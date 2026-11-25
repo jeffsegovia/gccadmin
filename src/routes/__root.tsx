@@ -69,6 +69,8 @@ export const Route = createRootRoute({
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:image', content: `${loaderData?.site ?? ''}/og.png` },
       ...themeColorMeta(loaderData?.theme),
+      // The standard name, plus Apple's (deprecated) for older iPhones.
+      { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       {
         name: 'apple-mobile-web-app-status-bar-style',

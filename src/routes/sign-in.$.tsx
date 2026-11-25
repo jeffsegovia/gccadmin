@@ -5,7 +5,7 @@ import { AuthLayout } from '@/components/auth-layout'
 export const Route = createFileRoute('/sign-in/$')({
   head: () => ({ meta: [{ title: 'Sign in · GCC Admin' }] }),
   component: () => (
-    <AuthLayout>
+    <AuthLayout card="sign-in">
       <SignIn signUpUrl="/sign-up" fallbackRedirectUrl="/home" />
     </AuthLayout>
   ),

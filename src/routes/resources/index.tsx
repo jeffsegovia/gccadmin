@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { FolderGrid } from '@/components/resources/folder-grid'
+import { FolderList } from '@/components/resources/folder-list'
 import { getLessonFolders } from '@/server/resources/resources.functions'
 
 export const Route = createFileRoute('/resources/')({
@@ -9,5 +9,5 @@ export const Route = createFileRoute('/resources/')({
 })
 
 function Folders() {
-  return <FolderGrid folders={Route.useLoaderData()} />
+  return <FolderList folders={Route.useLoaderData()} />
 }

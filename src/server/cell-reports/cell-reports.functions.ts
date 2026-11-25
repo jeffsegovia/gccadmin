@@ -1,8 +1,14 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq } from 'drizzle-orm'
+import { asc, eq, inArray, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import { db } from '@/db'
-import { cellReports } from '@/db/schema'
+import {
+  cellReportAttendeeSnapshots,
+  cellReports,
+  disciples,
+  lessons,
+} from '@/db/schema'
 import {
   AccessError,
   requireAccess,
@@ -127,4 +133,58 @@ export const deleteReport = createServerFn({ method: 'POST' })
     if (!access.isAdmin && found.report.leaderId !== access.disciple?.id)
       throw new AccessError('Only its leader can delete this report.')
     await db.delete(cellReports).where(eq(cellReports.id, data.id))
+  })
+
+/** Everything v2's PDF page shows, for each report asked for: who led and
+ * handled it, the lesson and its scripture, and the attendees as they
+ * were that day (the snapshots), oldest report first. */
+export const getReportsForPdf = createServerFn({ method: 'GET' })
+  .validator(z.object({ ids: z.array(z.string()).min(1).max(500) }))
+  .handler(async ({ data }) => {
+    await requireAccess()
+    const leader = alias(disciples, 'pdf_leader')
+    const assistant = alias(disciples, 'pdf_assistant')
+    const [reports, people] = await Promise.all([
+      db
+        .select({
+          id: cellReports.id,
+          type: cellReports.type,
+          date: cellReports.date,
+          createdAt: cellReports.createdAt,
+          venue: cellReports.venue,
+          leaderName: leader.name,
+          assistantName: assistant.name,
+          lessonTitle: sql<
+            string | null
+          >`coalesce(${lessons.title}, ${cellReports.lessonTitle})`,
+          customLesson: sql<boolean>`${cellReports.lessonId} is null`,
+          lessonScripture: lessons.scriptureReferences,
+          scripture: cellReports.scriptureReferences,
+        })
+        .from(cellReports)
+        .leftJoin(lessons, eq(lessons.id, cellReports.lessonId))
+        .leftJoin(leader, eq(leader.id, cellReports.leaderId))
+        .leftJoin(assistant, eq(assistant.id, cellReports.assistantId))
+        .where(inArray(cellReports.id, data.ids))
+        .orderBy(asc(cellReports.date)),
+      db
+        .select({
+          reportId: cellReportAttendeeSnapshots.cellReportId,
+          name: cellReportAttendeeSnapshots.name,
+          status: cellReportAttendeeSnapshots.status,
+          churchStatus: cellReportAttendeeSnapshots.churchStatus,
+        })
+        .from(cellReportAttendeeSnapshots)
+        .where(inArray(cellReportAttendeeSnapshots.cellReportId, data.ids))
+        .orderBy(asc(cellReportAttendeeSnapshots.name)),
+    ])
+    return reports.map((r) => ({
+      ...r,
+      date: r.date.toISOString(),
+      createdAt: r.createdAt.toISOString(),
+      scripture: r.customLesson
+        ? (r.scripture ?? [])
+        : (r.lessonScripture ?? r.scripture ?? []),
+      attendees: people.filter((p) => p.reportId === r.id),
+    }))
   })

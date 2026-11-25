@@ -12,7 +12,7 @@ import { ReportsTabs } from '@/components/reports-tabs'
 import { ListSearch } from '@/components/list-search'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants, Button } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { Segmented } from '@/components/ui/segmented'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
@@ -30,8 +30,8 @@ import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
 import { SOUL_PAGE, listSoulWinningSchema } from '@/lib/soul-winning/schema'
 import { Pager } from '@/components/pager'
-import { MEMBER_TYPE, SOUL_WINNING_TYPE } from '@/lib/labels'
-import { shortDate } from '@/lib/dates'
+import { MEMBER_TYPE } from '@/lib/labels'
+import { dateTime, shortDate } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
 import {
   deleteSoulWinning,
@@ -55,6 +55,15 @@ function SoulWinningPage() {
   const [open, setOpen] = useState<string | null>(null)
   const close = useCallback(() => setOpen(null), [])
   const view = search.view ?? 'sessions'
+  const tab =
+    view === 'souls'
+      ? 'souls'
+      : search.type === 'CONSOLIDATION'
+        ? 'CONSOLIDATION'
+        : 'SOUL_WINNING'
+  const conso = tab === 'CONSOLIDATION'
+  const track = (id: string) =>
+    set({ view: 'souls', type: undefined, session: id, q: undefined })
   const range: ReportRange = search.range ?? 'this_month'
   // Any change of filter starts again at the first page.
   const set = (next: Partial<typeof search>) =>
@@ -116,14 +125,26 @@ function SoulWinningPage() {
         ))}
       </div>
       <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {/* v2's three pages, as tabs. */}
         <Segmented
           label="Show"
-          className="w-full sm:w-64"
-          value={view}
-          onChange={(v) => set({ view: v === 'sessions' ? undefined : v })}
+          className="w-full lg:w-[28rem]"
+          value={tab}
+          onChange={(v) =>
+            set(
+              v === 'souls'
+                ? { view: 'souls', type: undefined }
+                : {
+                    view: undefined,
+                    session: undefined,
+                    type: v === 'CONSOLIDATION' ? 'CONSOLIDATION' : undefined,
+                  },
+            )
+          }
           options={[
-            { value: 'sessions', label: 'Sessions' },
-            { value: 'souls', label: 'New believers' },
+            { value: 'SOUL_WINNING', label: 'Soul Winning' },
+            { value: 'CONSOLIDATION', label: 'Consolidation' },
+            { value: 'souls', label: 'New Believers' },
           ]}
         />
         {view === 'sessions' && (
@@ -157,27 +178,6 @@ function SoulWinningPage() {
                 {l.name}
               </NativeSelectOption>
             ))}
-          </NativeSelect>
-        )}
-        {view === 'sessions' && (
-          <NativeSelect
-            className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
-            size="lg"
-            value={search.type ?? ''}
-            onChange={(e) =>
-              set({
-                type: (e.target.value || undefined) as typeof search.type,
-              })
-            }
-            aria-label="Kind"
-          >
-            <NativeSelectOption value="">Both kinds</NativeSelectOption>
-            <NativeSelectOption value="SOUL_WINNING">
-              Soul winning
-            </NativeSelectOption>
-            <NativeSelectOption value="CONSOLIDATION">
-              Consolidation
-            </NativeSelectOption>
           </NativeSelect>
         )}
         {view === 'souls' && (
@@ -257,52 +257,124 @@ function SoulWinningPage() {
             </Link>
           </Empty>
         ) : (
-          <Group>
-            {data.sessions.map((s) => (
-              <div
-                key={s.id}
-                className="flex min-h-15 min-w-0 items-center gap-3 px-3.5 py-2"
-              >
-                <span className="w-14 shrink-0 font-mono text-xs text-muted-foreground uppercase">
-                  {shortDate(s.date)}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[15px] font-medium">
-                    {s.venue}
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {s.type === 'SOUL_WINNING'
-                      ? `${s.believers} won`
-                      : `${s.believers} followed up`}
-                    {s.lessonTitle ? ` · ${s.lessonTitle}` : ''}
-                    {s.leaderName ? ` · ${s.leaderName}` : ''}
-                  </span>
-                </span>
-                <Pill tone={s.type === 'SOUL_WINNING' ? 'covered' : 'men'}>
-                  {SOUL_WINNING_TYPE[s.type]}
-                </Pill>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Track the believers at ${s.venue}`}
-                  title="Track their lessons"
-                  onClick={() =>
-                    set({ view: 'souls', session: s.id, q: undefined })
-                  }
+          <>
+            {/* Phones: who won them, where and when, and how many. */}
+            <Group className="md:hidden">
+              {data.sessions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => track(s.id)}
+                  className="flex min-h-15 w-full min-w-0 items-center gap-3 px-3.5 py-2.5 text-left hover:bg-muted/50"
                 >
-                  <ListChecks aria-hidden="true" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Delete session"
-                  onClick={() => setRemoving(s.id)}
-                >
-                  <Trash2 aria-hidden="true" />
-                </Button>
-              </div>
-            ))}
-          </Group>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-[15px] font-medium">
+                      {s.assistantName ?? s.leaderName ?? '—'}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {s.venue.split(',')[0]} · {shortDate(s.date)}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[13px] font-medium text-covered">
+                    {s.believers} {conso ? 'consolidated' : 'won'}
+                  </span>
+                  <RowChevron />
+                </button>
+              ))}
+            </Group>
+            {/* Wide screens: v2's table. */}
+            <div className="overflow-x-auto rounded-xl border bg-card max-md:hidden dark:border-transparent">
+              <table className="w-full min-w-[52rem] border-collapse text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground">
+                    <th
+                      scope="col"
+                      className="w-10 px-3 py-2.5 text-center font-medium"
+                    >
+                      #
+                    </th>
+                    {data.everyone && (
+                      <th scope="col" className="px-3 py-2.5 font-medium">
+                        Network Leader
+                      </th>
+                    )}
+                    <th scope="col" className="px-3 py-2.5 font-medium">
+                      {conso ? 'Consolidated By' : 'Won By'}
+                    </th>
+                    <th scope="col" className="px-3 py-2.5 font-medium">
+                      Lesson
+                    </th>
+                    <th scope="col" className="px-3 py-2.5 font-medium">
+                      Date & Venue
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2.5 font-medium whitespace-nowrap"
+                    >
+                      {conso ? '# Consolidated' : '# Won Souls'}
+                    </th>
+                    <th scope="col" className="w-10" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.sessions.map((s, i) => (
+                    <tr
+                      key={s.id}
+                      onClick={() => track(s.id)}
+                      className="cursor-pointer border-t hover:bg-muted/40"
+                    >
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">
+                        {(data.page - 1) * SOUL_PAGE + i + 1}
+                      </td>
+                      {data.everyone && (
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          {s.leaderName ?? '—'}
+                        </td>
+                      )}
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <span className="flex flex-col">
+                          <span>{s.assistantName ?? s.leaderName ?? '—'}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {s.assistantName
+                              ? 'Assistant Leader'
+                              : 'Primary Leader'}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="max-w-64 px-3 py-2.5">
+                        <span className="flex min-w-0 flex-col">
+                          <span className="truncate">
+                            {s.lessonTitle ?? '—'}
+                          </span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {s.seriesTitle ?? ''}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="max-w-64 px-3 py-2.5">
+                        <span className="flex min-w-0 flex-col">
+                          <span className="whitespace-nowrap">
+                            {dateTime(s.date)}
+                          </span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {s.venue}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <Pill tone="covered">
+                          {s.believers} {conso ? 'consolidated' : 'won'}
+                        </Pill>
+                      </td>
+                      <td className="pr-3">
+                        <RowChevron />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )
       ) : (
         <>
@@ -320,6 +392,14 @@ function SoulWinningPage() {
               <span className="min-w-0 flex-1 truncate">
                 At {data.sessionName ?? 'one session'}
               </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive"
+                onClick={() => setRemoving(search.session ?? null)}
+              >
+                <Trash2 aria-hidden="true" /> Delete session
+              </Button>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -375,20 +455,22 @@ function SoulWinningPage() {
               </Group>
               {/* Wide screens: v2's table, a column per lesson. */}
               <div className="overflow-x-auto border bg-card max-lg:hidden dark:border-transparent rounded-xl">
-                <table className="w-full border-collapse text-sm">
+                {/* Wider than the box when there are many lessons: it
+                    scrolls sideways instead of squeezing the columns. */}
+                <table className="w-full min-w-max border-collapse text-sm">
                   <thead>
                     <tr className="text-left text-xs text-muted-foreground">
                       <th
                         scope="col"
-                        className="min-w-48 px-3 py-2.5 font-medium"
+                        className="min-w-48 px-3 py-2.5 font-medium whitespace-nowrap"
                       >
                         New believer
                       </th>
                       <th
                         scope="col"
-                        className="min-w-36 px-3 py-2.5 font-medium"
+                        className="min-w-36 px-3 py-2.5 font-medium whitespace-nowrap"
                       >
-                        Handled by
+                        Handled By
                       </th>
                       {data.lessons.map((l) => (
                         <th
@@ -402,7 +484,7 @@ function SoulWinningPage() {
                       ))}
                       <th
                         scope="col"
-                        className="px-3 py-2.5 text-right font-medium"
+                        className="w-16 px-3 py-2.5 text-right font-medium whitespace-nowrap"
                       >
                         Taken
                       </th>
@@ -436,7 +518,7 @@ function SoulWinningPage() {
                               </span>
                             </button>
                           </th>
-                          <td className="px-3 py-2 text-[13px]">
+                          <td className="px-3 py-2 text-[13px] whitespace-nowrap">
                             {b.handledByName ?? b.leaderName ?? '—'}
                           </td>
                           {data.lessons.map((l) => (
@@ -459,7 +541,7 @@ function SoulWinningPage() {
                               )}
                             </td>
                           ))}
-                          <td className="numeric px-3 py-2 text-right">
+                          <td className="numeric px-3 py-2 text-right whitespace-nowrap">
                             {b.taken.length}/{data.lessons.length}
                           </td>
                         </tr>
@@ -495,8 +577,11 @@ function SoulWinningPage() {
                 try {
                   await deleteSoulWinning({ data: { id: removing! } })
                   toast.success('Session deleted')
+                  // Deleted from its own tracking view: back to the list.
+                  if (search.session === removing)
+                    set({ view: undefined, session: undefined })
+                  else await router.invalidate()
                   setRemoving(null)
-                  await router.invalidate()
                 } catch (error) {
                   toast.error(messageOf(error))
                 }

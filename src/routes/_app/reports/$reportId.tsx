@@ -5,12 +5,13 @@ import {
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
-import { Pencil, Trash2 } from 'lucide-react'
+import { FileDown, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Page } from '@/components/shell/page'
 import { ReportForm } from '@/components/cell-reports/report-form'
+import { PdfPreview } from '@/components/cell-reports/pdf-preview'
 import type { ReportFormOptions } from '@/components/cell-reports/report-form'
-import { Pill } from '@/components/status-pill'
+import { KindPill, LessonTag, Pill } from '@/components/status-pill'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -30,7 +31,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { reportToForm } from '@/lib/cell-reports/schema'
-import { CELL_STATUS, CELL_TYPE, plural } from '@/lib/labels'
+import { CELL_STATUS, plural } from '@/lib/labels'
 import { dateTime, toLocalInput } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
 import {
@@ -38,6 +39,7 @@ import {
   getReport,
   getReportFormOptions,
   updateReport,
+  getReportsForPdf,
 } from '@/server/cell-reports/cell-reports.functions'
 
 export const Route = createFileRoute('/_app/reports/$reportId')({
@@ -54,6 +56,7 @@ function ReportPage() {
   const [editing, setEditing] = useState(false)
   const [opts, setOpts] = useState<ReportFormOptions | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [pdf, setPdf] = useState(false)
   const lesson = data.lessonName ?? r.lessonTitle ?? 'No lesson'
 
   return (
@@ -62,38 +65,44 @@ function ReportPage() {
       title={lesson}
       description={`${dateTime(r.date)}${data.seriesTitle ? ` · ${data.seriesTitle}` : ''}`}
       action={
-        data.canEdit && (
-          <>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={async () => {
-                setEditing(true)
-                setOpts(
-                  await getReportFormOptions({
-                    data: { leaderId: r.leaderId },
-                  }),
-                )
-              }}
-            >
-              <Pencil aria-hidden="true" /> Edit
-            </Button>
-            <Button
-              variant="destructive"
-              size="icon-lg"
-              aria-label="Delete report"
-              onClick={() => setDeleting(true)}
-            >
-              <Trash2 aria-hidden="true" />
-            </Button>
-          </>
-        )
+        <>
+          {/* v2's Generate PDF: this report's page, previewed first. */}
+          <Button variant="secondary" size="lg" onClick={() => setPdf(true)}>
+            <FileDown aria-hidden="true" /> PDF
+          </Button>
+          {data.canEdit && (
+            <>
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={async () => {
+                  setEditing(true)
+                  setOpts(
+                    await getReportFormOptions({
+                      data: { leaderId: r.leaderId },
+                    }),
+                  )
+                }}
+              >
+                <Pencil aria-hidden="true" /> Edit
+              </Button>
+              <Button
+                variant="destructive"
+                size="icon-lg"
+                aria-label="Delete report"
+                onClick={() => setDeleting(true)}
+              >
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </>
+          )}
+        </>
       }
     >
       <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
         <section className="flex min-w-0 flex-col gap-2">
           <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
-            Who came · {data.attendees.length}
+            Attendees · {data.attendees.length}
           </h2>
           <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
             {data.attendees.map((a) => (
@@ -117,20 +126,30 @@ function ReportPage() {
           {[
             ['Leader', data.leaderName ?? '—'],
             ['Assistant', data.assistantName ?? '—'],
-            ['Type', CELL_TYPE[r.type]],
+            ['Type', <KindPill key="type" kind={r.type} />],
+            ['Lesson', <LessonTag key="lesson" custom={!r.lessonId} />],
             ['Venue', r.venue],
             ['Scripture', (r.scriptureReferences ?? []).join(', ') || '—'],
             ['Worship', (r.worship ?? []).join(', ') || '—'],
-            ['Follow-up', (r.work ?? []).join('; ') || '—'],
+            ['Work', (r.work ?? []).join('; ') || '—'],
             ['Came', plural(data.attendees.length, 'person', 'people')],
           ].map(([k, v]) => (
-            <div key={k} className="contents">
+            <div key={k as string} className="contents">
               <dt className="text-muted-foreground">{k}</dt>
               <dd className="min-w-0 break-words">{v}</dd>
             </div>
           ))}
         </dl>
       </div>
+
+      <PdfPreview
+        open={pdf}
+        onOpenChange={setPdf}
+        title="Cell Report"
+        description={lesson}
+        filename={`cg-${r.date.toString().slice(0, 10)}.pdf`}
+        load={() => getReportsForPdf({ data: { ids: [r.id] } })}
+      />
 
       <ResponsiveDialog open={editing} onOpenChange={setEditing}>
         <ResponsiveDialogContent className="sm:max-w-2xl">

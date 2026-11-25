@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Page } from '@/components/shell/page'
-import { ChurchStatusPill, Pill } from '@/components/status-pill'
+import { ChurchStatusPill, KindPill, Pill } from '@/components/status-pill'
 import { PortalSheet } from '@/components/disciples/portal-sheet'
 import { GrowthBar, Weeks } from '@/components/disciples/progress'
 import { DiscipleForm } from '@/components/disciples/disciple-form'
@@ -54,7 +54,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import {
   CELL_STATUS,
-  CELL_TYPE,
   GENDER,
   MEMBER_TYPE,
   PROCESS_LEVEL,
@@ -259,9 +258,11 @@ function DisciplePage() {
                           <span className="truncate text-[15px] font-medium">
                             {r.lessonTitle ?? r.customTitle ?? 'Cell group'}
                           </span>
-                          <span className="truncate text-xs text-muted-foreground">
-                            {CELL_TYPE[r.type]}
-                            {r.leaderName ? ` · led by ${r.leaderName}` : ''}
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <KindPill kind={r.type} />
+                            <span className="truncate text-xs text-muted-foreground">
+                              {r.leaderName ? `led by ${r.leaderName}` : ''}
+                            </span>
                           </span>
                         </span>
                         <RowChevron />

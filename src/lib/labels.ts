@@ -64,10 +64,11 @@ export const PROCESS_STATUS: Record<ProcessLevelStatus, string> = {
   DROPPED: 'Dropped',
 }
 
+// v2's names.
 export const CELL_TYPE: Record<CellType, string> = {
-  OPEN: 'Open',
+  OPEN: 'Open Cell',
   DISCIPLESHIP: 'Discipleship',
-  SOULWINNING: 'Soul winning',
+  SOULWINNING: 'Soul Winning',
 }
 
 export const ATTENDANCE_TYPE: Record<AttendanceType, string> = {
@@ -76,7 +77,7 @@ export const ATTENDANCE_TYPE: Record<AttendanceType, string> = {
 }
 
 export const SOUL_WINNING_TYPE: Record<SoulWinningReportType, string> = {
-  SOUL_WINNING: 'Soul winning',
+  SOUL_WINNING: 'Soul Winning',
   CONSOLIDATION: 'Consolidation',
 }
 

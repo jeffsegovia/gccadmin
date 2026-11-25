@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ChevronLeft,
@@ -6,12 +7,10 @@ import {
   FileDown,
   Plus,
 } from 'lucide-react'
-import { toast } from 'sonner'
-import { cn } from 'cn'
 import { Empty, Page } from '@/components/shell/page'
 import { ReportsTabs } from '@/components/reports-tabs'
+import { ReportRow as ReportItem } from '@/components/cell-reports/report-row'
 import { PersonCombobox } from '@/components/person-combobox'
-import { Pill } from '@/components/status-pill'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
 import { Segmented } from '@/components/ui/segmented'
@@ -22,14 +21,14 @@ import {
   listReportsSchema,
 } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
-import { reportsPdf } from '@/lib/cell-reports/pdf'
-import { CELL_TYPE, plural } from '@/lib/labels'
-import { manilaDay, shortDate, shortDay, weekStart } from '@/lib/dates'
-import { messageOf } from '@/lib/errors'
+import { plural } from '@/lib/labels'
+import { manilaDay, shortDay, weekStart } from '@/lib/dates'
 import {
   exportReports,
+  getReportsForPdf,
   getReportsPage,
 } from '@/server/cell-reports/cell-reports.functions'
+import { PdfPreview } from '@/components/cell-reports/pdf-preview'
 import type { ReportRow } from '@/server/cell-reports/cell-reports.server'
 
 export const Route = createFileRoute('/_app/reports/')({
@@ -40,19 +39,12 @@ export const Route = createFileRoute('/_app/reports/')({
   component: ReportsPage,
 })
 
-function typeTone(t: ReportRow['type']) {
-  return t === 'SOULWINNING'
-    ? 'covered'
-    : t === 'DISCIPLESHIP'
-      ? 'primary'
-      : 'neutral'
-}
-
 function ReportsPage() {
   const data = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const range: ReportRange = search.range ?? 'this_week'
+  const [pdf, setPdf] = useState(false)
   const set = (next: Partial<typeof search>) =>
     void navigate({
       search: (prev) => ({ ...prev, ...next, page: undefined }),
@@ -77,21 +69,10 @@ function ReportsPage() {
           <Button
             variant="secondary"
             size="lg"
-            onClick={async () => {
-              try {
-                const rows = await exportReports({
-                  data: { ...search, page: undefined },
-                })
-                reportsPdf(
-                  `GCC cell reports, ${RANGE_LABEL[range].toLowerCase()}`,
-                  rows,
-                )
-              } catch (error) {
-                toast.error(messageOf(error))
-              }
-            }}
+            disabled={data.total === 0}
+            onClick={() => setPdf(true)}
           >
-            <FileDown aria-hidden="true" /> PDF
+            <FileDown aria-hidden="true" /> View PDF
           </Button>
           <Link
             to="/reports/new"
@@ -106,9 +87,11 @@ function ReportsPage() {
       }
     >
       <ReportsTabs on="cell" />
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
+      {/* When and type share the row, half each. */}
+      <div className="grid min-w-0 grid-cols-2 gap-2">
         <NativeSelect
           size="lg"
+          className="w-full"
           value={range}
           onChange={(e) => set({ range: e.target.value as ReportRange })}
           aria-label="When"
@@ -121,6 +104,7 @@ function ReportsPage() {
         </NativeSelect>
         <NativeSelect
           size="lg"
+          className="w-full"
           value={search.type ?? ''}
           onChange={(e) =>
             set({ type: (e.target.value || undefined) as never })
@@ -128,12 +112,16 @@ function ReportsPage() {
           aria-label="Type"
         >
           <NativeSelectOption value="">All types</NativeSelectOption>
-          {(['OPEN', 'DISCIPLESHIP', 'SOULWINNING'] as const).map((t) => (
-            <NativeSelectOption key={t} value={t}>
-              {CELL_TYPE[t]}
-            </NativeSelectOption>
-          ))}
+          <NativeSelectOption value="OPEN">Open Cell</NativeSelectOption>
+          <NativeSelectOption value="DISCIPLESHIP">
+            Discipleship
+          </NativeSelectOption>
+          <NativeSelectOption value="SOULWINNING">
+            Soul Winning
+          </NativeSelectOption>
         </NativeSelect>
+      </div>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         {data.myId && (
           <Segmented
             label="Whose"
@@ -174,39 +162,7 @@ function ReportsPage() {
             </h2>
             <Group>
               {rows.map((r) => (
-                <Link
-                  key={r.id}
-                  to="/reports/$reportId"
-                  params={{ reportId: r.id }}
-                  className="grid min-h-14 min-w-0 grid-cols-[3.5rem_minmax(0,1fr)_auto] items-center gap-3 px-3.5 py-2 hover:bg-muted/50 md:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1.2fr)_7rem_3rem]"
-                >
-                  <span className="font-mono text-xs text-muted-foreground uppercase">
-                    {shortDate(r.date)}
-                  </span>
-                  <span className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium">
-                      {r.leaderName ?? '—'}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground md:hidden">
-                      {r.lessonTitle ?? 'No lesson'}
-                    </span>
-                    {r.assistantName && (
-                      <span className="truncate text-xs text-muted-foreground max-md:hidden">
-                        with {r.assistantName}
-                      </span>
-                    )}
-                  </span>
-                  <span className="truncate text-foreground/85 max-md:hidden">
-                    {r.lessonTitle ?? '—'}
-                  </span>
-                  <span className="max-md:hidden">
-                    <Pill tone={typeTone(r.type)}>{CELL_TYPE[r.type]}</Pill>
-                  </span>
-                  <span className={cn('numeric text-right text-sm')}>
-                    {r.attendees}
-                    <span className="sr-only"> came</span>
-                  </span>
-                </Link>
+                <ReportItem key={r.id} r={r} />
               ))}
             </Group>
           </section>
@@ -250,6 +206,21 @@ function ReportsPage() {
           </div>
         </div>
       )}
+      <PdfPreview
+        open={pdf}
+        onOpenChange={setPdf}
+        title="Cell Reports"
+        description={RANGE_LABEL[range]}
+        filename={`gcc-cell-reports-${range}.pdf`}
+        load={async () => {
+          const rows = await exportReports({
+            data: { ...search, page: undefined },
+          })
+          return rows.length
+            ? getReportsForPdf({ data: { ids: rows.map((r) => r.id) } })
+            : []
+        }}
+      />
     </Page>
   )
 }

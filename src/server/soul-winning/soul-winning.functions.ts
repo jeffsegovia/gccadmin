@@ -19,6 +19,7 @@ import { z } from 'zod'
 import { db } from '@/db'
 import {
   disciples,
+  lessonSeries,
   lessons,
   newBelievers,
   soulWinningNewBelievers,
@@ -121,9 +122,11 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
 
     const page = data.page ?? 1
     const offset = (page - 1) * SOUL_PAGE
+    // Soul Winning and Consolidation are tabs (as v2's pages); Soul
+    // Winning first.
     const sessionWhere = and(
       inRange,
-      data.type ? eq(soulWinningReports.type, data.type) : undefined,
+      eq(soulWinningReports.type, data.type ?? 'SOUL_WINNING'),
     )
     const sessions =
       data.view === 'souls'
@@ -135,6 +138,7 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
               type: soulWinningReports.type,
               venue: soulWinningReports.venue,
               lessonTitle: lessons.title,
+              seriesTitle: lessonSeries.title,
               leaderName: leader.name,
               leaderId: soulWinningReports.networkLeaderId,
               assistantName: assistant.name,
@@ -144,6 +148,7 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
             })
             .from(soulWinningReports)
             .leftJoin(lessons, eq(lessons.id, soulWinningReports.lessonId))
+            .leftJoin(lessonSeries, eq(lessonSeries.id, lessons.lessonSeriesId))
             .leftJoin(leader, eq(leader.id, soulWinningReports.networkLeaderId))
             .leftJoin(
               assistant,

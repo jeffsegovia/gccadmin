@@ -78,11 +78,13 @@ function PortalPage() {
 
   return (
     <div className="min-h-dvh">
-      <header className="mx-auto flex max-w-xl items-center gap-2 px-4 pt-4 pb-1">
-        <Logo className="size-6" />
-        <span className="truncate font-mono text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-          {appConfig.church}
-        </span>
+      <header className="dark bg-background text-foreground">
+        <div className="mx-auto flex max-w-xl items-center gap-2 px-4 py-3">
+          <Logo className="size-6" />
+          <span className="truncate font-mono text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            {appConfig.church}
+          </span>
+        </div>
       </header>
       <main className="mx-auto flex max-w-xl min-w-0 flex-col gap-5 px-4 pt-3 pb-12">
         <div className="flex flex-col gap-1">

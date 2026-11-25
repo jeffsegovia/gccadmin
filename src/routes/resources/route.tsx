@@ -42,7 +42,7 @@ function ResourcesLayout() {
       : pathname.startsWith(t.to)
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
+      <header className="dark sticky top-0 z-30 border-b bg-background text-foreground">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
             <Logo />

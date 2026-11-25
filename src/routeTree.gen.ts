@@ -16,6 +16,7 @@ import { Route as ResourcesRouteRouteImport } from './routes/resources/route'
 import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
 import { Route as AppGrowthRouteImport } from './routes/_app/growth'
 import { Route as AppHomeRouteImport } from './routes/_app/home'
+import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppLeadersRouteImport } from './routes/_app/leaders'
 import { Route as AppMoreRouteImport } from './routes/_app/more'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -72,6 +73,11 @@ const AppGrowthRoute = AppGrowthRouteImport.update({
 const AppHomeRoute = AppHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInsightsRoute = AppInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLeadersRoute = AppLeadersRouteImport.update({
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/unauthorized': typeof UnauthorizedRoute
   '/growth': typeof AppGrowthRoute
   '/home': typeof AppHomeRoute
+  '/insights': typeof AppInsightsRoute
   '/leaders': typeof AppLeadersRoute
   '/more': typeof AppMoreRoute
   '/profile': typeof AppProfileRoute
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/unauthorized': typeof UnauthorizedRoute
   '/growth': typeof AppGrowthRoute
   '/home': typeof AppHomeRoute
+  '/insights': typeof AppInsightsRoute
   '/leaders': typeof AppLeadersRoute
   '/more': typeof AppMoreRoute
   '/profile': typeof AppProfileRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/unauthorized': typeof UnauthorizedRoute
   '/_app/growth': typeof AppGrowthRoute
   '/_app/home': typeof AppHomeRoute
+  '/_app/insights': typeof AppInsightsRoute
   '/_app/leaders': typeof AppLeadersRoute
   '/_app/more': typeof AppMoreRoute
   '/_app/profile': typeof AppProfileRoute
@@ -299,6 +308,7 @@ export interface FileRouteTypes {
     | '/unauthorized'
     | '/growth'
     | '/home'
+    | '/insights'
     | '/leaders'
     | '/more'
     | '/profile'
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/unauthorized'
     | '/growth'
     | '/home'
+    | '/insights'
     | '/leaders'
     | '/more'
     | '/profile'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/unauthorized'
     | '/_app/growth'
     | '/_app/home'
+    | '/_app/insights'
     | '/_app/leaders'
     | '/_app/more'
     | '/_app/profile'
@@ -448,6 +460,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof AppHomeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/insights': {
+      id: '/_app/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AppInsightsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/leaders': {
@@ -642,6 +661,7 @@ const ResourcesRouteRouteWithChildren = ResourcesRouteRoute._addFileChildren(
 interface AppRouteChildren {
   AppGrowthRoute: typeof AppGrowthRoute
   AppHomeRoute: typeof AppHomeRoute
+  AppInsightsRoute: typeof AppInsightsRoute
   AppLeadersRoute: typeof AppLeadersRoute
   AppMoreRoute: typeof AppMoreRoute
   AppProfileRoute: typeof AppProfileRoute
@@ -663,6 +683,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppGrowthRoute: AppGrowthRoute,
   AppHomeRoute: AppHomeRoute,
+  AppInsightsRoute: AppInsightsRoute,
   AppLeadersRoute: AppLeadersRoute,
   AppMoreRoute: AppMoreRoute,
   AppProfileRoute: AppProfileRoute,

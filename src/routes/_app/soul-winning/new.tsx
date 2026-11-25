@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Check, Plus, X } from 'lucide-react'
+import { Check, Plus, X, HeartHandshake, Sprout } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { cn } from 'cn'
@@ -11,7 +11,7 @@ import { DialogActions } from '@/components/responsive-dialog'
 import { SubmitButton } from '@/components/submit-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Segmented } from '@/components/ui/segmented'
+import { RadioCards } from '@/components/radio-cards'
 import {
   consolidationSchema,
   soulWinningSchema,
@@ -116,13 +116,23 @@ function NewSessionPage() {
           }
         }}
       >
-        <Segmented
+        <RadioCards
           label="Kind"
           value={type}
           onChange={setType}
           options={[
-            { value: 'SOUL_WINNING', label: 'Soul winning' },
-            { value: 'CONSOLIDATION', label: 'Consolidation' },
+            {
+              value: 'SOUL_WINNING',
+              label: 'Soul winning',
+              hint: 'New believers won',
+              icon: Sprout,
+            },
+            {
+              value: 'CONSOLIDATION',
+              label: 'Consolidation',
+              hint: 'Following up believers',
+              icon: HeartHandshake,
+            },
           ]}
         />
         {opts.chooseLeader && (
@@ -306,13 +316,13 @@ function NewSessionPage() {
                       <span
                         aria-hidden="true"
                         className={cn(
-                          'grid size-6 shrink-0 place-items-center border-2',
+                          'grid size-5 shrink-0 place-items-center border-[1.5px]',
                           on
                             ? 'border-covered bg-covered text-background'
                             : 'border-foreground/25',
                         )}
                       >
-                        {on && <Check className="size-3.5" strokeWidth={3} />}
+                        {on && <Check className="size-3" strokeWidth={3} />}
                       </span>
                     </button>
                   )

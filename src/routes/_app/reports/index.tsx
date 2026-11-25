@@ -9,7 +9,6 @@ import {
 import { toast } from 'sonner'
 import { cn } from 'cn'
 import { Empty, Page } from '@/components/shell/page'
-import { FabLink } from '@/components/shell/fab'
 import { ReportsTabs } from '@/components/reports-tabs'
 import { PersonCombobox } from '@/components/person-combobox'
 import { Pill } from '@/components/status-pill'
@@ -251,7 +250,6 @@ function ReportsPage() {
           </div>
         </div>
       )}
-      <FabLink to="/reports/new" label="New cell report" />
     </Page>
   )
 }

@@ -10,7 +10,8 @@ export function messageOf(
 
 /** A fetch that never reached the server (offline, dropped signal). */
 export function isNetworkError(error: unknown): boolean {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) return true
+  if (typeof navigator !== 'undefined' && navigator.onLine === false)
+    return true
   return (
     error instanceof TypeError &&
     /fetch|network|load failed/i.test(error.message)

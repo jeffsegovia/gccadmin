@@ -14,7 +14,6 @@ import {
 import { toast } from 'sonner'
 import { cn } from 'cn'
 import { Empty, Page } from '@/components/shell/page'
-import { FabLink } from '@/components/shell/fab'
 import { ListSearch } from '@/components/list-search'
 import { ChurchStatusPill, PersonAvatar, Pill } from '@/components/status-pill'
 import {
@@ -345,7 +344,6 @@ function DisciplesPage() {
           link.
         </p>
       )}
-      <FabLink to="/disciples/new" label="Add a disciple" />
       <FiltersDialog
         open={filtering}
         onOpenChange={setFiltering}

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Search } from 'lucide-react'
+import { BookOpen, Check, DoorOpen, Search, Sprout } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from 'cn'
 import { FormField } from '@/components/form-field'
 import { PersonCombobox } from '@/components/person-combobox'
 import { SubmitButton } from '@/components/submit-button'
 import { DialogActions } from '@/components/responsive-dialog'
-import { Segmented } from '@/components/ui/segmented'
+import { RadioCards } from '@/components/radio-cards'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -208,13 +208,30 @@ export function ReportForm({
       )}
 
       <FormField label="Type">
-        <Segmented<CellType>
+        <RadioCards<CellType>
           label="Type"
           value={v.type}
           onChange={(type) => setV({ ...v, type })}
-          options={(['OPEN', 'DISCIPLESHIP', 'SOULWINNING'] as const).map(
-            (t) => ({ value: t, label: CELL_TYPE[t] }),
-          )}
+          options={[
+            {
+              value: 'OPEN',
+              label: CELL_TYPE.OPEN,
+              hint: 'Anyone welcome, guests too',
+              icon: DoorOpen,
+            },
+            {
+              value: 'DISCIPLESHIP',
+              label: CELL_TYPE.DISCIPLESHIP,
+              hint: 'Your disciples, a lesson series',
+              icon: BookOpen,
+            },
+            {
+              value: 'SOULWINNING',
+              label: CELL_TYPE.SOULWINNING,
+              hint: 'Sharing the gospel',
+              icon: Sprout,
+            },
+          ]}
         />
       </FormField>
 
@@ -390,13 +407,13 @@ export function ReportForm({
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'grid size-6 shrink-0 place-items-center border-2',
+                      'grid size-5 shrink-0 place-items-center border-[1.5px]',
                       on
                         ? 'border-covered bg-covered text-background'
                         : 'border-foreground/25',
                     )}
                   >
-                    {on && <Check className="size-3.5" strokeWidth={3} />}
+                    {on && <Check className="size-3" strokeWidth={3} />}
                   </span>
                 </button>
               )

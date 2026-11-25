@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { z } from 'zod'
 import { Empty, Page, Section } from '@/components/shell/page'
-import { Fab } from '@/components/shell/fab'
 import { ListSearch } from '@/components/list-search'
 import { ServiceDialog } from '@/components/attendance/service-dialog'
 import { Pill } from '@/components/status-pill'
@@ -23,7 +22,10 @@ import { ATTENDANCE_TYPE, plural } from '@/lib/labels'
 import { dateToDay, manilaDay, monthLabel, shortDay } from '@/lib/dates'
 
 export const Route = createFileRoute('/_app/attendance/')({
-  validateSearch: z.object({ q: z.string().optional() }),
+  validateSearch: z.object({
+    q: z.string().optional(),
+    new: z.string().optional(),
+  }),
   loaderDeps: ({ search }) => ({ q: search.q }),
   loader: ({ deps }) => getServices({ data: { q: deps.q } }),
   head: () => ({ meta: [{ title: 'Attendance · GCC Admin' }] }),
@@ -102,6 +104,15 @@ function AttendancePage() {
   const { q } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const [creating, setCreating] = useState(false)
+  const fromQuickAdd = Route.useSearch().new
+  useEffect(() => {
+    if (!fromQuickAdd) return
+    setCreating(true)
+    void navigate({
+      search: (prev) => ({ ...prev, new: undefined }),
+      replace: true,
+    })
+  }, [fromQuickAdd, navigate])
   const [waiting, setWaiting] = useState<Set<string>>(new Set())
   useEffect(() => setWaiting(new Set(servicesWithPending())), [services])
 
@@ -130,11 +141,7 @@ function AttendancePage() {
           >
             <UsersRound aria-hidden="true" /> Guests
           </Link>
-          <Button
-            size="lg"
-            className="max-md:hidden"
-            onClick={() => setCreating(true)}
-          >
+          <Button size="lg" onClick={() => setCreating(true)}>
             <Plus aria-hidden="true" /> New service
           </Button>
         </>
@@ -183,7 +190,6 @@ function AttendancePage() {
           ))}
         </>
       )}
-      <Fab label="New service or event" onClick={() => setCreating(true)} />
       <ServiceDialog open={creating} onOpenChange={setCreating} />
     </Page>
   )

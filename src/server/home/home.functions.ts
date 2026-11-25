@@ -1,5 +1,16 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, count, desc, eq, gte, lt, max, or, sql } from 'drizzle-orm'
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  lt,
+  max,
+  or,
+  sql,
+  inArray,
+} from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
 import {
@@ -18,6 +29,7 @@ import {
   rangeBounds,
 } from '@/server/cell-reports/cell-reports.server'
 import { addDays, dayToDate, manilaDay } from '@/lib/dates'
+import { birthdayWeek, turningAge } from '@/lib/birthdays'
 
 const leader = alias(disciples, 'leader')
 
@@ -165,6 +177,41 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
     listReports({ range: 'this_week', mine: !everyone }, me),
   ])
 
+  // Birthdays this week (Monday to Sunday, Manila), birthdays first by day.
+  const bWeek = birthdayWeek(today)
+  const keys = bWeek.flatMap((d) => d.keys)
+  const born = await db
+    .select({
+      id: disciples.id,
+      name: disciples.name,
+      gender: disciples.gender,
+      birthdate: disciples.birthdate,
+      key: sql<string>`to_char(${disciples.birthdate}, 'MM-DD')`,
+    })
+    .from(disciples)
+    .where(
+      and(
+        eq(disciples.isDeleted, false),
+        eq(disciples.isActive, true),
+        networkOnly(disciples.leaderId),
+        inArray(sql<string>`to_char(${disciples.birthdate}, 'MM-DD')`, keys),
+      ),
+    )
+  const birthdays = born
+    .map((b) => {
+      const date = bWeek.find((d) => d.keys.includes(b.key))!.date
+      return {
+        id: b.id,
+        name: b.name,
+        gender: b.gender,
+        date,
+        turns: turningAge(b.birthdate, date),
+      }
+    })
+    .sort(
+      (a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name),
+    )
+
   const reported = new Set(reportedLeaders.map((r) => r.id))
   const notReported = lastReports
     .filter((l) => !reported.has(l.id) && (everyone || l.id === me))
@@ -198,5 +245,7 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
     notReported,
     thisWeek: thisWeek.rows.slice(0, 6),
     myReportedThisWeek: me ? reported.has(me) : false,
+    birthdays,
+    today,
   }
 })

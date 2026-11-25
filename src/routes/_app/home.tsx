@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { CalendarCheck } from 'lucide-react'
+import { Cake, CalendarCheck } from 'lucide-react'
 import { cn } from 'cn'
 import { Page, Section } from '@/components/shell/page'
 import { RemindButton } from '@/components/remind-button'
@@ -94,6 +94,11 @@ function HomePage() {
       wide
       title={`${greeting()}, ${first}`}
       description={`Week of ${shortDay(monday)} – ${shortDay(addDays(monday, 6))}`}
+      action={
+        <Link to="/insights" className="text-[13px] font-medium text-primary">
+          See insights and trends
+        </Link>
+      }
     >
       <div className="grid grid-cols-3 border bg-card md:grid-cols-4 [&>*+*]:border-l">
         {stats.map((s) => (
@@ -178,6 +183,49 @@ function HomePage() {
               </>
             )}
           </section>
+
+          <Section title={`Birthdays this week · ${data.birthdays.length}`}>
+            {data.birthdays.length === 0 ? (
+              <p className="border border-dashed px-4 py-5 text-center text-sm text-muted-foreground">
+                No birthdays this week.
+              </p>
+            ) : (
+              <Group>
+                {data.birthdays.map((b) => (
+                  <Link
+                    key={b.id}
+                    to="/disciples/$discipleId"
+                    params={{ discipleId: b.id }}
+                    className="flex min-h-12 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
+                  >
+                    <Cake
+                      aria-hidden="true"
+                      className={cn(
+                        'size-4 shrink-0',
+                        b.date === data.today
+                          ? 'text-primary'
+                          : 'text-muted-foreground',
+                      )}
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate font-medium">{b.name}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {longDay(b.date).replace(/, \d{4}$/, '')} · turns{' '}
+                        {b.turns}
+                      </span>
+                    </span>
+                    {b.date === data.today ? (
+                      <Pill tone="primary">Today</Pill>
+                    ) : b.date < data.today ? (
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        Passed
+                      </span>
+                    ) : null}
+                  </Link>
+                ))}
+              </Group>
+            )}
+          </Section>
 
           {data.notReported.length > 0 && (
             <Section

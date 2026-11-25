@@ -8,7 +8,6 @@ import {
 import { Plus, Sprout, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Empty, Page } from '@/components/shell/page'
-import { FabLink } from '@/components/shell/fab'
 import { ReportsTabs } from '@/components/reports-tabs'
 import { ListSearch } from '@/components/list-search'
 import { GenderBar, Pill } from '@/components/status-pill'
@@ -249,7 +248,6 @@ function SoulWinningPage() {
           )}
         </>
       )}
-      <FabLink to="/soul-winning/new" label="New soul-winning session" />
       <AlertDialog
         open={!!removing}
         onOpenChange={(o) => !o && setRemoving(null)}

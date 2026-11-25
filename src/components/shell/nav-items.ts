@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  ChartColumn,
   CalendarCheck,
   ClipboardList,
   FolderOpen,
@@ -23,6 +24,7 @@ export type NavItem = {
 
 export const MAIN_NAV: ReadonlyArray<NavItem> = [
   { to: '/home', label: 'Home', icon: House },
+  { to: '/insights', label: 'Insights', icon: ChartColumn },
   { to: '/disciples', label: 'Disciples', icon: Users },
   { to: '/reports', label: 'Cell reports', icon: ClipboardList },
   { to: '/soul-winning', label: 'Soul winning', icon: Sprout },

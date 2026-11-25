@@ -14,10 +14,10 @@ export function NotFound() {
         It may have been deleted, or the link is wrong.
       </p>
       <Link
-        to="/"
+        to="/home"
         className={buttonVariants({ size: 'lg', className: 'mt-3' })}
       >
-        Go to your songs
+        Go to Home
       </Link>
     </div>
   )

@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
-import { Ellipsis, Plus } from 'lucide-react'
+import { Ellipsis } from 'lucide-react'
 import { cn } from 'cn'
-import { buttonVariants } from '@/components/ui/button'
 import { appConfig } from '@/config/site'
 import { Logo } from './logo'
 import {
@@ -14,6 +13,7 @@ import {
 } from './nav-items'
 import type { NavItem } from './nav-items'
 import { SearchButton } from './global-search'
+import { QuickAddFab, QuickAddMenu } from './quick-add'
 import { UserAvatar, UserMenu } from './user-menu'
 import type { MenuUser } from './user-menu'
 
@@ -72,15 +72,7 @@ function Sidebar({ isAdmin }: { isAdmin: boolean }) {
       aria-label="App menu"
       className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-58 shrink-0 flex-col overflow-y-auto border-r p-3 md:flex"
     >
-      <Link
-        to="/reports/new"
-        className={buttonVariants({
-          size: 'lg',
-          className: 'mb-3 justify-start',
-        })}
-      >
-        <Plus aria-hidden="true" /> New cell report
-      </Link>
+      <QuickAddMenu />
       <nav aria-label="Main" className="flex flex-col">
         <SideGroup items={MAIN_NAV} pathname={pathname} />
         <SideGroup label="Resources" items={RESOURCE_NAV} pathname={pathname} />
@@ -94,7 +86,7 @@ function Sidebar({ isAdmin }: { isAdmin: boolean }) {
 
 function TopBar({ user }: { user: MenuUser }) {
   return (
-    <header className="sticky top-0 z-40 hidden h-14 items-center gap-3 border-b bg-background/90 px-5 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:flex">
+    <header className="dark sticky top-0 z-40 hidden h-14 items-center gap-3 border-b bg-background px-5 text-foreground md:flex">
       <Link to="/home" className="flex min-w-0 items-center gap-2.5">
         <Logo />
         <span className="truncate text-[15px] font-semibold tracking-tight">
@@ -122,7 +114,7 @@ function TopBar({ user }: { user: MenuUser }) {
 
 function PhoneHeader({ user }: { user: MenuUser }) {
   return (
-    <header className="flex items-center gap-2 px-4 pt-3 pb-1 md:hidden">
+    <header className="dark sticky top-0 z-30 mb-2 flex items-center gap-2 bg-background px-4 py-2 text-foreground md:hidden">
       <Link
         to="/home"
         aria-label="Home"
@@ -211,6 +203,7 @@ export function AppShell({
           {children}
         </div>
       </div>
+      <QuickAddFab />
       <PhoneTabs />
     </div>
   )

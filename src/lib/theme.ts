@@ -22,7 +22,7 @@ export function themePreference(value: unknown): ThemePreference {
  * the browser's own bars (status bar, bottom bar): they take it from the
  * `theme-color` tag, which must follow the page's theme, not the device's,
  * or a pinned theme shows a bar of the other one. */
-export const THEME_BAR = { light: '#f7f6f3', dark: '#0a0a0a' } as const
+export const THEME_BAR = { light: '#0a0a0a', dark: '#0a0a0a' } as const
 
 /** Run in <head> before the first paint: "system" can only be resolved in
  * the browser, so the page doesn't flash light before turning dark. It

@@ -3,7 +3,6 @@ import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { BookOpen, ChevronRight, Plus } from 'lucide-react'
 import { z } from 'zod'
 import { Empty, Page } from '@/components/shell/page'
-import { Fab } from '@/components/shell/fab'
 import { ListSearch } from '@/components/list-search'
 import { SeriesDialog } from '@/components/lessons/lesson-dialogs'
 import { Button } from '@/components/ui/button'
@@ -30,11 +29,7 @@ function LessonsPage() {
       description={plural(data.series.length, 'series', 'series')}
       action={
         data.canEdit && (
-          <Button
-            size="lg"
-            className="max-md:hidden"
-            onClick={() => setAdding(true)}
-          >
+          <Button size="lg" onClick={() => setAdding(true)}>
             <Plus aria-hidden="true" /> New series
           </Button>
         )
@@ -80,9 +75,6 @@ function LessonsPage() {
             </Link>
           ))}
         </Group>
-      )}
-      {data.canEdit && (
-        <Fab label="New lesson series" onClick={() => setAdding(true)} />
       )}
       <SeriesDialog
         value={adding ? { title: '' } : null}

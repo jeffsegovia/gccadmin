@@ -204,13 +204,13 @@ function Mark({
         <span
           aria-hidden="true"
           className={cn(
-            'grid size-7 shrink-0 place-items-center border-2 transition-colors',
+            'grid size-5 shrink-0 place-items-center border-[1.5px] transition-colors',
             on
               ? 'border-covered bg-covered text-background'
               : 'border-foreground/25',
           )}
         >
-          {on && <Check className="size-4" strokeWidth={3} />}
+          {on && <Check className="size-3.5" strokeWidth={3} />}
         </span>
       </button>
       {end}

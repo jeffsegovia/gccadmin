@@ -14,7 +14,6 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as FocusRouteImport } from './routes/_focus'
 import { Route as ResourcesRouteRouteImport } from './routes/resources/route'
 import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
-import { Route as Char91__clerkChar93SplatRouteImport } from './routes/[__clerk].$'
 import { Route as AppGrowthRouteImport } from './routes/_app/growth'
 import { Route as AppHomeRouteImport } from './routes/_app/home'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
@@ -66,12 +65,6 @@ const UnauthorizedRoute = UnauthorizedRouteImport.update({
   path: '/unauthorized',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91__clerkChar93SplatRoute =
-  Char91__clerkChar93SplatRouteImport.update({
-    id: '/__clerk/$',
-    path: '/__clerk/$',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const AppGrowthRoute = AppGrowthRouteImport.update({
   id: '/growth',
   path: '/growth',
@@ -213,7 +206,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/resources': typeof ResourcesRouteRouteWithChildren
   '/unauthorized': typeof UnauthorizedRoute
-  '/__clerk/$': typeof Char91__clerkChar93SplatRoute
   '/growth': typeof AppGrowthRoute
   '/home': typeof AppHomeRoute
   '/insights': typeof AppInsightsRoute
@@ -245,7 +237,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/unauthorized': typeof UnauthorizedRoute
-  '/__clerk/$': typeof Char91__clerkChar93SplatRoute
   '/growth': typeof AppGrowthRoute
   '/home': typeof AppHomeRoute
   '/insights': typeof AppInsightsRoute
@@ -281,7 +272,6 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_focus': typeof FocusRouteWithChildren
   '/unauthorized': typeof UnauthorizedRoute
-  '/__clerk/$': typeof Char91__clerkChar93SplatRoute
   '/_app/growth': typeof AppGrowthRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/insights': typeof AppInsightsRoute
@@ -316,7 +306,6 @@ export interface FileRouteTypes {
     | '/'
     | '/resources'
     | '/unauthorized'
-    | '/__clerk/$'
     | '/growth'
     | '/home'
     | '/insights'
@@ -348,7 +337,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/unauthorized'
-    | '/__clerk/$'
     | '/growth'
     | '/home'
     | '/insights'
@@ -383,7 +371,6 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_focus'
     | '/unauthorized'
-    | '/__clerk/$'
     | '/_app/growth'
     | '/_app/home'
     | '/_app/insights'
@@ -419,7 +406,6 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   FocusRoute: typeof FocusRouteWithChildren
   UnauthorizedRoute: typeof UnauthorizedRoute
-  Char91__clerkChar93SplatRoute: typeof Char91__clerkChar93SplatRoute
   MeTokenRoute: typeof MeTokenRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
@@ -460,13 +446,6 @@ declare module '@tanstack/react-router' {
       path: '/unauthorized'
       fullPath: '/unauthorized'
       preLoaderRoute: typeof UnauthorizedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/__clerk/$': {
-      id: '/__clerk/$'
-      path: '/__clerk/$'
-      fullPath: '/__clerk/$'
-      preLoaderRoute: typeof Char91__clerkChar93SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/growth': {
@@ -741,7 +720,6 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   FocusRoute: FocusRouteWithChildren,
   UnauthorizedRoute: UnauthorizedRoute,
-  Char91__clerkChar93SplatRoute: Char91__clerkChar93SplatRoute,
   MeTokenRoute: MeTokenRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,

@@ -321,6 +321,21 @@ export const disciplePortalLinks = pgTable(
   ],
 )
 
+/** Emails sent on request (migrations/0003_email_log.sql). `key` is what
+ * the email is about: a leader's id, or the week of a summary. */
+export const emailLogs = pgTable(
+  'EmailLog',
+  {
+    id: id(),
+    kind: text('kind').notNull(),
+    key: text('key').notNull(),
+    recipient: text('recipient').notNull(),
+    sentById: text('sentById'),
+    sentAt: timestamp('sentAt', { precision: 3 }).notNull().defaultNow(),
+  },
+  (t) => [index('EmailLog_kind_key_sentAt_idx').on(t.kind, t.key, t.sentAt)],
+)
+
 export type Disciple = typeof disciples.$inferSelect
 export type Gender = (typeof gender.enumValues)[number]
 export type MemberType = (typeof memberType.enumValues)[number]

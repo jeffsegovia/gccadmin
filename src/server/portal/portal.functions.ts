@@ -17,7 +17,7 @@ import { cellReportSchema } from '@/lib/cell-reports/schema'
 import type { CellReportInput } from '@/lib/cell-reports/schema'
 import { CELL_TYPE } from '@/lib/labels'
 import { portalReportEmail } from '@/lib/email/templates'
-import { automaticEmailsOn, sendEmails, site } from '@/server/email/send.server'
+import { sendEmail, site } from '@/server/email/send.server'
 import {
   attendeeChoices,
   insertReport,
@@ -186,12 +186,10 @@ export const createPortalReport = createServerFn({ method: 'POST' })
       { ...data.report, assistantId: d.id, leaderId: d.leaderId },
       d.leaderId,
     )
-    // Tell the network leader (once automatic emails are on); a failed
-    // email never fails the report.
-    if (automaticEmailsOn())
-      await notifyLeader(d.leaderId, d.name, made.id, data.report).catch(
-        (e: unknown) => console.error('Portal report email failed', e),
-      )
+    // Tell the network leader; a failed email never fails the report.
+    await notifyLeader(d.leaderId, d.name, made.id, data.report).catch(
+      (e: unknown) => console.error('Portal report email failed', e),
+    )
     return made
   })
 
@@ -221,24 +219,24 @@ async function notifyLeader(
           .where(eq(lessons.id, report.lessonId))
       : Promise.resolve([]),
   ])
-  await sendEmails([
-    {
-      to: to.email,
-      email: portalReportEmail(
-        { site: site() },
-        {
-          leader: to.name,
-          disciple: discipleName,
-          type: CELL_TYPE[report.type],
-          date: dateTime(fromLocalInput(report.date)),
-          venue: report.venue,
-          lesson: lesson?.title ?? report.lessonTitle ?? null,
-          attendees: names.map((n) => n.name),
-          reportId,
-        },
-      ),
-    },
-  ])
+  await sendEmail({
+    to: to.email,
+    tag: 'portal-report',
+    idempotencyKey: `portal-report-${reportId}`,
+    email: portalReportEmail(
+      { site: site() },
+      {
+        leader: to.name,
+        disciple: discipleName,
+        type: CELL_TYPE[report.type],
+        date: dateTime(fromLocalInput(report.date)),
+        venue: report.venue,
+        lesson: lesson?.title ?? report.lessonTitle ?? null,
+        attendees: names.map((n) => n.name),
+        reportId,
+      },
+    ),
+  })
 }
 
 /** The portal's own reports, newest first. */

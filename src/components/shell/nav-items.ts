@@ -42,17 +42,18 @@ export const ADMIN_NAV: ReadonlyArray<NavItem> = [
   { to: '/users', label: 'Users', icon: UserCog, adminOnly: true },
 ]
 
-/** The phone's bottom bar: Reports holds cell groups and soul winning. */
+/** The phone's bottom bar (then More): Reports holds cell groups and soul
+ * winning; Attendance lives in More. */
 export const PHONE_TABS: ReadonlyArray<NavItem> = [
   { to: '/home', label: 'Home', icon: House },
-  { to: '/disciples', label: 'Disciples', icon: Users },
+  { to: '/insights', label: 'Insights', icon: ChartColumn },
   {
     to: '/reports',
     label: 'Reports',
     icon: ClipboardList,
     also: ['/soul-winning'],
   },
-  { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
+  { to: '/disciples', label: 'Disciples', icon: Users },
 ]
 
 export function isActive(item: NavItem, pathname: string): boolean {

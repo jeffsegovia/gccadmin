@@ -13,8 +13,9 @@ README.md for how it's built and deployed.
 - Branches are `feat/*`, `fix/*`, `release/*` or `hotfix/*`, merged into
   `development` (staging), then `main` (production). Deploys run from
   GitHub Actions only.
-- Emails: copies in `src/lib/email/templates.ts` are signed off by Jeff
-  before they change; automatic ones stay behind `EMAIL_REMINDERS=on`.
+- Emails go out on a mutation or an opt-in button, as in Reviu; never on
+  a schedule (no cron). Copies in `src/lib/email/templates.ts` are signed
+  off by Jeff before they change.
 
 ## Conventions (as in Osamu)
 

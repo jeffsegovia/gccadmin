@@ -1,6 +1,7 @@
 /* Every email GCC Admin sends: subject, inbox preview, HTML and plain
    text, from one layout. Pure, so the previews are exactly what's sent
-   (`pnpm email:preview` writes them to a page). */
+   (`pnpm email:preview` writes them to a page). Each goes out when
+   something happens or when someone taps a button; nothing is scheduled. */
 
 export type Email = {
   subject: string
@@ -96,77 +97,64 @@ const FAITHFUL = {
   ref: 'Luke 16:10',
 }
 
-/** 1. Sent by an admin from Leaders (Remind), as in v2. */
-export function reportReminderEmail(ctx: Ctx, p: { name: string }) {
+/** 1. Remind (Home's "Not reported", Leaders): a leader with no cell
+ * report this week. One a day per leader. A leader quiet for 14 days or
+ * more gets the catch-up wording instead. */
+export function reportReminderEmail(
+  ctx: Ctx,
+  p: { name: string; week: string; days: number | null; last: string | null },
+) {
+  const hi = { p: `Hi ${esc(first(p.name))},` }
+  if (p.days === null || p.days >= 14) {
+    const since =
+      p.last && p.days !== null
+        ? `Your last cell report was on <strong>${esc(p.last)}</strong>, ${p.days} days ago.`
+        : 'We don’t have a cell report from you yet.'
+    return layout(
+      ctx,
+      p.days !== null
+        ? `It’s been ${Math.floor(p.days / 7)} weeks since your last cell report`
+        : 'We haven’t had a cell report from you yet',
+      'Catching up keeps your disciples’ attendance right.',
+      [
+        hi,
+        {
+          p: `${since} If your group has been meeting, please catch up on the reports so your disciples’ cell attendance and lessons stay up to date.`,
+        },
+        FAITHFUL,
+        { button: 'Catch up on reports', href: `${ctx.site}/reports/new` },
+        {
+          p: 'If something has come up, just reply to this email and let us know how we can help or pray for you.',
+        },
+      ],
+    )
+  }
   return layout(
     ctx,
-    'Reminder: your cell reports for this week',
-    'A quick reminder to file this week’s cell reports.',
-    [
-      { p: `Hi ${esc(first(p.name))},` },
-      {
-        p: 'A quick reminder to file your cell reports for this week in GCC Admin. Being faithful in the small tasks honors the Lord.',
-      },
-      FAITHFUL,
-      { button: 'File a cell report', href: `${ctx.site}/reports/new` },
-      { small: 'Already filed them? Thank you! You can ignore this email.' },
-    ],
-  )
-}
-
-/** 2. Saturday 5 PM: leaders with no cell report this week yet. */
-export function weeklyNudgeEmail(ctx: Ctx, p: { name: string; week: string }) {
-  return layout(
-    ctx,
-    'Your cell report for this week',
+    'Reminder: your cell report for this week',
     `No cell report from you yet for ${p.week}.`,
     [
-      { p: `Hi ${esc(first(p.name))},` },
+      hi,
       {
         p: `We haven’t seen a cell report from you for this week (<strong>${esc(p.week)}</strong>) yet. If your group met, it only takes a couple of minutes, and you can do it from your phone.`,
       },
+      FAITHFUL,
       { button: 'File this week’s report', href: `${ctx.site}/reports/new` },
       {
         small:
-          'If your group didn’t meet this week, there’s nothing to file. This reminder goes out on Saturdays only to leaders who haven’t reported yet.',
+          'Already filed it, or your group didn’t meet this week? Thank you; you can ignore this email.',
       },
     ],
   )
 }
 
-/** 3. Monday 8 AM: leaders whose last cell report is 14 or more days old. */
-export function overdueEmail(
-  ctx: Ctx,
-  p: { name: string; days: number | null; last: string | null },
-) {
-  const since =
-    p.last && p.days !== null
-      ? `Your last cell report was on <strong>${esc(p.last)}</strong>, ${p.days} days ago.`
-      : 'We don’t have a cell report from you yet.'
-  return layout(
-    ctx,
-    p.days !== null
-      ? `It’s been ${Math.floor(p.days / 7)} weeks since your last cell report`
-      : 'We haven’t had a cell report from you yet',
-    'Catching up keeps your disciples’ attendance right.',
-    [
-      { p: `Hi ${esc(first(p.name))},` },
-      {
-        p: `${since} If your group has been meeting, please catch up on the reports so your disciples’ cell attendance and lessons stay up to date.`,
-      },
-      { button: 'Catch up on reports', href: `${ctx.site}/reports/new` },
-      {
-        p: 'If something has come up, just reply to this email and let us know how we can help or pray for you.',
-      },
-    ],
-  )
-}
-
-/** 4. Monday 7 AM, to admins and pastors: last week at a glance. */
+/** 2. "Email this summary" on Insights (admins and pastors): last week
+ * at a glance, to the admins and pastors. Once a week. */
 export function weeklySummaryEmail(
   ctx: Ctx,
   p: {
     week: string
+    sentBy: string
     reported: number
     leaders: number
     notReported: Array<{ name: string; last: string }>
@@ -178,12 +166,11 @@ export function weeklySummaryEmail(
     }
     newBelievers: number
     sunday: { title: string; total: number; guests: number } | null
-    birthdays: number
   },
 ) {
   const blocks: Array<Block> = [
     {
-      p: `Here’s last week (<strong>${esc(p.week)}</strong>) at Grace City Church.`,
+      p: `Here’s last week (<strong>${esc(p.week)}</strong>) at Grace City Church, sent by ${esc(p.sentBy)}.`,
     },
     {
       stats: [
@@ -214,10 +201,6 @@ export function weeklySummaryEmail(
       list: p.notReported.map((l) => [l.name, l.last]),
     })
   else blocks.push({ p: 'Every leader reported. Praise God!' })
-  if (p.birthdays)
-    blocks.push({
-      small: `${p.birthdays} ${p.birthdays === 1 ? 'birthday' : 'birthdays'} this week; see Home.`,
-    })
   blocks.push({ button: 'Open Insights', href: `${ctx.site}/insights` })
   return layout(
     ctx,
@@ -227,58 +210,7 @@ export function weeklySummaryEmail(
   )
 }
 
-/** 5. Monday 7 AM, to each leader whose network has birthdays this week. */
-export function birthdaysEmail(
-  ctx: Ctx,
-  p: {
-    name: string
-    people: Array<{ name: string; day: string; turns: number | null }>
-  },
-) {
-  return layout(
-    ctx,
-    p.people.length === 1
-      ? `${first(p.people[0].name)}’s birthday is this week`
-      : `${p.people.length} birthdays in your network this week`,
-    p.people.map((b) => `${first(b.name)} (${b.day})`).join(', '),
-    [
-      { p: `Hi ${esc(first(p.name))},` },
-      {
-        p: 'These disciples in your network celebrate their birthday this week. A message, a call or a prayer goes a long way.',
-      },
-      {
-        list: p.people.map((b) => [
-          b.name,
-          b.turns ? `${b.day} · turns ${b.turns}` : b.day,
-        ]),
-      },
-      { button: 'Open GCC Admin', href: `${ctx.site}/home` },
-    ],
-  )
-}
-
-/** 6. Monday 9 AM, to admins: last Sunday's attendance still open. */
-export function attendanceOpenEmail(
-  ctx: Ctx,
-  p: { id: string; title: string; date: string; marked: number },
-) {
-  return layout(
-    ctx,
-    `Lock the attendance for ${p.title}`,
-    `${p.marked} marked on ${p.date}; it’s still open.`,
-    [
-      {
-        p: `The attendance for <strong>${esc(p.title)}</strong> (${esc(p.date)}) is still open, with ${p.marked} people marked.`,
-      },
-      {
-        p: 'Once the list is final, lock it so it isn’t changed by mistake. You can unlock it anytime.',
-      },
-      { button: 'Review and lock', href: `${ctx.site}/attendance/${p.id}` },
-    ],
-  )
-}
-
-/** 7. When a disciple files a cell report from their page, to their
+/** 3. When a disciple files a cell report from their page: to their
  * network leader. */
 export function portalReportEmail(
   ctx: Ctx,
@@ -317,6 +249,30 @@ export function portalReportEmail(
         ? [{ small: esc(p.attendees.join(', ')) } satisfies Block]
         : []),
       { button: 'Open the report', href: `${ctx.site}/reports/${p.reportId}` },
+    ],
+  )
+}
+
+/** 4. When an admin links a sign-in to a primary leader (Leaders → Link
+ * account): to that leader. */
+export function welcomeLeaderEmail(ctx: Ctx, p: { name: string }) {
+  return layout(
+    ctx,
+    'You’re set up in GCC Admin',
+    'Your account is linked to your leader record.',
+    [
+      { p: `Hi ${esc(first(p.name))},` },
+      {
+        p: 'Your account is now linked to your leader record in GCC Admin. From your phone you can file cell reports, keep your disciples’ details up to date, record soul winning and take Sunday attendance.',
+      },
+      {
+        p: 'You can also give each of your disciples their own page: open a disciple and tap <strong>Portal link</strong> to share it.',
+      },
+      { button: 'Open GCC Admin', href: `${ctx.site}/home` },
+      {
+        small:
+          'On your phone, add it to your home screen (Share, then Add to Home Screen) to open it like an app.',
+      },
     ],
   )
 }

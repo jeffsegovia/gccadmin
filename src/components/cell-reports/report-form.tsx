@@ -43,8 +43,8 @@ export type ReportFormOptions = {
 const DRAFT = 'gcc-report-draft:v1:'
 
 /** The form in three short steps, so a phone never scrolls through all of
- * it at once: the meeting, what was taught, then who came. */
-const STEPS = ['Meeting', 'Lesson', 'Who came'] as const
+ * it at once: the details, what was taught, then the attendees. */
+const STEPS = ['Details', 'Lesson', 'Attendees'] as const
 const STEP_OF: Record<string, number> = {
   type: 0,
   leaderId: 0,
@@ -489,10 +489,10 @@ export function ReportForm({
         </>
       )}
       {step === 2 && (
-        <section aria-label="Who came" className="flex min-w-0 flex-col gap-2">
+        <section aria-label="Attendees" className="flex min-w-0 flex-col gap-2">
           <div className="flex min-w-0 items-baseline justify-between gap-3">
             <span className="text-[13px] font-medium">
-              Who came · {ticked.size} of {people.length}
+              Attendees · {ticked.size} of {people.length}
             </span>
             {ticked.size < people.length && people.length > 0 && (
               <button

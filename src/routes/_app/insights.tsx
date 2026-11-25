@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { CELL_STATUS, CHURCH_STATUS, MEMBER_TYPE } from '@/lib/labels'
 import { shortDay } from '@/lib/dates'
 import { getInsights } from '@/server/insights/insights.functions'
+import { getSummaryStatus } from '@/server/email/emails.functions'
+import { SummaryEmail } from '@/components/insights/summary-email'
 import type { Kind } from '@/server/insights/insights.functions'
 
 export const Route = createFileRoute('/_app/insights')({
@@ -15,7 +17,13 @@ export const Route = createFileRoute('/_app/insights')({
     mine: z.boolean().optional(),
   }),
   loaderDeps: ({ search }) => search,
-  loader: ({ deps }) => getInsights({ data: deps }),
+  loader: async ({ deps }) => {
+    const [insights, summary] = await Promise.all([
+      getInsights({ data: deps }),
+      getSummaryStatus(),
+    ])
+    return { ...insights, summary }
+  },
   // Rendered in the browser: the page shell shows at once with a
   // skeleton, and the summary (cached two minutes on the server and the
   // router) fills in.
@@ -148,6 +156,7 @@ function InsightsPage() {
             </tbody>
           </table>
         </div>
+        {data.summary && <SummaryEmail status={data.summary} />}
       </Section>
 
       <Section

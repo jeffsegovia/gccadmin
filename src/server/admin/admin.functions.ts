@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import { clerkClient } from '@clerk/tanstack-react-start/server'
 import { and, asc, count, eq, ilike, inArray, isNotNull } from 'drizzle-orm'
-import { reportReminderEmail } from '@/lib/email/templates'
-import { sendEmails, site } from '@/server/email/send.server'
+import { welcomeLeaderEmail } from '@/lib/email/templates'
+import { sendEmail, site } from '@/server/email/send.server'
 import { z } from 'zod'
 import { db } from '@/db'
 import { disciples, users } from '@/db/schema'
@@ -170,6 +170,14 @@ export const linkLeaderAccount = createServerFn({ method: 'POST' })
       await clerkClient().users.updateUserMetadata(data.clerkId, {
         publicMetadata: { role: 'leader' },
       })
+    // A newly linked leader hears that they're set up (once per link).
+    if (u.email)
+      await sendEmail({
+        to: u.email,
+        tag: 'leader-linked',
+        idempotencyKey: `leader-linked-${data.leaderId}-${data.clerkId}`,
+        email: welcomeLeaderEmail({ site: site() }, { name: leader.name }),
+      })
   })
 
 export const unlinkLeaderAccount = createServerFn({ method: 'POST' })
@@ -207,30 +215,3 @@ export const getUnlinkedAccounts = createServerFn({ method: 'GET' }).handler(
       })
   },
 )
-
-/** Emails leaders who haven't reported this week (v2's reminder). */
-export const sendReportReminders = createServerFn({ method: 'POST' })
-  .validator(z.object({ leaderIds: z.array(z.string()).min(1).max(100) }))
-  .handler(async ({ data }) => {
-    await requireAdmin()
-    const key = process.env.RESEND_API_KEY
-    const from = process.env.RESEND_FROM_EMAIL
-    if (!key || !from)
-      throw new AccessError(
-        'Email isn’t set up (RESEND_API_KEY, RESEND_FROM_EMAIL).',
-      )
-    const rows = await db
-      .select({ name: disciples.name, email: users.email })
-      .from(disciples)
-      .innerJoin(users, eq(users.clerkId, disciples.userAccountId))
-      .where(inArray(disciples.id, data.leaderIds))
-    if (!rows.length)
-      throw new AccessError('None of them have a linked account with an email.')
-    await sendEmails(
-      rows.map((r) => ({
-        to: r.email,
-        email: reportReminderEmail({ site: site() }, { name: r.name }),
-      })),
-    )
-    return { sent: rows.length, skipped: data.leaderIds.length - rows.length }
-  })

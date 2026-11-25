@@ -103,7 +103,7 @@ Set up once:
 
 1. Create the Vercel project (`vercel link`) and set the variables from
    `.env.template` for Production and Preview (production Clerk keys,
-   `DATABASE_URL` as the pooled connection string, `CRON_SECRET`).
+   `DATABASE_URL` as the pooled connection string).
 2. In GitHub, add two environments, `production` and `development`, each
    with the secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
    (from `.vercel/project.json`) and `DATABASE_URL`. Optionally set the
@@ -112,19 +112,20 @@ Set up once:
 
 ## Emails
 
-The copies are in `src/lib/email/templates.ts`; `pnpm email:preview`
-writes them all to `email-preview.html`. Scheduled emails run from
-Vercel Cron (`vite.config.ts` lists the schedule, in UTC):
+As in Reviu and Osamu, an email goes out only when something happens or
+when someone taps a button; nothing is scheduled. The copies are in
+`src/lib/email/templates.ts`; `pnpm email:preview` writes them all to
+`email-preview.html`.
 
-| Email                         | When (Manila) | To                                                              |
-| ----------------------------- | ------------- | --------------------------------------------------------------- |
-| Weekly nudge                  | Saturday 5 PM | Primary leaders with no report this week                        |
-| Weekly summary and birthdays  | Monday 7 AM   | Admins and pastors; each leader with birthdays in their network |
-| Overdue reports               | Monday 8 AM   | Primary leaders with no report in 14 days                       |
-| Attendance still open         | Monday 9 AM   | Admins, if last Sunday isn't locked                             |
-| Report from a disciple's page | When filed    | Their network leader                                            |
+| Email                                                       | Sent when                                                           | To                             |
+| ----------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------ |
+| Cell report reminder (catch-up wording after 14 quiet days) | An admin taps Email reminder (Home, Leaders); once a day per leader | Leaders not reported this week |
+| Weekly summary                                              | An admin or pastor taps it on Insights; once a week                 | Admins and pastors             |
+| Report from a disciple's page                               | The disciple saves the report                                       | Their network leader           |
+| Leader account linked                                       | An admin links a sign-in on Leaders                                 | That leader                    |
 
-They send only with `EMAIL_REMINDERS=on`.
+Requested emails are logged in `EmailLog` (migrations/0003). A failed
+email never fails the action that sent it.
 
 ## Share image and shortcuts
 

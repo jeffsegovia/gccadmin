@@ -6,7 +6,7 @@
 //
 // Pages go to the network first, so nothing stale shows while online.
 const CACHE = 'gcc-shell-v1'
-const PAGES = 'gcc-pages-v1'
+const PAGES = 'gcc-pages-v2'
 const KEEP = [CACHE, PAGES]
 
 const OFFLINE_PAGE = `<!doctype html><html lang="en"><meta charset="utf-8">
@@ -17,8 +17,10 @@ const OFFLINE_PAGE = `<!doctype html><html lang="en"><meta charset="utf-8">
 <p style="margin:0;color:#a3a3a3">This page needs a connection. Attendance sheets you opened before still work offline.</p>
 <button onclick="location.reload()" style="margin-top:20px;height:44px;padding:0 20px;border:0;background:#e8b54d;color:#2a1c05;font-weight:600;font-size:15px">Try again</button></div>`
 
-// Pages kept for offline use: the attendance list and each sheet.
-const keepPage = (url) => url.pathname.startsWith('/attendance')
+// Pages kept for offline use: the attendance list and each sheet, and
+// More (where Attendance sits on phones).
+const keepPage = (url) =>
+  url.pathname.startsWith('/attendance') || url.pathname === '/more'
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting()

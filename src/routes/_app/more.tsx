@@ -3,6 +3,7 @@ import { useClerkSafe } from '@/lib/auth/clerk-safe'
 import {
   CalendarCheck,
   ChevronRight,
+  ExternalLink,
   LogOut,
   Smartphone,
   Sprout,
@@ -13,6 +14,8 @@ import { UserAvatar } from '@/components/shell/user-menu'
 import { ThemeSegmented } from '@/components/shell/theme-segmented'
 import { Button } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
+import { SiteIcon } from '@/components/site-icon'
+import { GCC_LINKS } from '@/config/links'
 import { ADMIN_NAV, RESOURCE_NAV } from '@/components/shell/nav-items'
 import type { NavItem } from '@/components/shell/nav-items'
 
@@ -89,6 +92,30 @@ function MorePage() {
           <Rows items={ADMIN_NAV} />
         </Section>
       )}
+      <Section title="Grace City Church">
+        <Group>
+          {GCC_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              target="_blank"
+              rel="noreferrer"
+              className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2"
+            >
+              <span className="grid size-8 shrink-0 place-items-center bg-muted">
+                <SiteIcon href={l.href} className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
+                {l.label}
+              </span>
+              <ExternalLink
+                aria-hidden="true"
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+            </a>
+          ))}
+        </Group>
+      </Section>
       <Section title="Appearance">
         <ThemeSegmented />
       </Section>

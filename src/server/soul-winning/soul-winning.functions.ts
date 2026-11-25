@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import {
   and,
   asc,
+  count,
   desc,
   eq,
   gte,
@@ -49,6 +50,7 @@ import {
   listSoulWinningSchema,
   newBelieverSchema,
   soulWinningSchema,
+  SOUL_PAGE,
 } from '@/lib/soul-winning/schema'
 
 const leader = alias(disciples, 'leader')
@@ -117,6 +119,12 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
       )
       .where(inRange)
 
+    const page = data.page ?? 1
+    const offset = (page - 1) * SOUL_PAGE
+    const sessionWhere = and(
+      inRange,
+      data.type ? eq(soulWinningReports.type, data.type) : undefined,
+    )
     const sessions =
       data.view === 'souls'
         ? []
@@ -145,14 +153,10 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
               believerCount,
               eq(believerCount.reportId, soulWinningReports.id),
             )
-            .where(
-              and(
-                inRange,
-                data.type ? eq(soulWinningReports.type, data.type) : undefined,
-              ),
-            )
-            .orderBy(desc(soulWinningReports.date))
-            .limit(200)
+            .where(sessionWhere)
+            .orderBy(desc(soulWinningReports.date), asc(soulWinningReports.id))
+            .limit(SOUL_PAGE)
+            .offset(offset)
 
     const believerScope =
       everyone && !data.mine
@@ -163,6 +167,30 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
               eq(newBelievers.handledById, access.disciple.id),
             )
           : sql`false`
+    const soulWhere = and(
+      believerScope,
+      everyone && data.leader
+        ? eq(newBelievers.networkLeaderId, data.leader)
+        : undefined,
+      data.wonBy ? eq(newBelievers.handledById, data.wonBy) : undefined,
+      data.memberType?.length
+        ? inArray(newBelievers.memberType, data.memberType)
+        : undefined,
+      data.session
+        ? inArray(
+            newBelievers.id,
+            db
+              .select({ id: soulWinningNewBelievers.newBelieverId })
+              .from(soulWinningNewBelievers)
+              .where(eq(soulWinningNewBelievers.reportId, data.session)),
+          )
+        : undefined,
+      data.q?.trim() ? ilike(newBelievers.name, likeTerm(data.q)) : undefined,
+    )
+    const [counted] = await db
+      .select({ n: count() })
+      .from(data.view === 'souls' ? newBelievers : soulWinningReports)
+      .where(data.view === 'souls' ? soulWhere : sessionWhere)
     const souls =
       data.view !== 'souls'
         ? []
@@ -180,36 +208,10 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
             .from(newBelievers)
             .leftJoin(leader, eq(leader.id, newBelievers.networkLeaderId))
             .leftJoin(handler, eq(handler.id, newBelievers.handledById))
-            .where(
-              and(
-                believerScope,
-                everyone && data.leader
-                  ? eq(newBelievers.networkLeaderId, data.leader)
-                  : undefined,
-                data.wonBy
-                  ? eq(newBelievers.handledById, data.wonBy)
-                  : undefined,
-                data.memberType?.length
-                  ? inArray(newBelievers.memberType, data.memberType)
-                  : undefined,
-                data.session
-                  ? inArray(
-                      newBelievers.id,
-                      db
-                        .select({ id: soulWinningNewBelievers.newBelieverId })
-                        .from(soulWinningNewBelievers)
-                        .where(
-                          eq(soulWinningNewBelievers.reportId, data.session),
-                        ),
-                    )
-                  : undefined,
-                data.q?.trim()
-                  ? ilike(newBelievers.name, likeTerm(data.q))
-                  : undefined,
-              ),
-            )
+            .where(soulWhere)
             .orderBy(asc(newBelievers.name), desc(newBelievers.createdAt))
-            .limit(300)
+            .limit(SOUL_PAGE)
+            .offset(offset)
 
     // Lesson tracking, as v2's New believers table: the soul-winning and
     // consolidation lessons each believer has taken.
@@ -249,6 +251,8 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
         }
       }),
       lessons: shownLessons,
+      page,
+      total: counted.n,
       leaders,
       winners,
       sessionName: data.session

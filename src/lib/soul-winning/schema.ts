@@ -57,5 +57,8 @@ export const listSoulWinningSchema = z.object({
   lessons: z.enum(['soul-winning', 'consolidation']).optional(),
   /** Believers: only those at one session (v2's Track). */
   session: z.string().optional(),
+  page: z.number().int().min(1).optional(),
 })
+/** Sessions and believers a page, as v2 paged its tables. */
+export const SOUL_PAGE = 25
 export type SoulWinningSearch = z.infer<typeof listSoulWinningSchema>

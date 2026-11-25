@@ -28,7 +28,8 @@ import {
 import { BelieverSheet } from '@/components/soul-winning/believer-sheet'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
-import { listSoulWinningSchema } from '@/lib/soul-winning/schema'
+import { SOUL_PAGE, listSoulWinningSchema } from '@/lib/soul-winning/schema'
+import { Pager } from '@/components/pager'
 import { MEMBER_TYPE, SOUL_WINNING_TYPE } from '@/lib/labels'
 import { shortDate } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
@@ -55,8 +56,12 @@ function SoulWinningPage() {
   const close = useCallback(() => setOpen(null), [])
   const view = search.view ?? 'sessions'
   const range: ReportRange = search.range ?? 'this_month'
+  // Any change of filter starts again at the first page.
   const set = (next: Partial<typeof search>) =>
-    void navigate({ search: (prev) => ({ ...prev, ...next }), replace: true })
+    void navigate({
+      search: (prev) => ({ ...prev, ...next, page: undefined }),
+      replace: true,
+    })
 
   return (
     <Page
@@ -467,6 +472,9 @@ function SoulWinningPage() {
             </>
           )}
         </>
+      )}
+      {(view === 'souls' ? data.souls.length : data.sessions.length) > 0 && (
+        <Pager page={data.page} total={data.total} pageSize={SOUL_PAGE} />
       )}
       <BelieverSheet id={open} onClose={close} />
       <AlertDialog

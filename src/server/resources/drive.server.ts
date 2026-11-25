@@ -70,7 +70,12 @@ export async function foldersIn(
   }))
 }
 
-export async function folderFiles(folderId: string) {
+/** A folder's PDFs, by name: A to Z for lessons, Z to A for preachings
+ * (the newest series first), as in v2. */
+export async function folderFiles(
+  folderId: string,
+  order: 'asc' | 'desc' = 'asc',
+) {
   const g = gdrive()
   const folder = await g.files.get({
     fileId: folderId,
@@ -80,8 +85,8 @@ export async function folderFiles(folderId: string) {
     throw new Error('That folder isn’t here.')
   const files = await g.files.list({
     q: `mimeType = 'application/pdf' and '${folderId}' in parents and trashed = false`,
-    fields: 'files(id, name, size, webViewLink, createdTime)',
-    orderBy: 'name',
+    fields: 'files(id, name, size, webViewLink, webContentLink, createdTime)',
+    orderBy: order === 'desc' ? 'name desc' : 'name',
     pageSize: 300,
     spaces: 'drive',
   })
@@ -96,6 +101,7 @@ export async function folderFiles(folderId: string) {
       name: (f.name ?? 'File').replace(/\.pdf$/i, ''),
       size: f.size ? Number(f.size) : null,
       webViewLink: f.webViewLink ?? null,
+      webContentLink: f.webContentLink ?? null,
       createdTime: f.createdTime ?? null,
     })),
   }

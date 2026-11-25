@@ -26,8 +26,13 @@ export const getPreachingFolders = createServerFn({ method: 'GET' }).handler(
 )
 
 export const getFolder = createServerFn({ method: 'GET' })
-  .validator(z.object({ id: z.string().regex(/^[\w-]{10,80}$/) }))
+  .validator(
+    z.object({
+      id: z.string().regex(/^[\w-]{10,80}$/),
+      from: z.enum(['lessons', 'preachings']).optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     cache()
-    return folderFiles(data.id)
+    return folderFiles(data.id, data.from === 'preachings' ? 'desc' : 'asc')
   })

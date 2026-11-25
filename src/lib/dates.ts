@@ -123,3 +123,21 @@ export function ageOn(birthdate: Date | string, today = new Date()): number {
   if (m < 0 || (m === 0 && today.getUTCDate() < b.getUTCDate())) age--
   return age
 }
+
+/** "3 months ago", "yesterday" (v2's date distance). */
+export function timeAgo(date: Date | string, now: Date = new Date()): string {
+  const seconds = (new Date(date).getTime() - now.getTime()) / 1000
+  const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+    ['year', 31_536_000],
+    ['month', 2_592_000],
+    ['week', 604_800],
+    ['day', 86_400],
+    ['hour', 3_600],
+    ['minute', 60],
+  ]
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+  for (const [unit, size] of units)
+    if (Math.abs(seconds) >= size)
+      return rtf.format(Math.round(seconds / size), unit)
+  return 'just now'
+}

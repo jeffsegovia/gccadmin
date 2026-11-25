@@ -9,5 +9,5 @@ export const Route = createFileRoute('/resources/preachings')({
 })
 
 function Folders() {
-  return <FolderList folders={Route.useLoaderData()} />
+  return <FolderList folders={Route.useLoaderData()} from="preachings" />
 }

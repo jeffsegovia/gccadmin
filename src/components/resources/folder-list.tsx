@@ -5,8 +5,11 @@ import type { DriveFolder } from '@/server/resources/drive.server'
 /** Drive folders as one list, a row each, like every list in the app. */
 export function FolderList({
   folders,
+  from,
 }: {
   folders: ReadonlyArray<DriveFolder>
+  /** Which tab the folders are from: preachings list their files Z to A. */
+  from: 'lessons' | 'preachings'
 }) {
   if (!folders.length)
     return (
@@ -21,6 +24,7 @@ export function FolderList({
           <Link
             to="/resources/$folderId"
             params={{ folderId: f.id }}
+            search={{ from }}
             className="flex min-h-15 min-w-0 items-center gap-3 px-3.5 py-2.5 hover:bg-muted/50"
           >
             <Folder

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Cake } from 'lucide-react'
 import { cn } from 'cn'
 import { Pill } from '@/components/status-pill'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { longDay } from '@/lib/dates'
 
 /** Birthdays this week (Monday to Sunday), soonest first; today's is
@@ -22,7 +22,7 @@ export function BirthdayList({
   return (
     <>
       {birthdays.length === 0 ? (
-        <p className="border border-dashed px-4 py-5 text-center text-sm text-muted-foreground">
+        <p className="border border-dashed px-4 py-5 text-center text-sm text-muted-foreground rounded-xl">
           No birthdays this week.
         </p>
       ) : (
@@ -54,6 +54,7 @@ export function BirthdayList({
                   Passed
                 </span>
               ) : null}
+              <RowChevron />
             </Link>
           ))}
         </Group>

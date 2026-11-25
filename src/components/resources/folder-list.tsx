@@ -13,12 +13,12 @@ export function FolderList({
 }) {
   if (!folders.length)
     return (
-      <p className="border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+      <p className="border border-dashed px-4 py-10 text-center text-sm text-muted-foreground rounded-xl">
         Nothing here yet.
       </p>
     )
   return (
-    <ul className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+    <ul className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
       {folders.map((f) => (
         <li key={f.id}>
           <Link

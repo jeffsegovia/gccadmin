@@ -26,7 +26,7 @@ import { GuestDialog } from '@/components/attendance/guest-dialog'
 import { ServiceDialog } from '@/components/attendance/service-dialog'
 import { useAttendanceSync } from '@/components/attendance/use-attendance-sync'
 import type { SyncStatus } from '@/components/attendance/use-attendance-sync'
-import { GenderBar, Pill } from '@/components/status-pill'
+import { Pill } from '@/components/status-pill'
 import { Segmented } from '@/components/ui/segmented'
 import { Button } from '@/components/ui/button'
 import {
@@ -158,7 +158,6 @@ function Mark({
   on,
   name,
   sub,
-  gender,
   disabled,
   onToggle,
   end,
@@ -166,7 +165,6 @@ function Mark({
   on: boolean
   name: string
   sub?: string
-  gender: 'MALE' | 'FEMALE'
   disabled?: boolean
   onToggle: () => void
   end?: React.ReactNode
@@ -186,7 +184,6 @@ function Mark({
         onClick={onToggle}
         className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-1.5 pr-2 pl-3.5 text-left disabled:cursor-not-allowed"
       >
-        <GenderBar gender={gender} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span
             className={cn(
@@ -387,7 +384,7 @@ function SheetPage() {
             aria-pressed={filter === value}
             onClick={() => setFilter(value)}
             className={cn(
-              'h-8 border px-3 text-[13px] font-medium',
+              'h-8 border px-3 text-[13px] font-medium rounded-lg',
               filter === value
                 ? 'border-primary/50 bg-primary/15 text-primary'
                 : 'border-border hover:bg-muted',
@@ -412,14 +409,13 @@ function SheetPage() {
               {g.here} of {g.total}
             </span>
           </div>
-          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
             {g.shown.map((m) => (
               <Mark
                 key={m.id}
                 on={sync.present('member', m.id)}
                 name={m.name}
                 sub={MEMBER_TYPE[m.memberType]}
-                gender={m.gender}
                 disabled={locked}
                 onToggle={() => sync.toggle('member', m.id)}
               />
@@ -448,18 +444,17 @@ function SheetPage() {
           )}
         </div>
         {guestsHere.length === 0 ? (
-          <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
             No guests marked yet.
           </p>
         ) : (
-          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
             {guestsHere.map((g) => (
               <Mark
                 key={g.id}
                 on
                 name={g.name}
                 sub={g.sub}
-                gender={g.gender}
                 disabled={locked}
                 onToggle={() => sync.toggle('guest', g.id)}
                 end={
@@ -495,18 +490,17 @@ function SheetPage() {
           </span>
         </div>
         {cameBefore.length + untickedToday.length === 0 ? (
-          <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
             No returning guests to mark.
           </p>
         ) : (
-          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
             {untickedToday.map((g) => (
               <Mark
                 key={g.id}
                 on={false}
                 name={g.name}
                 sub="Unticked today"
-                gender={g.gender}
                 disabled={locked}
                 onToggle={() => sync.toggle('guest', g.id)}
               />
@@ -517,7 +511,6 @@ function SheetPage() {
                 on={false}
                 name={g.name}
                 sub={`Since ${shortDay(g.firstDate)} · ${g.visits} ${g.visits === 1 ? 'visit' : 'visits'}`}
-                gender={g.gender}
                 disabled={locked}
                 onToggle={() => sync.toggle('guest', g.id)}
                 end={
@@ -603,7 +596,7 @@ function SheetPage() {
 
       <main className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col gap-4 px-4 pt-4 pb-32 md:px-8 md:pb-12">
         {locked && (
-          <div className="flex items-start gap-2.5 border border-short/30 bg-short/10 p-3 text-sm">
+          <div className="flex items-start gap-2.5 border border-short/30 bg-short/10 p-3 text-sm rounded-lg">
             <Lock
               aria-hidden="true"
               className="mt-0.5 size-4 shrink-0 text-short"
@@ -619,13 +612,13 @@ function SheetPage() {
         {sync.status === 'error' && sync.error && (
           <div
             role="alert"
-            className="border border-short/30 bg-short/10 p-3 text-sm"
+            className="border border-short/30 bg-short/10 p-3 text-sm rounded-lg"
           >
             {sync.error} Your marks are kept on this device.
           </div>
         )}
 
-        <div className="grid grid-cols-3 border bg-card md:grid-cols-5 [&>*+*]:border-l">
+        <div className="grid grid-cols-3 border bg-card md:grid-cols-5 [&>*+*]:border-l rounded-xl overflow-hidden">
           {[
             ['Present', presentMembers.length + guestsHere.length, ''],
             ['Men', men, 'text-men'],
@@ -681,7 +674,7 @@ function SheetPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Find a name"
               aria-label="Find a name"
-              className="h-11 w-full min-w-0 border border-input bg-card pr-3 pl-9 text-base outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:h-10 md:text-sm"
+              className="h-11 w-full min-w-0 border border-input bg-card pr-3 pl-9 text-base outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:h-10 md:text-sm rounded-xl"
             />
           </div>
         </div>

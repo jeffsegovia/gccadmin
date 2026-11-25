@@ -25,7 +25,13 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn('flex gap-0.5 rounded-none bg-card p-[3px]', className)}
+      // The same height and edge as the selects and buttons beside it
+      // (40px, or 32px small), so a row of filters lines up.
+      className={cn(
+        'flex gap-0.5 rounded-lg border border-input bg-card p-[3px]',
+        size === 'sm' ? 'h-8' : 'h-10',
+        className,
+      )}
       onKeyDown={(e) => {
         const step =
           e.key === 'ArrowRight' || e.key === 'ArrowDown'
@@ -56,8 +62,8 @@ export function Segmented<T extends string>({
             title={Icon ? o.label : undefined}
             onClick={() => onChange(o.value)}
             className={cn(
-              'flex min-w-0 flex-1 items-center justify-center truncate rounded-none px-1.5 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              size === 'sm' ? 'h-7 text-xs' : 'h-8 text-[13px]',
+              'flex min-w-0 flex-1 items-center justify-center truncate rounded-md px-1.5 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              size === 'sm' ? 'h-full text-xs' : 'h-full text-[13px]',
               Icon && 'w-9 flex-none [&_svg]:size-4',
               on
                 ? 'bg-secondary text-foreground shadow-sm'

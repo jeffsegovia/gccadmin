@@ -104,7 +104,7 @@ export function ImportDialog({
             />
           </FormField>
           {rows.length > 0 && (
-            <div className="flex items-center gap-2 border bg-muted/40 p-3 text-sm">
+            <div className="flex items-center gap-2 border bg-muted/40 p-3 text-sm rounded-lg">
               <FileSpreadsheet
                 aria-hidden="true"
                 className="size-4 shrink-0 text-primary"

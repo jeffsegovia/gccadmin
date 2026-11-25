@@ -48,7 +48,7 @@ function Multi<T extends string>({
                 onChange(next.size ? [...next] : undefined)
               }}
               className={cn(
-                'h-9 border px-3 text-[13px] font-medium',
+                'h-9 border px-3 text-[13px] font-medium rounded-lg',
                 on
                   ? 'border-primary/50 bg-primary/15 text-primary'
                   : 'border-border hover:bg-muted',
@@ -137,7 +137,7 @@ export function FiltersDialog({
                       })
                     }
                     className={cn(
-                      'h-9 border px-3 text-[13px] font-medium',
+                      'h-9 border px-3 text-[13px] font-medium rounded-lg',
                       on
                         ? 'border-primary/50 bg-primary/15 text-primary'
                         : 'border-border hover:bg-muted',

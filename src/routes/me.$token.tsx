@@ -99,7 +99,7 @@ function PortalPage() {
         {p.leader && (
           <section
             aria-label="Your leader"
-            className="flex min-w-0 items-center gap-3 border bg-card p-3.5 dark:border-transparent"
+            className="flex min-w-0 items-center gap-3 border bg-card p-3.5 dark:border-transparent rounded-xl"
           >
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="text-xs text-muted-foreground">Your leader</span>
@@ -139,7 +139,7 @@ function PortalPage() {
             <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
               Coming up
             </h2>
-            <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+            <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
               {p.nextService && (
                 <div className="flex min-w-0 flex-col px-3.5 py-3">
                   <span className="truncate text-[15px] font-medium">
@@ -169,7 +169,7 @@ function PortalPage() {
 
         <section
           aria-label="Last 12 weeks"
-          className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent"
+          className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl"
         >
           <h2 className="text-[13px] font-medium text-muted-foreground">
             Last 12 weeks
@@ -183,7 +183,7 @@ function PortalPage() {
             <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
               Your cell group
             </h2>
-            <div className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent">
+            <div className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl">
               <p className="text-sm text-muted-foreground">
                 Report the cell group you led for the people you handle. It goes
                 to
@@ -214,7 +214,7 @@ function PortalPage() {
           </section>
         )}
 
-        <details className="group border bg-card dark:border-transparent">
+        <details className="group border bg-card dark:border-transparent rounded-xl">
           <summary className="flex min-h-13 cursor-pointer list-none items-center gap-3 px-3.5 py-2">
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="text-[15px] font-medium">
@@ -248,7 +248,7 @@ function PortalPage() {
 
         <section
           aria-label="Your details"
-          className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent"
+          className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl"
         >
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-[15px] font-medium">Your details</h2>

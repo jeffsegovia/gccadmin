@@ -95,7 +95,7 @@ function InsightsPage() {
     >
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <Section title={`Soul winning · ${data.yearToDate.year} so far`}>
-          <div className="grid grid-cols-3 border bg-card dark:border-transparent [&>*+*]:border-l">
+          <div className="grid grid-cols-3 border bg-card dark:border-transparent [&>*+*]:border-l rounded-xl overflow-hidden">
             {(
               [
                 ['Sessions', data.yearToDate.soulWinning],
@@ -116,7 +116,7 @@ function InsightsPage() {
           </div>
         </Section>
         <Section title="Cell groups this week">
-          <div className="flex min-w-0 flex-col border bg-card dark:border-transparent">
+          <div className="flex min-w-0 flex-col border bg-card dark:border-transparent rounded-xl">
             <div className="grid grid-cols-2 border-b [&>*+*]:border-l">
               <div className="flex min-w-0 flex-col gap-0.5 px-3 py-3 sm:px-4">
                 <span className="truncate text-xs text-muted-foreground">
@@ -162,7 +162,7 @@ function InsightsPage() {
       </div>
 
       <Section title="Reports filed">
-        <div className="border bg-card dark:border-transparent">
+        <div className="border bg-card dark:border-transparent rounded-xl">
           <table className="w-full table-fixed border-collapse text-[13px] sm:text-sm">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
@@ -249,7 +249,7 @@ function InsightsPage() {
           />
         }
       >
-        <div className="flex min-w-0 flex-col gap-3 border bg-card p-4 dark:border-transparent">
+        <div className="flex min-w-0 flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl">
           <TrendChart
             ariaLabel={`Reports filed per ${data.period === 'weeks' ? 'week' : 'month'}, by kind`}
             labels={labels}
@@ -316,7 +316,7 @@ function InsightsPage() {
           ).map(([title, rows, words]) => (
             <div
               key={title}
-              className="flex min-w-0 flex-col gap-3 border bg-card p-4 dark:border-transparent"
+              className="flex min-w-0 flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl"
             >
               <h3 className="text-[13px] font-medium text-muted-foreground">
                 {title}

@@ -130,6 +130,8 @@ export async function listReports(
       lessonTitle: sql<
         string | null
       >`coalesce(${lessons.title}, ${cellReports.lessonTitle})`,
+      // v2 tagged a lesson as a GCC Lesson or a Custom one.
+      customLesson: sql<boolean>`${cellReports.lessonId} is null`,
       leaderId: cellReports.leaderId,
       leaderName: leader.name,
       assistantName: assistant.name,

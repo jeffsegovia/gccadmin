@@ -3,8 +3,8 @@ import { UsersRound } from 'lucide-react'
 import { z } from 'zod'
 import { Empty, Page } from '@/components/shell/page'
 import { ListSearch } from '@/components/list-search'
-import { GenderBar, Pill } from '@/components/status-pill'
-import { Group } from '@/components/ui/list'
+import { Pill } from '@/components/status-pill'
+import { Group, RowChevron } from '@/components/ui/list'
 import { getGuests } from '@/server/attendance/attendance.functions'
 import { shortDay } from '@/lib/dates'
 import { plural } from '@/lib/labels'
@@ -53,7 +53,6 @@ function GuestsPage() {
                   key={g.id}
                   className="flex min-h-14 min-w-0 items-center gap-3 px-3.5 py-2"
                 >
-                  <GenderBar gender={g.gender} />
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[15px] font-medium">
                       {g.name}
@@ -94,11 +93,11 @@ function GuestsPage() {
                     params={{ discipleId: g.discipleProfileId! }}
                     className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
                   >
-                    <GenderBar gender={g.gender} />
                     <span className="min-w-0 flex-1 truncate font-medium">
                       {g.name}
                     </span>
                     <Pill tone="covered">Disciple</Pill>
+                    <RowChevron />
                   </Link>
                 ))}
               </Group>

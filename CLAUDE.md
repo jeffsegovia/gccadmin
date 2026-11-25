@@ -26,8 +26,12 @@ README.md for how it's built and deployed.
   `src/lib/<feature>/`; pure logic in `src/lib/`, tested in `__tests__/`.
 - The database keeps v2's Prisma tables; changes are additive SQL in
   `migrations/` (`pnpm db:migrate`).
-- Sharp corners (radius 0), dark by default with a dark top bar in light
-  mode; tokens in `src/styles.css`, components use tokens only.
+- Osamu's soft, petite look: corners from `--radius` (8px, capped at
+  12px; cards `rounded-xl`), tiny badges (`Pill`, 20px), a chevron at the
+  end of every row that opens something (`RowChevron`), no gender color
+  coding. Dark by default with a dark top bar in light mode; tokens in
+  `src/styles.css`, components use tokens only. Controls in a row share
+  one height (40px; `Segmented` matches the selects).
 - Dialogs are `ResponsiveDialog` (a sheet on phones, its top bar's submit
   mirrors the form's). Saving buttons are `SubmitButton`/`PendingButton`.
 - Times are Manila (`src/lib/dates.ts`); calendar days are stored as UTC

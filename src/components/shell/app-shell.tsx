@@ -86,7 +86,7 @@ function Sidebar({ isAdmin }: { isAdmin: boolean }) {
 
 function TopBar({ user }: { user: MenuUser }) {
   return (
-    <header className="dark sticky top-0 z-40 hidden h-14 items-center gap-3 border-b bg-background px-5 text-foreground md:flex">
+    <header className="dark sticky top-0 z-40 hidden h-14 items-center gap-3 border-b border-white/12 bg-background px-5 text-foreground md:flex">
       <Link to="/home" className="flex min-w-0 items-center gap-2.5">
         <Logo />
         <span className="truncate text-[15px] font-semibold tracking-tight">
@@ -114,7 +114,7 @@ function TopBar({ user }: { user: MenuUser }) {
 
 function PhoneHeader({ user }: { user: MenuUser }) {
   return (
-    <header className="dark sticky top-0 z-30 mb-2 flex items-center gap-2 bg-background px-4 py-2 text-foreground md:hidden">
+    <header className="dark sticky top-0 z-30 mb-2 flex items-center gap-2 border-b border-white/12 bg-background px-4 py-2 text-foreground md:hidden">
       <Link
         to="/home"
         aria-label="Home"

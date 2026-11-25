@@ -39,7 +39,7 @@ export function ListSearch({
         onChange={(e) => setText(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-11 w-full min-w-0 border border-input bg-card pr-9 pl-9 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:h-10 md:text-sm [&::-webkit-search-cancel-button]:hidden"
+        className="h-11 w-full min-w-0 border border-input bg-card pr-9 pl-9 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:h-10 md:text-sm [&::-webkit-search-cancel-button]:hidden rounded-xl"
       />
       {text && (
         <button

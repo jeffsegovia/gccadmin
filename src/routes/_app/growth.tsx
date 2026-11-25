@@ -3,8 +3,8 @@ import { TrendingUp } from 'lucide-react'
 import { z } from 'zod'
 import { cn } from 'cn'
 import { Empty, Page } from '@/components/shell/page'
-import { GenderBar, Pill } from '@/components/status-pill'
-import { Group } from '@/components/ui/list'
+import { Pill } from '@/components/status-pill'
+import { Group, RowChevron } from '@/components/ui/list'
 import { processLevel } from '@/db/schema'
 import type { ProcessLevel } from '@/db/schema'
 import { PROCESS_LEVEL, PROCESS_STATUS } from '@/lib/labels'
@@ -44,7 +44,7 @@ function GrowthPage() {
       title="Growth process"
       description={`Where ${data.everyone ? 'the church' : 'your network'} is in the Growth Process System.`}
     >
-      <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+      <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
         {LEVELS.map((l) => {
           const n = total(l)
           const on = l === data.level
@@ -81,6 +81,7 @@ function GrowthPage() {
               <span className="w-20 shrink-0 truncate text-right text-xs text-muted-foreground max-sm:hidden">
                 {ongoing(l) ? `${ongoing(l)} ongoing` : ''}
               </span>
+              <RowChevron />
             </button>
           )
         })}
@@ -100,7 +101,6 @@ function GrowthPage() {
                 params={{ discipleId: p.id }}
                 className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
               >
-                <GenderBar gender={p.gender} />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate font-medium">{p.name}</span>
                   {data.everyone && p.leaderName && (
@@ -122,6 +122,7 @@ function GrowthPage() {
                 >
                   {PROCESS_STATUS[p.status]}
                 </Pill>
+                <RowChevron />
               </Link>
             ))}
           </Group>

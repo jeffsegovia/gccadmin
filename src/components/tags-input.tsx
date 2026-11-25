@@ -33,14 +33,14 @@ export function TagsInput({
     <div className="flex min-w-0 flex-col gap-1.5">
       <div
         className={cn(
-          'flex min-h-10 min-w-0 flex-wrap items-center gap-1.5 border border-input px-2 py-1.5 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+          'flex min-h-10 min-w-0 flex-wrap items-center gap-1.5 border border-input px-2 py-1.5 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 rounded-lg',
           invalid && 'border-destructive',
         )}
       >
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex max-w-full min-w-0 items-center gap-1 bg-secondary py-0.5 pr-1 pl-2 text-[13px]"
+            className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-md bg-secondary py-0.5 pr-1 pl-2 text-[13px]"
           >
             <span className="min-w-0 break-words">{tag}</span>
             <button

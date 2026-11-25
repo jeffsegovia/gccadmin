@@ -165,7 +165,7 @@ export function TrendChart({
           <div
             role="status"
             className={cn(
-              'pointer-events-none absolute top-1 z-10 flex min-w-40 flex-col gap-1 border bg-popover px-3 py-2 text-xs shadow-lg',
+              'pointer-events-none absolute top-1 z-10 flex min-w-40 flex-col gap-1 border bg-popover px-3 py-2 text-xs shadow-lg rounded-lg',
             )}
             style={
               cx(hover) > width / 2

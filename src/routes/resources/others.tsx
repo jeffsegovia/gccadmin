@@ -8,7 +8,7 @@ const LINKS = [...GCC_LINKS, ...MORE_LINKS]
 export const Route = createFileRoute('/resources/others')({
   head: () => ({ meta: [{ title: 'More from GCC · GCC Resources' }] }),
   component: () => (
-    <ul className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+    <ul className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
       {LINKS.map((l) => (
         <li key={l.href}>
           <a

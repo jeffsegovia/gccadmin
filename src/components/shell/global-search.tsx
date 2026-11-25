@@ -51,7 +51,9 @@ export function SearchButton({ compact }: { compact?: boolean }) {
             <span className="min-w-0 flex-1 truncate text-left">
               Search people, lessons
             </span>
-            <kbd className="border px-1.5 font-mono text-[10px]">⌘K</kbd>
+            <kbd className="border px-1.5 font-mono text-[10px] rounded-lg">
+              ⌘K
+            </kbd>
           </>
         )}
       </button>
@@ -112,7 +114,7 @@ function SearchPanel({ onPick }: { onPick: () => void }) {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Name of a disciple, guest or lesson"
           aria-label="Search"
-          className="h-11 w-full border border-input bg-transparent pr-9 pl-9 text-base outline-none focus-visible:border-ring"
+          className="h-11 w-full border border-input bg-transparent pr-9 pl-9 text-base outline-none focus-visible:border-ring rounded-lg"
         />
         {loading && (
           <Spinner className="absolute top-1/2 right-3 -translate-y-1/2" />

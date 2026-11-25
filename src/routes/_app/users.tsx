@@ -18,7 +18,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/responsive-dialog'
 import { Button } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { Switch } from '@/components/ui/switch'
 import { messageOf } from '@/lib/errors'
 import { timeAgo } from '@/lib/dates'
@@ -107,6 +107,7 @@ function UsersPage() {
                     ? 'Leader'
                     : 'Unassigned'}
               </Pill>
+              <RowChevron />
             </button>
           ))}
         </Group>

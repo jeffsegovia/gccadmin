@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Page } from '@/components/shell/page'
-import { ChurchStatusPill, PersonAvatar, Pill } from '@/components/status-pill'
+import { ChurchStatusPill, Pill } from '@/components/status-pill'
 import { PortalSheet } from '@/components/disciples/portal-sheet'
 import { GrowthBar, Weeks } from '@/components/disciples/progress'
 import { DiscipleForm } from '@/components/disciples/disciple-form'
@@ -33,7 +33,7 @@ import { PersonCombobox } from '@/components/person-combobox'
 import { PendingButton } from '@/components/pending-button'
 import { FormField } from '@/components/form-field'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { Segmented } from '@/components/ui/segmented'
 import {
   DropdownMenu,
@@ -118,11 +118,6 @@ function DisciplePage() {
       back={{ to: '/disciples', label: 'Disciples' }}
       title={
         <span className="flex min-w-0 items-center gap-3">
-          <PersonAvatar
-            name={d.name}
-            gender={d.gender}
-            className="size-12 text-base"
-          />
           <span className="min-w-0 break-words">{d.name}</span>
         </span>
       }
@@ -211,9 +206,7 @@ function DisciplePage() {
     >
       <div className="-mt-2 flex flex-wrap gap-1.5">
         <ChurchStatusPill status={d.churchStatus} />
-        <Pill>
-          {MEMBER_TYPE[d.memberType]} · {ageOn(d.birthdate)}
-        </Pill>
+        <Pill>{MEMBER_TYPE[d.memberType]}</Pill>
         {d.isPrimary && <Pill tone="primary">Primary leader</Pill>}
         {d.isMyPrimary && !d.isPrimary && (
           <Pill tone="primary">Assistant leader</Pill>
@@ -235,7 +228,7 @@ function DisciplePage() {
 
           {tab === 'cell' && (
             <div className="flex min-w-0 flex-col gap-4">
-              <div className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent">
+              <div className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl">
                 <h2 className="text-[13px] font-medium text-muted-foreground">
                   Last 12 weeks
                 </h2>
@@ -247,7 +240,7 @@ function DisciplePage() {
                   Cell groups · {data.cellGroupTotal}
                 </h2>
                 {data.recent.length === 0 ? (
-                  <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                  <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
                     No cell groups yet.
                   </p>
                 ) : (
@@ -271,6 +264,7 @@ function DisciplePage() {
                             {r.leaderName ? ` · led by ${r.leaderName}` : ''}
                           </span>
                         </span>
+                        <RowChevron />
                       </Link>
                     ))}
                   </Group>
@@ -280,7 +274,7 @@ function DisciplePage() {
           )}
 
           {tab === 'details' && (
-            <dl className="grid min-w-0 grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-4 gap-y-3 border bg-card p-4 text-sm dark:border-transparent">
+            <dl className="grid min-w-0 grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-4 gap-y-3 border bg-card p-4 text-sm dark:border-transparent rounded-xl">
               {[
                 ['Gender', GENDER[d.gender]],
                 [
@@ -307,7 +301,7 @@ function DisciplePage() {
 
           {tab === 'lessons' &&
             (data.lessonsTaken.length === 0 ? (
-              <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+              <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
                 No lessons yet.
               </p>
             ) : (
@@ -329,7 +323,7 @@ function DisciplePage() {
             ))}
 
           {tab === 'disciples' && data.handled.length === 0 && (
-            <p className="border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+            <p className="border border-dashed px-4 py-8 text-center text-sm text-muted-foreground rounded-xl">
               No disciples being handled yet.
             </p>
           )}
@@ -342,7 +336,6 @@ function DisciplePage() {
                   params={{ discipleId: h.id }}
                   className="flex min-h-14 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
                 >
-                  <PersonAvatar name={h.name} gender={h.gender} />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate font-medium">{h.name}</span>
                     <span className="truncate text-xs text-muted-foreground">
@@ -351,13 +344,14 @@ function DisciplePage() {
                     </span>
                   </span>
                   <ChurchStatusPill status={h.churchStatus} />
+                  <RowChevron />
                 </Link>
               ))}
             </Group>
           )}
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-3 border bg-card p-4 text-sm dark:border-transparent max-lg:hidden">
+        <aside className="flex min-w-0 flex-col gap-3 border bg-card p-4 text-sm dark:border-transparent max-lg:hidden rounded-xl">
           <h2 className="text-[13px] font-medium text-muted-foreground">
             Leader
           </h2>

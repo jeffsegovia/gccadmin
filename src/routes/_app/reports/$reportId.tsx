@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { Page } from '@/components/shell/page'
 import { ReportForm } from '@/components/cell-reports/report-form'
 import type { ReportFormOptions } from '@/components/cell-reports/report-form'
-import { GenderBar, Pill } from '@/components/status-pill'
+import { Pill } from '@/components/status-pill'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -95,7 +95,7 @@ function ReportPage() {
           <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
             Who came · {data.attendees.length}
           </h2>
-          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
             {data.attendees.map((a) => (
               <Link
                 key={a.id}
@@ -103,7 +103,6 @@ function ReportPage() {
                 params={{ discipleId: a.id }}
                 className="flex min-h-12 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
               >
-                <GenderBar gender={a.gender} />
                 <span className="min-w-0 flex-1 truncate font-medium">
                   {a.name}
                 </span>
@@ -114,7 +113,7 @@ function ReportPage() {
             ))}
           </div>
         </section>
-        <dl className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3 gap-y-2.5 border bg-card p-4 text-sm dark:border-transparent">
+        <dl className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3 gap-y-2.5 border bg-card p-4 text-sm dark:border-transparent rounded-xl">
           {[
             ['Leader', data.leaderName ?? '—'],
             ['Assistant', data.assistantName ?? '—'],

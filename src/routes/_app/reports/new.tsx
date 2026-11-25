@@ -25,7 +25,7 @@ function NewReportPage() {
       back={{ to: '/reports', label: 'Cell reports' }}
       className="max-w-3xl"
     >
-      <div className="border bg-card p-4 md:p-6 dark:border-transparent">
+      <div className="border bg-card p-4 md:p-6 dark:border-transparent rounded-xl">
         <ReportForm
           opts={opts}
           draftKey="new"

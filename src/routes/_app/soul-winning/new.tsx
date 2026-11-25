@@ -78,7 +78,7 @@ function NewSessionPage() {
     >
       <form
         noValidate
-        className="flex flex-col gap-5 border bg-card p-4 md:p-6 dark:border-transparent"
+        className="flex flex-col gap-5 border bg-card p-4 md:p-6 dark:border-transparent rounded-xl"
         onSubmit={async (e) => {
           e.preventDefault()
           const base = {
@@ -200,7 +200,10 @@ function NewSessionPage() {
               New believers · {souls.filter((s) => s.name.trim()).length}
             </span>
             {souls.map((s, i) => (
-              <div key={i} className="flex min-w-0 flex-col gap-3 border p-3">
+              <div
+                key={i}
+                className="flex min-w-0 flex-col gap-3 border p-3 rounded-lg"
+              >
                 <div className="flex min-w-0 items-center gap-2">
                   <Input
                     aria-label={`Name ${i + 1}`}
@@ -282,11 +285,11 @@ function NewSessionPage() {
               Who was there · {picked.size}
             </span>
             {opts.believers.length === 0 ? (
-              <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+              <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
                 No new believers in this network yet.
               </p>
             ) : (
-              <div className="flex max-h-[24rem] flex-col overflow-y-auto border [&>*+*]:border-t">
+              <div className="flex max-h-[24rem] flex-col overflow-y-auto border [&>*+*]:border-t rounded-lg">
                 {opts.believers.map((b) => {
                   const on = picked.has(b.id)
                   return (
@@ -306,13 +309,6 @@ function NewSessionPage() {
                         on && 'bg-covered/8',
                       )}
                     >
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          'h-6 w-1 shrink-0',
-                          b.gender === 'MALE' ? 'bg-men' : 'bg-women',
-                        )}
-                      />
                       <span className="min-w-0 flex-1 truncate font-medium">
                         {b.name}
                       </span>

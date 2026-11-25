@@ -98,7 +98,7 @@ export function Empty({
   children?: ReactNode
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 border border-dashed px-6 py-14 text-center">
+    <div className="flex flex-col items-center gap-3 border border-dashed px-6 py-14 text-center rounded-xl">
       <Icon aria-hidden className="size-6 text-muted-foreground" />
       <p className="text-sm text-muted-foreground">{title}</p>
       {children}

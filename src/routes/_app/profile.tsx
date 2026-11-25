@@ -30,7 +30,7 @@ function ProfilePage() {
     <Page title="My profile" description={viewer.email} className="max-w-2xl">
       {profile ? (
         <form
-          className="flex flex-col gap-4 border bg-card p-4 md:p-6 dark:border-transparent"
+          className="flex flex-col gap-4 border bg-card p-4 md:p-6 dark:border-transparent rounded-xl"
           onSubmit={async (e) => {
             e.preventDefault()
             setPending(true)
@@ -93,7 +93,7 @@ function ProfilePage() {
           </SubmitButton>
         </form>
       ) : (
-        <p className="border bg-card p-4 text-sm text-muted-foreground dark:border-transparent">
+        <p className="border bg-card p-4 text-sm text-muted-foreground dark:border-transparent rounded-xl">
           Your account isn’t linked to a leader record yet. An admin can link it
           from Leaders.
         </p>

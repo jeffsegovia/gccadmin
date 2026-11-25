@@ -68,7 +68,7 @@ export function ChipChoice<T extends string>({
             aria-checked={on}
             onClick={() => onChange(o.value)}
             className={cn(
-              'h-9 max-w-full truncate border px-3 text-[13px] font-medium transition-colors',
+              'h-9 max-w-full truncate border px-3 text-[13px] font-medium transition-colors rounded-lg',
               on
                 ? 'border-primary/50 bg-primary/15 text-primary'
                 : 'border-border text-foreground hover:bg-muted',

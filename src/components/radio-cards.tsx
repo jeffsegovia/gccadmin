@@ -58,7 +58,7 @@ export function RadioCards<T extends string>({
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(o.value)}
             className={cn(
-              'flex min-w-0 items-center gap-3 border p-3 text-left transition-colors sm:flex-col sm:items-start sm:gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'flex min-w-0 items-center gap-3 border p-3 text-left transition-colors sm:flex-col sm:items-start sm:gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg',
               on
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:bg-muted/50',

@@ -1,7 +1,18 @@
 import type { ReactNode } from 'react'
 import { cn } from 'cn'
-import type { ChurchStatus, Gender } from '@/db/schema'
-import { CHURCH_STATUS } from '@/lib/labels'
+import type {
+  CellStatus,
+  ChurchStatus,
+  Gender,
+  MemberType,
+  ProcessLevel,
+} from '@/db/schema'
+import {
+  CELL_STATUS,
+  CHURCH_STATUS,
+  MEMBER_TYPE,
+  PROCESS_LEVEL,
+} from '@/lib/labels'
 
 export type Tone =
   'covered' | 'caution' | 'short' | 'primary' | 'men' | 'neutral'
@@ -29,7 +40,8 @@ export function Pill({
   return (
     <span
       className={cn(
-        'inline-flex h-6 max-w-full shrink-0 items-center gap-1 px-2 text-xs font-medium whitespace-nowrap',
+        // Tiny, as in Osamu: a word, not a button.
+        'inline-flex h-5 max-w-full shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] leading-none font-medium whitespace-nowrap',
         TONES[tone],
         className,
       )}
@@ -39,10 +51,51 @@ export function Pill({
   )
 }
 
-export function ChurchStatusPill({ status }: { status: ChurchStatus }) {
+/** Cell Status as a badge: Regular, or the 1st to 3rd timer. */
+export function CellStatusPill({
+  status,
+  named,
+}: {
+  status: CellStatus
+  named?: boolean
+}) {
+  return (
+    <Pill tone={status === 'REGULAR' ? 'covered' : 'caution'}>
+      {named ? `Cell · ${CELL_STATUS[status]}` : CELL_STATUS[status]}
+    </Pill>
+  )
+}
+
+/** Process Level as a badge (the Growth Process step). */
+export function ProcessLevelPill({ level }: { level: ProcessLevel }) {
+  return (
+    <Pill tone={level === 'NONE' ? 'neutral' : 'primary'}>
+      {PROCESS_LEVEL[level]}
+    </Pill>
+  )
+}
+
+/** Member Type as a badge, the word only. */
+export function MemberTypePill({ type }: { type: MemberType }) {
+  return <Pill>{MEMBER_TYPE[type]}</Pill>
+}
+
+/** Church Status as a badge. `named` adds "Church ·" where it sits beside
+ * Cell Status and both could read Regular. */
+export function ChurchStatusPill({
+  status,
+  named,
+}: {
+  status: ChurchStatus
+  named?: boolean
+}) {
   const tone: Tone =
     status === 'REGULAR' ? 'covered' : status === 'ACS' ? 'primary' : 'neutral'
-  return <Pill tone={tone}>{CHURCH_STATUS[status]}</Pill>
+  return (
+    <Pill tone={tone}>
+      {named ? `Church · ${CHURCH_STATUS[status]}` : CHURCH_STATUS[status]}
+    </Pill>
+  )
 }
 
 /** A thin colored bar beside a name: men blue, women pink (with the word
@@ -86,5 +139,14 @@ export function PersonAvatar({
     >
       {letters}
     </span>
+  )
+}
+
+/** A lesson's source, as v2 tagged it: GCC Lesson or Custom. */
+export function LessonTag({ custom }: { custom: boolean }) {
+  return (
+    <Pill tone={custom ? 'neutral' : 'primary'}>
+      {custom ? 'Custom' : 'GCC Lesson'}
+    </Pill>
   )
 }

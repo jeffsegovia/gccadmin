@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { Empty, Page } from '@/components/shell/page'
 import { ListSearch } from '@/components/list-search'
-import { PersonAvatar, Pill } from '@/components/status-pill'
+import { Pill } from '@/components/status-pill'
 import { RemindButton } from '@/components/remind-button'
 import { PersonCombobox } from '@/components/person-combobox'
 import { PendingButton } from '@/components/pending-button'
@@ -24,7 +24,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/responsive-dialog'
 import { Button } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { messageOf } from '@/lib/errors'
 import {
   getLeaders,
@@ -77,7 +77,6 @@ function LeadersPage() {
               key={l.id}
               className="flex min-h-15 min-w-0 items-center gap-3 px-3.5 py-2"
             >
-              <PersonAvatar name={l.name} gender={l.gender} />
               <Link
                 to="/disciples/$discipleId"
                 params={{ discipleId: l.id }}
@@ -89,6 +88,7 @@ function LeadersPage() {
                 <span className="truncate text-xs text-muted-foreground">
                   {l.disciples ?? 0} disciples · {l.email ?? 'no sign-in yet'}
                 </span>
+                <RowChevron />
               </Link>
               {l.userAccountId ? (
                 <PendingButton

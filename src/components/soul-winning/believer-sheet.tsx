@@ -151,7 +151,7 @@ export function BelieverSheet({
                 </span>
               </div>
               {b.lessons.length === 0 ? (
-                <p className="border border-dashed px-3 py-4 text-sm text-muted-foreground">
+                <p className="border border-dashed px-3 py-4 text-sm text-muted-foreground rounded-xl">
                   No Soul-Winning or Consolidation lesson series in Lessons yet.
                 </p>
               ) : (
@@ -160,7 +160,7 @@ export function BelieverSheet({
                     <span className="text-xs text-muted-foreground">
                       {g.title}
                     </span>
-                    <ul className="flex flex-col border [&>*+*]:border-t">
+                    <ul className="flex flex-col border [&>*+*]:border-t rounded-lg overflow-hidden">
                       {g.lessons.map((l) => (
                         <li
                           key={l.id}
@@ -169,7 +169,7 @@ export function BelieverSheet({
                           <span
                             aria-hidden="true"
                             className={cn(
-                              'grid size-4 shrink-0 place-items-center border-[1.5px]',
+                              'grid size-4 shrink-0 place-items-center rounded-[4px] border-[1.5px]',
                               l.takenOn
                                 ? 'border-covered bg-covered text-background'
                                 : 'border-foreground/25',
@@ -203,7 +203,7 @@ export function BelieverSheet({
             {b.sessions.length > 0 && (
               <section aria-label="Sessions" className="flex flex-col gap-1.5">
                 <h3 className="text-[13px] font-medium">Sessions</h3>
-                <ul className="flex flex-col border [&>*+*]:border-t">
+                <ul className="flex flex-col border [&>*+*]:border-t rounded-lg overflow-hidden">
                   {b.sessions.map((s) => (
                     <li
                       key={s.id}
@@ -271,7 +271,7 @@ export function BelieverSheet({
                 <UserPlus aria-hidden="true" /> Make a disciple
               </Link>
             ) : (
-              <p className="border border-caution/30 bg-caution/10 px-3 py-2 text-[13px]">
+              <p className="border border-caution/30 bg-caution/10 px-3 py-2 text-[13px] rounded-lg">
                 {b.name.split(' ')[0]} can become a disciple once every
                 soul-winning and consolidation lesson is taken:{' '}
                 {b.lessons.length - done} to go.

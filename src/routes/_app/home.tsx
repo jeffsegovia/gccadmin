@@ -7,7 +7,7 @@ import { BirthdayList } from '@/components/birthday-list'
 import { CountBars } from '@/components/insights/trend-chart'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { CELL_TYPE, CHURCH_STATUS } from '@/lib/labels'
 import {
   longDay,
@@ -98,11 +98,11 @@ function HomePage() {
       description={`Week of ${shortDay(monday)} – ${shortDay(addDays(monday, 6))}`}
       action={
         <Link to="/insights" className="text-[13px] font-medium text-primary">
-          See insights and trends
+          See insights →
         </Link>
       }
     >
-      <div className="grid grid-cols-3 border bg-card md:grid-cols-4 [&>*+*]:border-l">
+      <div className="grid grid-cols-3 border bg-card md:grid-cols-4 [&>*+*]:border-l rounded-xl overflow-hidden">
         {stats.map((s) => (
           <div
             key={s.label}
@@ -135,7 +135,7 @@ function HomePage() {
         <div className="flex min-w-0 flex-col gap-6 lg:order-2">
           <section
             aria-label="Next service"
-            className="flex min-w-0 flex-col gap-3 border border-primary/40 bg-card p-4"
+            className="flex min-w-0 flex-col gap-3 border border-primary/40 bg-card p-4 rounded-xl"
           >
             {data.upcoming ? (
               <>
@@ -241,7 +241,7 @@ function HomePage() {
               }
             >
               {/* The same bars as Insights, so the numbers read alike. */}
-              <div className="border bg-card p-4 dark:border-transparent">
+              <div className="border bg-card p-4 dark:border-transparent rounded-xl">
                 <CountBars
                   total={statusTotal}
                   rows={(['REGULAR', 'ACS', 'NACS'] as const).map((k) => ({
@@ -259,7 +259,7 @@ function HomePage() {
             <Section
               title={`Sunday attendance · last ${data.sundays.length} weeks`}
             >
-              <div className="flex flex-col gap-2 border bg-card p-4 dark:border-transparent">
+              <div className="flex flex-col gap-2 border bg-card p-4 dark:border-transparent rounded-xl">
                 <div className="flex h-36 items-end gap-1.5 md:gap-2.5">
                   {data.sundays.map((s, i) => (
                     <div
@@ -306,7 +306,7 @@ function HomePage() {
             }
           >
             {data.thisWeek.length === 0 ? (
-              <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+              <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
                 No reports yet this week.
               </p>
             ) : (
@@ -330,6 +330,7 @@ function HomePage() {
                       </span>
                     </span>
                     <span className="numeric text-sm">{r.attendees}</span>
+                    <RowChevron />
                   </Link>
                 ))}
               </Group>

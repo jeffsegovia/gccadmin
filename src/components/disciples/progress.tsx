@@ -12,7 +12,7 @@ export function GrowthBar({
   return (
     <section
       aria-label="Growth process"
-      className="flex min-w-0 flex-col gap-2.5 border bg-card p-4 dark:border-transparent"
+      className="flex min-w-0 flex-col gap-2.5 border bg-card p-4 dark:border-transparent rounded-xl"
     >
       <div className="flex min-w-0 items-baseline justify-between gap-3">
         <h2 className="text-[13px] font-medium text-muted-foreground">

@@ -372,7 +372,7 @@ export function ReportForm({
         <StepBar step={step} reached={reached} onPick={go} />
       </div>
       {restored && (
-        <p className="border border-caution/30 bg-caution/10 px-3 py-2 text-[13px]">
+        <p className="border border-caution/30 bg-caution/10 px-3 py-2 text-[13px] rounded-lg">
           Your unsaved report is back.{' '}
           <button
             type="button"
@@ -426,7 +426,7 @@ export function ReportForm({
 
           {fixedLeader ? (
             <FormField label="Network leader">
-              <p className="flex h-10 items-center border bg-muted/40 px-3 text-sm">
+              <p className="flex h-10 items-center border bg-muted/40 px-3 text-sm rounded-lg">
                 {fixedLeader}
               </p>
             </FormField>
@@ -597,7 +597,7 @@ export function ReportForm({
                   </FormField>
                 </div>
                 <FormField label="Scripture references">
-                  <p className="min-h-10 border bg-muted/40 px-3 py-2 text-sm break-words text-muted-foreground">
+                  <p className="min-h-10 border bg-muted/40 px-3 py-2 text-sm break-words text-muted-foreground rounded-lg">
                     {lesson?.scriptureReferences?.length
                       ? lesson.scriptureReferences.join(', ')
                       : 'Comes with the lesson'}
@@ -708,18 +708,18 @@ export function ReportForm({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search names"
                 aria-label="Search attendees"
-                className="h-10 w-full min-w-0 border border-input bg-transparent pr-3 pl-9 text-base outline-none focus-visible:border-ring md:text-sm"
+                className="h-10 w-full min-w-0 border border-input bg-transparent pr-3 pl-9 text-base outline-none focus-visible:border-ring md:text-sm rounded-lg"
               />
             </div>
           )}
           {people.length === 0 ? (
-            <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+            <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
               {opts.chooseLeader && !v.leaderId
                 ? 'Select a leader first.'
                 : 'No disciple found for this leader.'}
             </p>
           ) : (
-            <div className="flex max-h-[26rem] min-w-0 flex-col overflow-y-auto border [&>*+*]:border-t">
+            <div className="flex max-h-[26rem] min-w-0 flex-col overflow-y-auto border [&>*+*]:border-t rounded-lg">
               {shown.map((p) => {
                 const on = ticked.has(p.id)
                 return (
@@ -739,13 +739,6 @@ export function ReportForm({
                       on && 'bg-covered/8',
                     )}
                   >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'h-6 w-1 shrink-0',
-                        p.gender === 'MALE' ? 'bg-men' : 'bg-women',
-                      )}
-                    />
                     <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
                       {p.name}
                     </span>

@@ -14,7 +14,7 @@ export function CheckMark({
     <span
       aria-hidden="true"
       className={cn(
-        'grid size-4 shrink-0 place-items-center border-[1.5px] transition-colors',
+        'grid size-4 shrink-0 place-items-center rounded-[4px] border-[1.5px] transition-colors',
         on
           ? 'border-covered bg-covered text-background'
           : 'border-foreground/30',

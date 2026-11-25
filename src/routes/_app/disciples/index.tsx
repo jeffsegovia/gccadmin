@@ -15,7 +15,13 @@ import { toast } from 'sonner'
 import { cn } from 'cn'
 import { Empty, Page } from '@/components/shell/page'
 import { ListSearch } from '@/components/list-search'
-import { ChurchStatusPill, PersonAvatar, Pill } from '@/components/status-pill'
+import {
+  CellStatusPill,
+  ChurchStatusPill,
+  MemberTypePill,
+  Pill,
+  ProcessLevelPill,
+} from '@/components/status-pill'
 import {
   FiltersDialog,
   countFilters,
@@ -32,7 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { listDisciplesSchema } from '@/lib/disciples/schema'
 import { writeDisciplesFile } from '@/lib/disciples/spreadsheet'
-import { CELL_STATUS, MEMBER_TYPE, PROCESS_LEVEL } from '@/lib/labels'
+import { MEMBER_TYPE } from '@/lib/labels'
 import { manilaDay } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
 import {
@@ -59,11 +65,7 @@ function portalText(d: DiscipleRow) {
 }
 
 function sub(d: DiscipleRow) {
-  return [
-    MEMBER_TYPE[d.memberType],
-    PROCESS_LEVEL[d.processLevel],
-    d.handledByName ?? d.leaderName,
-  ]
+  return [MEMBER_TYPE[d.memberType], d.handledByName ?? d.leaderName]
     .filter(Boolean)
     .join(' · ')
 }
@@ -201,7 +203,6 @@ function DisciplesPage() {
                 params={{ discipleId: d.id }}
                 className="flex min-h-15 min-w-0 items-center gap-3 px-3.5 py-2"
               >
-                <PersonAvatar name={d.name} gender={d.gender} />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[15px] font-medium">
                     {d.name}
@@ -209,14 +210,22 @@ function DisciplesPage() {
                   <span className="truncate text-xs text-muted-foreground">
                     {sub(d)}
                   </span>
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    <ChurchStatusPill status={d.churchStatus} named />
+                    <CellStatusPill status={d.cellStatus} named />
+                    <ProcessLevelPill level={d.processLevel} />
+                  </span>
                   <Role d={d} />
                 </span>
-                <ChurchStatusPill status={d.churchStatus} />
+                <ChevronRight
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-muted-foreground"
+                />
               </Link>
             ))}
           </Group>
           {/* Wide screens: a table that scrolls inside its box. */}
-          <div className="overflow-x-auto border bg-card max-md:hidden">
+          <div className="overflow-x-auto border bg-card max-md:hidden rounded-xl">
             <table className="w-full min-w-[56rem] border-collapse text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
@@ -225,8 +234,8 @@ function DisciplesPage() {
                     'Leader',
                     'Member Type',
                     'Process Level',
-                    'Church',
-                    'Cell',
+                    'Church Status',
+                    'Cell Status',
                     'Portal',
                   ].map((h) => (
                     <th
@@ -250,11 +259,6 @@ function DisciplesPage() {
                           params={{ discipleId: d.id }}
                           className="flex min-w-0 items-center gap-2.5"
                         >
-                          <PersonAvatar
-                            name={d.name}
-                            gender={d.gender}
-                            className="size-8 text-xs"
-                          />
                           <span className="flex min-w-0 flex-col">
                             <span className="truncate font-medium">
                               {d.name}
@@ -266,17 +270,17 @@ function DisciplesPage() {
                       <td className="max-w-48 truncate px-3 py-2 text-foreground/85">
                         {d.handledByName ?? d.leaderName ?? '—'}
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-foreground/85">
-                        {MEMBER_TYPE[d.memberType]}
+                      <td className="px-3 py-2">
+                        <MemberTypePill type={d.memberType} />
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-foreground/85">
-                        {PROCESS_LEVEL[d.processLevel]}
+                      <td className="px-3 py-2">
+                        <ProcessLevelPill level={d.processLevel} />
                       </td>
                       <td className="px-3 py-2">
                         <ChurchStatusPill status={d.churchStatus} />
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-foreground/85">
-                        {CELL_STATUS[d.cellStatus]}
+                      <td className="px-3 py-2">
+                        <CellStatusPill status={d.cellStatus} />
                       </td>
                       <td
                         className={cn(

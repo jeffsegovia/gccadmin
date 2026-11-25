@@ -71,7 +71,7 @@ function SeriesPage() {
       }
     >
       {data.lessons.length === 0 ? (
-        <p className="border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="border border-dashed px-4 py-10 text-center text-sm text-muted-foreground rounded-xl">
           No lessons in this series yet.
         </p>
       ) : (

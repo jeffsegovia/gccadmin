@@ -28,7 +28,7 @@ function RequestAccess() {
   const body = `Hi Admin!\n\nPlease grant me Leader rights to GCC Admin.\n\nMy email is ${email} and my account name is ${name}.\n\nThank you.`
   return (
     <AuthLayout>
-      <div className="flex w-full flex-col gap-4 border bg-card p-6">
+      <div className="flex w-full flex-col gap-4 border bg-card p-6 rounded-xl">
         <h1 className="text-xl font-semibold">Waiting for access</h1>
         <p className="text-sm text-muted-foreground">
           You’re signed in as <span className="text-foreground">{email}</span>,

@@ -8,10 +8,21 @@ export function Group({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       className={cn(
-        'overflow-hidden border bg-card dark:border-transparent [&>*+*]:border-t [&>*+*]:border-border',
+        'overflow-hidden rounded-xl border bg-card dark:border-transparent [&>*+*]:border-t [&>*+*]:border-border',
         className,
       )}
       {...props}
+    />
+  )
+}
+
+/** The chevron at the end of a row that opens something (as in Osamu),
+ * so a row reads as tappable at a glance. */
+export function RowChevron({ className }: { className?: string }) {
+  return (
+    <ChevronRight
+      aria-hidden="true"
+      className={cn('size-4 shrink-0 text-muted-foreground/70', className)}
     />
   )
 }

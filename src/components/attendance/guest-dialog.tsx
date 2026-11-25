@@ -169,7 +169,7 @@ function GuestForm({
       {twin && (
         <div
           role="status"
-          className="flex gap-2.5 border border-caution/30 bg-caution/10 p-3 text-[13px]"
+          className="flex gap-2.5 border border-caution/30 bg-caution/10 p-3 text-[13px] rounded-lg"
         >
           <CircleAlert
             aria-hidden="true"

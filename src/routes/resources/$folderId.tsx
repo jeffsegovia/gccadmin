@@ -56,7 +56,7 @@ function FolderPage() {
         )}
       </div>
       {files.length === 0 ? (
-        <p className="border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="border border-dashed px-4 py-10 text-center text-sm text-muted-foreground rounded-xl">
           No files in this folder yet.
         </p>
       ) : (
@@ -82,11 +82,11 @@ function FolderPage() {
             </p>
           </div>
           {shown.length === 0 ? (
-            <p className="border border-dashed px-4 py-10 text-center text-sm break-words text-muted-foreground">
+            <p className="border border-dashed px-4 py-10 text-center text-sm break-words text-muted-foreground rounded-xl">
               Nothing matches “{search.q}”.
             </p>
           ) : (
-            <ul className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t">
+            <ul className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
               {shown.map((f) => (
                 <li
                   key={f.id}

@@ -33,7 +33,7 @@
   --border: oklch(0.91 0.002 85);
   --input: oklch(0.87 0.002 85);
   --ring: oklch(0.5 0.1 75);
-  --radius: 0rem;
+  --radius: 0.5rem;
 
   --covered: oklch(0.5 0.12 155);
   --caution: oklch(0.55 0.15 55);
@@ -139,15 +139,16 @@
   --color-series-3: var(--series-3);
   --color-series-4: var(--series-4);
 
-  /* Square corners, whatever size a component asks for. */
-  --radius-xs: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-  --radius-2xl: 0px;
-  --radius-3xl: 0px;
-  --radius-4xl: 0px;
+  /* Osamu's soft corners: steps of 2px around --radius (8px), capped at
+     12px, so big panels stay square-ish instead of growing rounder. */
+  --radius-xs: calc(var(--radius) - 6px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 4px);
+  --radius-4xl: calc(var(--radius) + 4px);
 }
 
 @layer base {

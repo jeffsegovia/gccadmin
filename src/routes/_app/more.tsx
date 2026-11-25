@@ -57,7 +57,7 @@ function MorePage() {
     <Page title="More">
       <Link
         to="/profile"
-        className="flex min-w-0 items-center gap-3 border bg-card p-3.5 dark:border-transparent"
+        className="flex min-w-0 items-center gap-3 border bg-card p-3.5 dark:border-transparent rounded-xl"
       >
         <UserAvatar user={viewer} className="size-11" />
         <span className="flex min-w-0 flex-1 flex-col">
@@ -120,7 +120,7 @@ function MorePage() {
         <ThemeSegmented />
       </Section>
       <Section title="App">
-        <p className="flex items-start gap-2 border bg-card p-3.5 text-sm text-muted-foreground dark:border-transparent">
+        <p className="flex items-start gap-2 border bg-card p-3.5 text-sm text-muted-foreground dark:border-transparent rounded-xl">
           <Smartphone
             aria-hidden="true"
             className="mt-0.5 size-4 shrink-0 text-primary"

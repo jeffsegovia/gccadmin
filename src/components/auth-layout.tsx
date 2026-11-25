@@ -58,7 +58,7 @@ function AuthCardSkeleton({ card }: { card: AuthCard }) {
     <div
       role="status"
       aria-label="Loading sign-in"
-      className="flex w-full max-w-100 flex-col items-center border bg-card px-8 pt-8 pb-7"
+      className="flex w-full max-w-100 flex-col items-center border bg-card px-8 pt-8 pb-7 rounded-xl"
     >
       <Skeleton className="h-5 w-44" />
       <Skeleton className="mt-3 h-3.5 w-56" />
@@ -80,7 +80,7 @@ function AuthUnavailable() {
   return (
     <div
       role="alert"
-      className="flex w-full max-w-100 flex-col items-center gap-3 border bg-card px-6 py-8 text-center"
+      className="flex w-full max-w-100 flex-col items-center gap-3 border bg-card px-6 py-8 text-center rounded-xl"
     >
       <p className="text-[15px] font-semibold">Sign-in couldn’t load</p>
       <p className="text-sm text-muted-foreground">

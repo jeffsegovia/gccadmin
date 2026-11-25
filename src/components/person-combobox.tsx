@@ -60,7 +60,7 @@ export function PersonCombobox({
         aria-label={ariaLabel}
         aria-invalid={invalid || undefined}
         className={cn(
-          'flex h-10 w-full min-w-0 items-center gap-2.5 border border-input bg-transparent pr-3 pl-3 text-left text-base transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 aria-invalid:border-destructive md:text-sm',
+          'flex h-10 w-full min-w-0 items-center gap-2.5 border border-input bg-transparent pr-3 pl-3 text-left text-base transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 aria-invalid:border-destructive md:text-sm rounded-lg',
           className,
         )}
       >
@@ -85,7 +85,7 @@ export function PersonCombobox({
         >
           <Combobox.Popup
             aria-label={ariaLabel ?? 'Choices'}
-            className="flex max-h-[min(22rem,var(--available-height))] w-(--anchor-width) min-w-64 origin-(--transform-origin) flex-col overflow-hidden border bg-popover text-popover-foreground shadow-2xl outline-none"
+            className="flex max-h-[min(22rem,var(--available-height))] w-(--anchor-width) min-w-64 origin-(--transform-origin) flex-col overflow-hidden border bg-popover text-popover-foreground shadow-2xl outline-none rounded-lg"
           >
             <div className="flex items-center gap-2 border-b px-3">
               <Search

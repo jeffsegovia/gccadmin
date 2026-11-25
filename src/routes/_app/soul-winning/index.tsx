@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { Empty, Page } from '@/components/shell/page'
 import { ReportsTabs } from '@/components/reports-tabs'
 import { ListSearch } from '@/components/list-search'
-import { GenderBar, Pill } from '@/components/status-pill'
+import { Pill } from '@/components/status-pill'
 import { buttonVariants, Button } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
 import { Segmented } from '@/components/ui/segmented'
@@ -94,7 +94,7 @@ function SoulWinningPage() {
       }
     >
       <ReportsTabs on="soul" />
-      <div className="grid grid-cols-3 border bg-card [&>*+*]:border-l">
+      <div className="grid grid-cols-3 border bg-card [&>*+*]:border-l rounded-xl overflow-hidden">
         {[
           ['SW sessions', data.stats.sw, ''],
           ['Consolidation', data.stats.conso, ''],
@@ -312,7 +312,7 @@ function SoulWinningPage() {
             onChange={(q) => set({ q })}
           />
           {search.session && (
-            <div className="flex min-w-0 items-center gap-2 border bg-card px-3 py-2 text-sm">
+            <div className="flex min-w-0 items-center gap-2 border bg-card px-3 py-2 text-sm rounded-xl">
               <ListChecks
                 aria-hidden="true"
                 className="size-4 shrink-0 text-muted-foreground"
@@ -348,7 +348,6 @@ function SoulWinningPage() {
                     onClick={() => setOpen(b.id)}
                     className="flex min-h-15 w-full min-w-0 items-center gap-3 px-3.5 py-2 text-left hover:bg-muted/50"
                   >
-                    <GenderBar gender={b.gender} />
                     <span className="flex min-w-0 flex-1 flex-col gap-1">
                       <span className="truncate text-[15px] font-medium">
                         {b.name}
@@ -375,7 +374,7 @@ function SoulWinningPage() {
                 ))}
               </Group>
               {/* Wide screens: v2's table, a column per lesson. */}
-              <div className="overflow-x-auto border bg-card max-lg:hidden dark:border-transparent">
+              <div className="overflow-x-auto border bg-card max-lg:hidden dark:border-transparent rounded-xl">
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="text-left text-xs text-muted-foreground">

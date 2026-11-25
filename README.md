@@ -96,7 +96,7 @@ GitHub Actions deploys (`.github/workflows/deploy.yml`), not Vercel's Git
 integration (`vercel.json` turns that off so nothing deploys twice). On a
 push to `main` or `development` it runs the format check, lint, type
 check and tests, applies `migrations/` to that environment's database,
-then builds with `vercel build` (Nitro picks the Vercel preset) and
+then builds with `vercel build` (with `NITRO_PRESET=vercel`) and
 deploys the prebuilt output.
 
 Set up once:

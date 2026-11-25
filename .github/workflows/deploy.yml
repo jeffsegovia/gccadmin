@@ -88,8 +88,13 @@ jobs:
       - name: Pull Vercel settings and environment variables
         run: pnpm dlx vercel@latest pull --yes --environment=$VERCEL_ENV --token=${{ secrets.VERCEL_TOKEN }}
 
+      # Nitro doesn't detect Vercel under `vercel build` in Actions, so the
+      # preset is named: it writes .vercel/output (the server function and
+      # static files), which `vercel deploy --prebuilt` uploads.
       - name: Build
         run: pnpm dlx vercel@latest build ${{ github.ref_name == 'main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NITRO_PRESET: vercel
 
       - name: Deploy to production
         if: github.ref_name == 'main'

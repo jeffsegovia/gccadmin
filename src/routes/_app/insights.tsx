@@ -6,7 +6,14 @@ import { Segmented } from '@/components/ui/segmented'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CELL_STATUS, CHURCH_STATUS, MEMBER_TYPE } from '@/lib/labels'
 import { shortDay } from '@/lib/dates'
-import { getInsights } from '@/server/insights/insights.functions'
+import {
+  getInsights,
+  getReportsFiled,
+} from '@/server/insights/insights.functions'
+import { ReportsFiled } from '@/components/insights/reports-filed'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
+import type { ReportRange } from '@/lib/cell-reports/schema'
 import { getSummaryStatus } from '@/server/email/emails.functions'
 import { SummaryEmail } from '@/components/insights/summary-email'
 import type { Kind } from '@/server/insights/insights.functions'
@@ -15,14 +22,17 @@ export const Route = createFileRoute('/_app/insights')({
   validateSearch: z.object({
     period: z.enum(['weeks', 'months']).optional(),
     mine: z.boolean().optional(),
+    /** Reports filed's date range (v2's Cell Groups card). */
+    filed: z.enum(REPORT_RANGES).optional(),
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
-    const [insights, summary] = await Promise.all([
-      getInsights({ data: deps }),
+    const [insights, filed, summary] = await Promise.all([
+      getInsights({ data: { period: deps.period, mine: deps.mine } }),
+      getReportsFiled({ data: { range: deps.filed, mine: deps.mine } }),
       getSummaryStatus(),
     ])
-    return { ...insights, summary }
+    return { ...insights, filed, summary }
   },
   // Rendered in the browser: the page shell shows at once with a
   // skeleton, and the summary (cached two minutes on the server and the
@@ -47,12 +57,6 @@ const KIND_COLOR: Record<Kind, string> = {
   soulWinning: 'var(--series-3)',
   consolidation: 'var(--series-4)',
 }
-const RANGES = [
-  ['this_week', 'This week'],
-  ['last_week', 'Last week'],
-  ['this_month', 'This month'],
-  ['last_month', 'Last month'],
-] as const
 const KINDS = Object.keys(KIND_LABEL) as Array<Kind>
 
 function monthName(day: string) {
@@ -161,69 +165,31 @@ function InsightsPage() {
         </Section>
       </div>
 
-      <Section title="Reports filed">
-        <div className="border bg-card dark:border-transparent rounded-xl">
-          <table className="w-full table-fixed border-collapse text-[13px] sm:text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground">
-                <th
-                  scope="col"
-                  className="w-[36%] px-3 py-2.5 font-medium sm:px-4"
-                >
-                  Report
-                </th>
-                {RANGES.map(([k, l]) => (
-                  <th
-                    key={k}
-                    scope="col"
-                    className="px-1.5 py-2.5 text-right font-medium sm:px-3"
-                  >
-                    {l}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {KINDS.map((kind) => (
-                <tr key={kind} className="border-t">
-                  <th scope="row" className="px-4 py-2.5 text-left font-medium">
-                    <span className="flex items-start gap-2 sm:items-center">
-                      <span
-                        aria-hidden="true"
-                        className="h-0.5 w-3 shrink-0"
-                        style={{ background: KIND_COLOR[kind] }}
-                      />
-                      <span className="min-w-0 leading-tight">
-                        {KIND_LABEL[kind]}
-                      </span>
-                    </span>
-                  </th>
-                  {RANGES.map(([k]) => (
-                    <td
-                      key={k}
-                      className="numeric px-1.5 py-2.5 text-right sm:px-3"
-                    >
-                      {data.tallies[k][kind]}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-              <tr className="border-t text-muted-foreground">
-                <th scope="row" className="px-4 py-2.5 text-left font-medium">
-                  All reports
-                </th>
-                {RANGES.map(([k]) => (
-                  <td
-                    key={k}
-                    className="numeric px-1.5 py-2.5 text-right font-medium text-foreground sm:px-3"
-                  >
-                    {KINDS.reduce((a, kind) => a + data.tallies[k][kind], 0)}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <Section
+        title="Reports filed"
+        action={
+          <NativeSelect
+            size="sm"
+            value={search.filed ?? 'this_week'}
+            onChange={(e) =>
+              set({
+                filed:
+                  e.target.value === 'this_week'
+                    ? undefined
+                    : (e.target.value as ReportRange),
+              })
+            }
+            aria-label="Date range"
+          >
+            {REPORT_RANGES.filter((r) => r !== 'all').map((r) => (
+              <NativeSelectOption key={r} value={r}>
+                {RANGE_LABEL[r]}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        }
+      >
+        <ReportsFiled data={data.filed} />
         {data.summary && <SummaryEmail status={data.summary} />}
       </Section>
 

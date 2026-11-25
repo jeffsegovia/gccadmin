@@ -26,8 +26,16 @@ describe('cell report form', () => {
     expect(cellReportSchema.safeParse({ ...base, lessonId: 'x' }).success).toBe(
       true,
     )
+    // A custom lesson names its scripture, as in v2.
     expect(
       cellReportSchema.safeParse({ ...base, lessonTitle: 'Grace' }).success,
+    ).toBe(false)
+    expect(
+      cellReportSchema.safeParse({
+        ...base,
+        lessonTitle: 'Grace',
+        scriptureReferences: ['Ephesians 2:8-9'],
+      }).success,
     ).toBe(true)
   })
   it('needs someone who came', () => {

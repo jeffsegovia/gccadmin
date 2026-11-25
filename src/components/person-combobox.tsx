@@ -13,6 +13,8 @@ export function PersonCombobox({
   value,
   onChange,
   placeholder = 'Choose someone',
+  searchPlaceholder = 'Search names',
+  emptyText = 'Nobody by that name.',
   noneLabel,
   invalid,
   disabled,
@@ -24,6 +26,10 @@ export function PersonCombobox({
   value: string | null | undefined
   onChange: (id: string) => void
   placeholder?: string
+  /** The search box at the top of the list ("Search lessons"). */
+  searchPlaceholder?: string
+  /** Shown when the search matches nothing. */
+  emptyText?: string
   /** Offers "nobody" first, for optional fields and filters. */
   noneLabel?: string
   invalid?: boolean
@@ -78,7 +84,7 @@ export function PersonCombobox({
           sideOffset={4}
         >
           <Combobox.Popup
-            aria-label="People"
+            aria-label={ariaLabel ?? 'Choices'}
             className="flex max-h-[min(22rem,var(--available-height))] w-(--anchor-width) min-w-64 origin-(--transform-origin) flex-col overflow-hidden border bg-popover text-popover-foreground shadow-2xl outline-none"
           >
             <div className="flex items-center gap-2 border-b px-3">
@@ -87,13 +93,13 @@ export function PersonCombobox({
                 className="size-4 shrink-0 text-muted-foreground"
               />
               <Combobox.Input
-                placeholder="Search names"
+                placeholder={searchPlaceholder}
                 className="h-11 w-full min-w-0 bg-transparent text-base outline-none placeholder:text-muted-foreground"
               />
             </div>
             <Combobox.Empty>
               <p className="px-3 py-4 text-sm text-muted-foreground">
-                Nobody by that name.
+                {emptyText}
               </p>
             </Combobox.Empty>
             <Combobox.List className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1 empty:p-0">

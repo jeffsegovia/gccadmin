@@ -33,13 +33,19 @@ const TABS = [
 
 function ResourcesLayout() {
   const state = Route.useLoaderData()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
+  // A folder page belongs to the tab it was opened from (?from=).
+  const inFolder = /^\/resources\/(?!preachings|others)[^/]+/.test(pathname)
+  const fromPreachings =
+    inFolder && (search as { from?: string }).from === 'preachings'
   const onTab = (t: (typeof TABS)[number]) =>
-    'exact' in t
-      ? pathname === t.to ||
-        pathname === `${t.to}/` ||
-        /^\/resources\/(?!preachings|others)[^/]+/.test(pathname)
-      : pathname.startsWith(t.to)
+    t.to === '/resources/preachings'
+      ? pathname.startsWith(t.to) || fromPreachings
+      : 'exact' in t
+        ? pathname === t.to ||
+          pathname === `${t.to}/` ||
+          (inFolder && !fromPreachings)
+        : pathname.startsWith(t.to)
   return (
     <div className="min-h-dvh">
       <header className="dark sticky top-0 z-30 border-b bg-background text-foreground">

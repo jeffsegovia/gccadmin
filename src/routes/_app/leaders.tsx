@@ -169,6 +169,8 @@ function LinkDialog({
               value={clerkId}
               onChange={setClerkId}
               placeholder="Choose their account"
+              searchPlaceholder="Search accounts"
+              emptyText="No account by that name or email."
             />
           </FormField>
           <DialogActions>

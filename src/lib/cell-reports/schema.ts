@@ -29,9 +29,20 @@ export const cellReportSchema = z
     work: z.array(z.string().trim().min(1).max(200)).max(10).default([]),
   })
   .refine((v) => !!v.lessonId || !!v.lessonTitle?.trim(), {
-    message: 'Choose a lesson or type your own',
+    message: 'Lesson is required',
     path: ['lessonId'],
   })
+  // A custom lesson names its scripture (v2's rule); a GCC lesson has its own.
+  .refine(
+    (v) =>
+      !!v.lessonId ||
+      !v.lessonTitle?.trim() ||
+      (v.scriptureReferences ?? []).length > 0,
+    {
+      message: 'Add at least one scripture reference',
+      path: ['scriptureReferences'],
+    },
+  )
 export type CellReportInput = z.input<typeof cellReportSchema>
 
 export const REPORT_RANGES = [

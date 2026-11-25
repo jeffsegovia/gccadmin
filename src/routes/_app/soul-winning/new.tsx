@@ -178,7 +178,9 @@ function NewSessionPage() {
             people={lessonPeople}
             value={lessonId}
             onChange={setLessonId}
-            placeholder="Choose a lesson"
+            placeholder="Select lesson"
+            searchPlaceholder="Search lessons"
+            emptyText="No lesson by that name."
           />
         </FormField>
         <FormField label="Assistant leader" optional>

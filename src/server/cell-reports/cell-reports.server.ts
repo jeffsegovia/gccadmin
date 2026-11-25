@@ -219,6 +219,7 @@ export async function attendeeChoices(opts: {
       gender: disciples.gender,
       cellStatus: disciples.cellStatus,
       isMyPrimary: disciples.isMyPrimary,
+      isPrimary: disciples.isPrimary,
     })
     .from(disciples)
     .where(
@@ -234,6 +235,10 @@ export async function lessonChoices() {
       title: lessons.title,
       seriesId: lessonSeries.id,
       seriesTitle: lessonSeries.title,
+      scriptureReferences: lessons.scriptureReferences,
+      // The pickers sort by date added, newest first (as in v2).
+      addedAt: sql<string>`to_char(${lessons.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.MS')`,
+      seriesAddedAt: sql<string>`to_char(${lessonSeries.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.MS')`,
     })
     .from(lessons)
     .innerJoin(lessonSeries, eq(lessonSeries.id, lessons.lessonSeriesId))

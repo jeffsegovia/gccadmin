@@ -9,11 +9,14 @@ export type TrendSeries = {
   values: ReadonlyArray<number>
 }
 
-const H = 220
-const PAD = { top: 16, right: 92, bottom: 26, left: 30 }
+const H = 230
+const PAD = { top: 18, right: 8, bottom: 26, left: 30 }
+const GAP = 2
 
-/** Lines over time, one per series: 2px lines, a legend above, each line
- * named at its end, a crosshair with a tooltip on hover or tap. */
+/** Reports over time as stacked bars: one bar per period, its height the
+ * total, split by series from the baseline up in a fixed order. A legend
+ * above; only the latest bar carries its total; hovering or tapping a
+ * period shows each series and the total. */
 export function TrendChart({
   labels,
   series,
@@ -37,26 +40,22 @@ export function TrendChart({
   }, [])
 
   const n = labels.length
-  const max = Math.max(1, ...series.flatMap((s) => s.values))
-  const top = Math.max(2, Math.ceil(max / 2) * 2)
+  const totals = labels.map((_, i) =>
+    series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0),
+  )
+  const max = Math.max(1, ...totals)
+  // A rounded top so the gridlines land on whole numbers.
+  const step = max <= 4 ? 1 : max <= 10 ? 2 : max <= 40 ? 5 : 10
+  const top = Math.ceil(max / step) * step
+  const ticks = [0, Math.round(top / 2), top]
   const plotW = width - PAD.left - PAD.right
   const plotH = H - PAD.top - PAD.bottom
-  const x = (i: number) =>
-    PAD.left + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW)
+  const band = plotW / Math.max(1, n)
+  const barW = Math.max(6, Math.min(44, band * 0.62))
+  const cx = (i: number) => PAD.left + band * i + band / 2
   const y = (v: number) => PAD.top + plotH - (v / top) * plotH
-  const ticks = [0, top / 2, top]
+  const every = Math.max(1, Math.ceil(56 / band))
 
-  // End labels, nudged apart so they never overlap.
-  const ends = series
-    .map((s) => ({ s, y: y(s.values[n - 1] ?? 0) }))
-    .sort((a, b) => a.y - b.y)
-  for (let i = 1; i < ends.length; i++)
-    if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13
-
-  const every = Math.max(
-    1,
-    Math.ceil(64 / Math.max(1, plotW / Math.max(1, n - 1))),
-  )
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <ul
@@ -67,7 +66,7 @@ export function TrendChart({
           <li key={s.key} className="flex items-center gap-1.5">
             <span
               aria-hidden="true"
-              className="h-0.5 w-4"
+              className="size-2.5 shrink-0"
               style={{ background: s.color }}
             />
             {s.label}
@@ -81,12 +80,6 @@ export function TrendChart({
           width={width}
           height={H}
           className="block touch-none"
-          onPointerMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect()
-            const px = e.clientX - rect.left
-            const i = Math.round(((px - PAD.left) / plotW) * (n - 1))
-            setHover(Math.min(n - 1, Math.max(0, i)))
-          }}
           onPointerLeave={() => setHover(null)}
         >
           {ticks.map((t) => (
@@ -96,7 +89,9 @@ export function TrendChart({
                 x2={PAD.left + plotW}
                 y1={y(t)}
                 y2={y(t)}
-                className="stroke-border"
+                className={
+                  t === 0 ? 'stroke-muted-foreground/50' : 'stroke-border'
+                }
                 strokeWidth={1}
               />
               <text
@@ -109,87 +104,91 @@ export function TrendChart({
               </text>
             </g>
           ))}
-          {labels.map((l, i) =>
-            i % every === (n - 1) % every ? (
-              <text
-                key={l}
-                x={x(i)}
-                y={H - 6}
-                textAnchor="middle"
-                className="fill-muted-foreground text-[11px]"
-              >
-                {l}
-              </text>
-            ) : null,
-          )}
-          {hover !== null && (
-            <line
-              x1={x(hover)}
-              x2={x(hover)}
-              y1={PAD.top}
-              y2={PAD.top + plotH}
-              className="stroke-muted-foreground"
-              strokeWidth={1}
-              strokeDasharray="3 3"
-            />
-          )}
-          {series.map((s) => (
-            <g key={s.key}>
-              <polyline
-                fill="none"
-                stroke={s.color}
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ')}
-              />
-              {hover !== null && (
-                <circle
-                  cx={x(hover)}
-                  cy={y(s.values[hover] ?? 0)}
-                  r={4}
-                  fill={s.color}
-                  className="stroke-card"
-                  strokeWidth={2}
+          {labels.map((l, i) => {
+            const x0 = cx(i) - barW / 2
+            let base = y(0)
+            return (
+              <g key={l} opacity={hover === null || hover === i ? 1 : 0.45}>
+                {series.map((s) => {
+                  const v = s.values[i] ?? 0
+                  if (!v) return null
+                  const h = (v / top) * plotH
+                  base -= h
+                  // A gap of the card's color between stacked segments.
+                  const drawn = Math.max(1, h - GAP)
+                  return (
+                    <rect
+                      key={s.key}
+                      x={x0}
+                      y={base + (h - drawn)}
+                      width={barW}
+                      height={drawn}
+                      fill={s.color}
+                    />
+                  )
+                })}
+                {i === n - 1 && totals[i] > 0 && (
+                  <text
+                    x={cx(i)}
+                    y={y(totals[i]) - 6}
+                    textAnchor="middle"
+                    className="fill-foreground text-[11px] font-medium"
+                  >
+                    {totals[i]}
+                  </text>
+                )}
+                {i % every === (n - 1) % every && (
+                  <text
+                    x={cx(i)}
+                    y={H - 6}
+                    textAnchor="middle"
+                    className="fill-muted-foreground text-[11px]"
+                  >
+                    {l}
+                  </text>
+                )}
+                {/* The whole column is the hover target, wider than the bar. */}
+                <rect
+                  x={PAD.left + band * i}
+                  y={PAD.top}
+                  width={band}
+                  height={plotH}
+                  fill="transparent"
+                  onPointerEnter={() => setHover(i)}
+                  onPointerDown={() => setHover(i)}
                 />
-              )}
-            </g>
-          ))}
-          {ends.map(({ s, y: ly }) => (
-            <text
-              key={s.key}
-              x={PAD.left + plotW + 8}
-              y={ly + 4}
-              className="fill-foreground text-[11px]"
-            >
-              {s.label} {s.values[n - 1] ?? 0}
-            </text>
-          ))}
+              </g>
+            )
+          })}
         </svg>
         {hover !== null && (
           <div
             role="status"
             className={cn(
-              'pointer-events-none absolute top-1 z-10 flex min-w-36 flex-col gap-1 border bg-popover px-3 py-2 text-xs shadow-lg',
+              'pointer-events-none absolute top-1 z-10 flex min-w-40 flex-col gap-1 border bg-popover px-3 py-2 text-xs shadow-lg',
             )}
             style={
-              x(hover) > width / 2
-                ? { right: width - x(hover) + 10 }
-                : { left: x(hover) + 10 }
+              cx(hover) > width / 2
+                ? { right: width - cx(hover) + barW / 2 + 8 }
+                : { left: cx(hover) + barW / 2 + 8 }
             }
           >
             <span className="font-medium">{labels[hover]}</span>
-            {series.map((s) => (
+            {[...series].reverse().map((s) => (
               <span key={s.key} className="flex items-center gap-2">
                 <span
                   aria-hidden="true"
-                  className="size-2 shrink-0 rounded-full"
+                  className="size-2 shrink-0"
                   style={{ background: s.color }}
                 />
                 <span className="flex-1">{s.label}</span>
                 <span className="numeric font-medium">{s.values[hover]}</span>
               </span>
             ))}
+            <span className="mt-0.5 flex items-center gap-2 border-t pt-1">
+              <span className="flex-1 text-muted-foreground">Total</span>
+              <span className="numeric font-medium">{totals[hover]}</span>
+            </span>
           </div>
         )}
       </div>

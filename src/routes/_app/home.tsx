@@ -1,12 +1,14 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { Cake, CalendarCheck } from 'lucide-react'
+import { CalendarCheck } from 'lucide-react'
 import { cn } from 'cn'
 import { Page, Section } from '@/components/shell/page'
 import { RemindButton } from '@/components/remind-button'
+import { BirthdayList } from '@/components/birthday-list'
+import { CountBars } from '@/components/insights/trend-chart'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
-import { CELL_TYPE } from '@/lib/labels'
+import { CELL_TYPE, CHURCH_STATUS } from '@/lib/labels'
 import {
   longDay,
   manilaDay,
@@ -185,46 +187,7 @@ function HomePage() {
           </section>
 
           <Section title={`Birthdays this week · ${data.birthdays.length}`}>
-            {data.birthdays.length === 0 ? (
-              <p className="border border-dashed px-4 py-5 text-center text-sm text-muted-foreground">
-                No birthdays this week.
-              </p>
-            ) : (
-              <Group>
-                {data.birthdays.map((b) => (
-                  <Link
-                    key={b.id}
-                    to="/disciples/$discipleId"
-                    params={{ discipleId: b.id }}
-                    className="flex min-h-12 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
-                  >
-                    <Cake
-                      aria-hidden="true"
-                      className={cn(
-                        'size-4 shrink-0',
-                        b.date === data.today
-                          ? 'text-primary'
-                          : 'text-muted-foreground',
-                      )}
-                    />
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate font-medium">{b.name}</span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {longDay(b.date).replace(/, \d{4}$/, '')} · turns{' '}
-                        {b.turns}
-                      </span>
-                    </span>
-                    {b.date === data.today ? (
-                      <Pill tone="primary">Today</Pill>
-                    ) : b.date < data.today ? (
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        Passed
-                      </span>
-                    ) : null}
-                  </Link>
-                ))}
-              </Group>
-            )}
+            <BirthdayList birthdays={data.birthdays} today={data.today} />
           </Section>
 
           {data.notReported.length > 0 && (
@@ -266,42 +229,26 @@ function HomePage() {
           )}
 
           {statusTotal > 0 && (
-            <Section title="Disciples by church status">
-              <div className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent">
-                <div
-                  className="flex h-3 gap-0.5"
-                  role="img"
-                  aria-label={`Regular ${status.REGULAR ?? 0}, ACS ${status.ACS ?? 0}, NACS ${status.NACS ?? 0}`}
+            <Section
+              title="Disciples by church status"
+              action={
+                <Link
+                  to="/insights"
+                  className="text-[13px] font-medium text-primary"
                 >
-                  <span
-                    className="bg-covered"
-                    style={{ flexGrow: status.REGULAR ?? 0 }}
-                  />
-                  <span
-                    className="bg-primary"
-                    style={{ flexGrow: status.ACS ?? 0 }}
-                  />
-                  <span
-                    className="bg-chart-4"
-                    style={{ flexGrow: status.NACS ?? 0 }}
-                  />
-                </div>
-                {(
-                  [
-                    ['REGULAR', 'Regular', 'bg-covered'],
-                    ['ACS', 'ACS', 'bg-primary'],
-                    ['NACS', 'NACS', 'bg-chart-4'],
-                  ] as const
-                ).map(([k, label, color]) => (
-                  <div key={k} className="flex items-center gap-2 text-[13px]">
-                    <span
-                      aria-hidden="true"
-                      className={cn('size-2.5', color)}
-                    />
-                    <span className="flex-1">{label}</span>
-                    <span className="numeric">{status[k] ?? 0}</span>
-                  </div>
-                ))}
+                  See insights
+                </Link>
+              }
+            >
+              {/* The same bars as Insights, so the numbers read alike. */}
+              <div className="border bg-card p-4 dark:border-transparent">
+                <CountBars
+                  total={statusTotal}
+                  rows={(['REGULAR', 'ACS', 'NACS'] as const).map((k) => ({
+                    label: CHURCH_STATUS[k],
+                    n: status[k] ?? 0,
+                  }))}
+                />
               </div>
             </Section>
           )}

@@ -26,7 +26,7 @@ export const SAMPLES = [
     name: 'Weekly nudge',
     when: 'Saturdays, 5 PM',
     to: 'Primary leaders with no cell report this week yet',
-    email: weeklyNudgeEmail(ctx, { name: 'Mark Dela Cruz', week: '24–30 Nov' }),
+    email: weeklyNudgeEmail(ctx, { name: 'Mark Dela Cruz', week: 'Nov 24–30' }),
   },
   {
     key: 'overdue',
@@ -36,7 +36,7 @@ export const SAMPLES = [
     email: overdueEmail(ctx, {
       name: 'Paolo Santos',
       days: 16,
-      last: 'Sun, 9 Nov',
+      last: 'Sun, Nov 9',
     }),
   },
   {
@@ -45,7 +45,7 @@ export const SAMPLES = [
     when: 'Mondays, 7 AM',
     to: 'Admins and pastors',
     email: weeklySummaryEmail(ctx, {
-      week: '17–23 Nov',
+      week: 'Nov 17–23',
       reported: 12,
       leaders: 15,
       notReported: [
@@ -67,9 +67,9 @@ export const SAMPLES = [
     email: birthdaysEmail(ctx, {
       name: 'Mark Dela Cruz',
       people: [
-        { name: 'Joshua Reyes', day: 'Tue, 25 Nov', turns: 24 },
-        { name: 'Anna Cruz', day: 'Fri, 28 Nov', turns: 31 },
-        { name: 'Liza Bautista', day: 'Sun, 30 Nov', turns: null },
+        { name: 'Joshua Reyes', day: 'Tue, Nov 25', turns: 24 },
+        { name: 'Anna Cruz', day: 'Fri, Nov 28', turns: 31 },
+        { name: 'Liza Bautista', day: 'Sun, Nov 30', turns: null },
       ],
     }),
   },
@@ -81,7 +81,7 @@ export const SAMPLES = [
     email: attendanceOpenEmail(ctx, {
       id: 'sample',
       title: 'Sunday service',
-      date: 'Sun, 23 Nov',
+      date: 'Sun, Nov 23',
       marked: 148,
     }),
   },
@@ -94,7 +94,7 @@ export const SAMPLES = [
       leader: 'Mark Dela Cruz',
       disciple: 'Joshua Reyes',
       type: 'Discipleship',
-      date: 'Tue, 25 Nov, 7:00 PM',
+      date: 'Tue, Nov 25 · 7:00 PM',
       venue: 'Reyes residence',
       lesson: 'The Power of Prayer',
       attendees: ['Joshua Reyes', 'Carlo Mendoza', 'Rey Villanueva'],

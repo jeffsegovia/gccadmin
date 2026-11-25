@@ -304,14 +304,12 @@ async function main() {
         assistantLeaderId: joshua,
       })
       .returning()
-    await db
-      .insert(s.soulWinningNewBelievers)
-      .values(
-        (i === 0 ? won : won.slice(0, 1)).map((id) => ({
-          newBelieverId: id,
-          reportId: r.id,
-        })),
-      )
+    await db.insert(s.soulWinningNewBelievers).values(
+      (i === 0 ? won : won.slice(0, 1)).map((id) => ({
+        newBelieverId: id,
+        reportId: r.id,
+      })),
+    )
   }
 
   // Joshua's portal link, for trying /me/<token>.

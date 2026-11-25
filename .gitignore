@@ -1,0 +1,12 @@
+node_modules
+dist
+.output
+.tanstack
+.wrangler
+.dev.vars*
+.env
+.env.*
+!.env.template
+*.local
+.DS_Store
+.vercel

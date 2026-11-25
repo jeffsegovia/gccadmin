@@ -85,8 +85,6 @@ export const Route = createFileRoute('/_focus/attendance/$attendanceId')({
   component: SheetPage,
 })
 
-type Filter = 'all' | 'men' | 'women' | 'unmarked'
-
 function StatusBadge({
   status,
   waiting,
@@ -215,8 +213,11 @@ function SheetPage() {
   const sync = useAttendanceSync(sheet, refresh)
   const locked = service.isLocked || sync.status === 'locked'
 
-  const [tab, setTab] = useState<'members' | 'guests'>('members')
-  const [filter, setFilter] = useState<Filter>('all')
+  // v2's views of the sheet.
+  const [tab, setTab] = useState<
+    'leaders' | 'male' | 'female' | 'returnees' | 'newcomers'
+  >('leaders')
+  const [unmarkedOnly, setUnmarkedOnly] = useState(false)
   const [query, setQuery] = useState('')
   const [addingGuest, setAddingGuest] = useState(false)
   const [editingGuest, setEditingGuest] = useState<GuestInput | null>(null)
@@ -230,9 +231,9 @@ function SheetPage() {
     const q = query.trim().toLowerCase()
     const keep = (m: Sheet['members'][number]) => {
       if (q && !m.name.toLowerCase().includes(q)) return false
-      if (filter === 'men') return m.gender === 'MALE'
-      if (filter === 'women') return m.gender === 'FEMALE'
-      if (filter === 'unmarked') return !sync.present('member', m.id)
+      if (tab === 'male' && m.gender !== 'MALE') return false
+      if (tab === 'female' && m.gender !== 'FEMALE') return false
+      if (unmarkedOnly) return !sync.present('member', m.id)
       return true
     }
     const leaders = sheet.members.filter((m) => m.isPrimary)
@@ -250,12 +251,31 @@ function SheetPage() {
       entry.people.push(m)
       byLeader.set(key, entry)
     }
-    const all = [
-      { key: 'leaders', name: 'Primary leaders', people: leaders },
-      ...[...byLeader.entries()]
-        .map(([key, v]) => ({ key, ...v }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    ]
+    // Leaders: the primary leaders, men then women (v2's Leaders view).
+    // Male and Female: everyone else by network, with each subtotal.
+    const all =
+      tab === 'leaders'
+        ? [
+            {
+              key: 'men',
+              name: 'Male leaders',
+              people: leaders.filter((m) => m.gender === 'MALE'),
+            },
+            {
+              key: 'women',
+              name: 'Female leaders',
+              people: leaders.filter((m) => m.gender === 'FEMALE'),
+            },
+          ]
+        : [...byLeader.entries()]
+            .map(([key, v]) => ({
+              key,
+              ...v,
+              people: v.people.filter((m) =>
+                tab === 'male' ? m.gender === 'MALE' : m.gender === 'FEMALE',
+              ),
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name))
     return all
       .map((g) => ({
         ...g,
@@ -264,7 +284,7 @@ function SheetPage() {
         shown: g.people.filter(keep),
       }))
       .filter((g) => g.shown.length > 0)
-  }, [sheet, query, filter, sync])
+  }, [sheet, query, tab, unmarkedOnly, sync])
 
   const presentMembers = sheet.members.filter((m) =>
     sync.present('member', m.id),
@@ -369,31 +389,19 @@ function SheetPage() {
 
   const membersPanel = (
     <section aria-label="Members" className="flex min-w-0 flex-col gap-3">
-      <div className="flex min-w-0 flex-wrap gap-1.5">
-        {(
-          [
-            ['all', 'All'],
-            ['men', 'Men'],
-            ['women', 'Women'],
-            ['unmarked', 'Not marked'],
-          ] as const
-        ).map(([value, text]) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={filter === value}
-            onClick={() => setFilter(value)}
-            className={cn(
-              'h-8 border px-3 text-[13px] font-medium rounded-lg',
-              filter === value
-                ? 'border-primary/50 bg-primary/15 text-primary'
-                : 'border-border hover:bg-muted',
-            )}
-          >
-            {text}
-          </button>
-        ))}
-      </div>
+      <button
+        type="button"
+        aria-pressed={unmarkedOnly}
+        onClick={() => setUnmarkedOnly(!unmarkedOnly)}
+        className={cn(
+          'h-8 w-fit rounded-lg border px-3 text-[13px] font-medium',
+          unmarkedOnly
+            ? 'border-primary/50 bg-primary/15 text-primary'
+            : 'border-border hover:bg-muted',
+        )}
+      >
+        Not marked only
+      </button>
       {groups.length === 0 && (
         <p className="px-1 py-6 text-center text-sm text-muted-foreground">
           {query ? 'Nobody by that name.' : 'Everyone here is marked.'}
@@ -406,7 +414,7 @@ function SheetPage() {
               {g.name}
             </h3>
             <span className="shrink-0 text-xs text-muted-foreground numeric">
-              {g.here} of {g.total}
+              Subtotal {g.here} of {g.total}
             </span>
           </div>
           <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
@@ -426,30 +434,80 @@ function SheetPage() {
     </section>
   )
 
-  const guestsPanel = (
-    <section aria-label="Guests" className="flex min-w-0 flex-col gap-4">
+  // v2's New Comers: today's first-timers, and adding one.
+  const newToday = guestsHere.filter((g) => g.visit === 1)
+  // v2's Returnees: guests back today, and earlier guests to tick.
+  const backToday = guestsHere.filter((g) => g.visit > 1)
+  const newcomersPanel = (
+    <section aria-label="New Comers" className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex items-baseline justify-between gap-3 px-0.5">
           <h3 className="text-[13px] font-medium text-muted-foreground">
-            Here today · {guestsHere.length}
+            First-timers today · {newToday.length}
           </h3>
           {!locked && (
             <button
               type="button"
               onClick={() => setAddingGuest(true)}
-              className="text-[13px] font-medium text-primary max-md:hidden"
+              className="text-[13px] font-medium text-primary"
             >
               Add a first-timer
             </button>
           )}
         </div>
-        {guestsHere.length === 0 ? (
+        {newToday.length === 0 ? (
           <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
-            No guests marked yet.
+            No first-timers marked yet.
           </p>
         ) : (
           <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
-            {guestsHere.map((g) => (
+            {newToday.map((g) => (
+              <Mark
+                key={g.id}
+                on
+                name={g.name}
+                sub={g.sub}
+                disabled={locked}
+                onToggle={() => sync.toggle('guest', g.id)}
+                end={
+                  <div className="flex shrink-0 items-center gap-1 pr-2">
+                    <Pill tone={g.visit === 1 ? 'caution' : 'covered'}>
+                      {visitLabel(g.visit)}
+                    </Pill>
+                    {g.editable && !locked && (
+                      <button
+                        type="button"
+                        aria-label={`Edit ${g.name}`}
+                        onClick={() => setEditingGuest(g.editable!)}
+                        className="grid size-10 place-items-center text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </button>
+                    )}
+                  </div>
+                }
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+  const returneesPanel = (
+    <section aria-label="Returnees" className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex items-baseline justify-between gap-3 px-0.5">
+          <h3 className="text-[13px] font-medium text-muted-foreground">
+            Back today · {backToday.length}
+          </h3>
+        </div>
+        {backToday.length === 0 ? (
+          <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
+            No returnees marked yet.
+          </p>
+        ) : (
+          <div className="flex flex-col border bg-card dark:border-transparent [&>*+*]:border-t rounded-xl overflow-hidden">
+            {backToday.map((g) => (
               <Mark
                 key={g.id}
                 on
@@ -621,14 +679,10 @@ function SheetPage() {
         <div className="grid grid-cols-3 border bg-card md:grid-cols-5 [&>*+*]:border-l rounded-xl overflow-hidden">
           {[
             ['Present', presentMembers.length + guestsHere.length, ''],
-            ['Men', men, 'text-men'],
-            ['Women', women, 'text-women'],
-            ['First-timers', firstTimers, 'text-caution max-md:hidden'],
-            [
-              'Returning',
-              guestsHere.length - firstTimers,
-              'text-covered max-md:hidden',
-            ],
+            ['Male', men, ''],
+            ['Female', women, ''],
+            ['New Comers', firstTimers, 'max-md:hidden'],
+            ['Returnees', guestsHere.length - firstTimers, 'max-md:hidden'],
           ].map(([name, value, tone]) => (
             <div
               key={name as string}
@@ -652,15 +706,32 @@ function SheetPage() {
           ))}
         </div>
 
+        {/* v2's attendance statistics: who's here by member type
+            (members, and guests whose member type is known). */}
+        <p className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 px-0.5 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">By Member Type</span>
+          {(['KIDS', 'YOUTH', 'YOUNGPRO', 'MEN', 'WOMEN'] as const).map((t) => (
+            <span key={t} className="numeric whitespace-nowrap">
+              {MEMBER_TYPE[t]}{' '}
+              {presentMembers.filter((m) => m.memberType === t).length +
+                guestsHere.filter((g) => g.editable?.memberType === t).length}
+            </span>
+          ))}
+        </p>
+
         <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
           <Segmented
-            label="Who"
-            className="md:hidden"
+            label="View"
+            scroll
+            className="w-full md:w-auto md:min-w-[36rem]"
             value={tab}
             onChange={setTab}
             options={[
-              { value: 'members', label: `Members · ${presentMembers.length}` },
-              { value: 'guests', label: `Guests · ${guestsHere.length}` },
+              { value: 'leaders', label: 'Leaders' },
+              { value: 'male', label: 'Male' },
+              { value: 'female', label: 'Female' },
+              { value: 'returnees', label: 'Returnees' },
+              { value: 'newcomers', label: 'New Comers' },
             ]}
           />
           <div className="relative min-w-0 flex-1 md:max-w-sm">
@@ -679,13 +750,12 @@ function SheetPage() {
           </div>
         </div>
 
-        <div className="grid min-w-0 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:items-start">
-          <div className={cn('min-w-0', tab !== 'members' && 'max-md:hidden')}>
-            {membersPanel}
-          </div>
-          <div className={cn('min-w-0', tab !== 'guests' && 'max-md:hidden')}>
-            {guestsPanel}
-          </div>
+        <div className="min-w-0">
+          {tab === 'returnees'
+            ? returneesPanel
+            : tab === 'newcomers'
+              ? newcomersPanel
+              : membersPanel}
         </div>
       </main>
 

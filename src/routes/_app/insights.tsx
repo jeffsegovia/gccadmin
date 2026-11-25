@@ -275,9 +275,9 @@ function InsightsPage() {
         <div className="grid min-w-0 gap-4 lg:grid-cols-3">
           {(
             [
-              ['By group', d.memberType, MEMBER_TYPE],
-              ['By church status', d.churchStatus, CHURCH_STATUS],
-              ['By cell status', d.cellStatus, CELL_STATUS],
+              ['By Member Type', d.memberType, MEMBER_TYPE],
+              ['By Church Status', d.churchStatus, CHURCH_STATUS],
+              ['By Cell Status', d.cellStatus, CELL_STATUS],
             ] as const
           ).map(([title, rows, words]) => (
             <div
@@ -302,6 +302,7 @@ function InsightsPage() {
             </div>
           ))}
         </div>
+        <ChurchAttendanceByType rows={d.attendanceByType} />
       </Section>
     </Page>
   )
@@ -328,5 +329,69 @@ function InsightsSkeleton() {
         </div>
       </div>
     </Page>
+  )
+}
+
+const ATTENDED = [
+  ['nacs', 'Not yet attended (NACS)', 'bg-muted-foreground/45'],
+  ['acs', 'Attended (ACS)', 'bg-primary'],
+  ['regular', 'Regular', 'bg-covered'],
+] as const
+
+/** v2's Church Attendance By Member Type: each group's split of NACS,
+ * ACS and Regular, with the counts beside it. */
+function ChurchAttendanceByType({
+  rows,
+}: {
+  rows: ReadonlyArray<{
+    type: keyof typeof MEMBER_TYPE
+    nacs: number
+    acs: number
+    regular: number
+  }>
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 dark:border-transparent">
+      <h3 className="text-[13px] font-medium text-muted-foreground">
+        Church Attendance By Member Type
+      </h3>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        {ATTENDED.map(([k, label, color]) => (
+          <span key={k} className="flex items-center gap-1.5">
+            <span aria-hidden="true" className={`size-2 rounded-sm ${color}`} />
+            {label}
+          </span>
+        ))}
+      </div>
+      <ul className="flex flex-col gap-2.5">
+        {rows.map((r) => {
+          const total = r.nacs + r.acs + r.regular
+          return (
+            <li
+              key={r.type}
+              className="grid grid-cols-[minmax(0,5.5rem)_minmax(0,1fr)_auto] items-center gap-3 text-[13px]"
+              title={`${MEMBER_TYPE[r.type]}: NACS ${r.nacs}, ACS ${r.acs}, Regular ${r.regular}`}
+            >
+              <span className="truncate">{MEMBER_TYPE[r.type]}</span>
+              <span className="flex h-2.5 gap-px overflow-hidden rounded-full bg-muted">
+                {ATTENDED.map(([k, , color]) =>
+                  r[k] ? (
+                    <span
+                      key={k}
+                      className={color}
+                      style={{ flexGrow: r[k] }}
+                    />
+                  ) : null,
+                )}
+              </span>
+              <span className="numeric text-right whitespace-nowrap text-muted-foreground">
+                {r.nacs} · {r.acs} · {r.regular}
+                <span className="sr-only"> of {total}</span>
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }

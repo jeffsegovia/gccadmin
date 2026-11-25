@@ -12,6 +12,7 @@ export function Segmented<T extends string>({
   label,
   className,
   size = 'default',
+  scroll = false,
 }: {
   value: T
   onChange: (next: T) => void
@@ -19,6 +20,9 @@ export function Segmented<T extends string>({
   label: string
   className?: string
   size?: 'default' | 'sm'
+  /** Many options: each keeps its width and the track scrolls sideways
+   * on a narrow screen, instead of cutting words off. */
+  scroll?: boolean
 }) {
   const index = options.findIndex((o) => o.value === value)
   return (
@@ -30,6 +34,7 @@ export function Segmented<T extends string>({
       className={cn(
         'flex gap-0.5 rounded-lg border border-input bg-card p-[3px]',
         size === 'sm' ? 'h-8' : 'h-10',
+        scroll && 'scrollbar-none overflow-x-auto',
         className,
       )}
       onKeyDown={(e) => {
@@ -65,6 +70,7 @@ export function Segmented<T extends string>({
               'flex min-w-0 flex-1 items-center justify-center truncate rounded-md px-1.5 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
               size === 'sm' ? 'h-full text-xs' : 'h-full text-[13px]',
               Icon && 'w-9 flex-none [&_svg]:size-4',
+              scroll && 'flex-none px-3 whitespace-nowrap',
               on
                 ? 'bg-secondary text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',

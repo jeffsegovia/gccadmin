@@ -33,15 +33,21 @@ back or kept on purpose, with the reason.
 - [x] The banner on every page: "Gawa tayo lagi ng Cell Reports 🙏."
 - [x] New believer edit: Who handles this new believer?
 - [x] Users: Email verified column.
-- [ ] Attendance sheet views as v2: Leaders, Male, Female, Returnees, New
-      Comers, and the statistics card (by gender, by member type, usual
-      attendees + new and returnees).
-- [ ] Insights: v2's Cell Groups card with its date range (by type, with
-      assistant or by primary, change from the period before), Cell
-      Groups by Leaders (male and female leaders, Show breakdown), Church
-      Attendance By Member Type, Recent Cell Groups.
-- [ ] Lists that v2 paged and v3 capped (soul-winning sessions at 200,
-      new believers at 300): paged like v2, nothing hidden.
+- [x] Attendance sheet views as v2: Leaders (male and female leaders),
+      Male, Female (by network, with subtotals), Returnees, New Comers;
+      the statistics: present, male, female, new comers, returnees, and
+      by member type.
+- [x] Insights: v2's Cell Groups card with its date range (by kind,
+      change from the period before, with an assistant or by the
+      primary), Cell Groups by Leaders (male and female leaders, Show
+      breakdown), Church Attendance By Member Type. Recent Cell Groups is
+      Home's Cell groups this week (All reports for the rest).
+- [x] Lists that v2 paged and v3 capped (soul-winning sessions, new
+      believers): paged, nothing hidden.
+- [x] Soul winning, Consolidation and New Believers as tabs (v2's pages),
+      v2's sessions table.
+- [x] Cell report PDF as v2's template, with a preview.
+- [x] Lessons tagged GCC Lesson or Custom; v2's names for report kinds.
 
 ## Kept on purpose
 

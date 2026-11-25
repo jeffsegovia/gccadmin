@@ -292,6 +292,22 @@ export const getInsights = createServerFn({ method: 'GET' })
       const byType = sumBy('memberType')
       const byChurch = sumBy('churchStatus')
       const byCell = sumBy('cellStatus')
+      // v2's Church Attendance By Member Type: each group's NACS (not
+      // yet attended), ACS (attended) and Regular.
+      const attendanceByType = (
+        ['KIDS', 'YOUTH', 'YOUNGPRO', 'MEN', 'WOMEN'] as const
+      ).map((type) => {
+        const of = (status: string) =>
+          people
+            .filter((p) => p.memberType === type && p.churchStatus === status)
+            .reduce((a, p) => a + p.n, 0)
+        return {
+          type,
+          nacs: of('NACS'),
+          acs: of('ACS'),
+          regular: of('REGULAR'),
+        }
+      })
 
       return {
         everyone,
@@ -306,6 +322,7 @@ export const getInsights = createServerFn({ method: 'GET' })
           churchStatus: byChurch,
           cellStatus: byCell,
           total: byType.reduce((a, r) => a + r.n, 0),
+          attendanceByType,
         },
       }
     })

@@ -34,9 +34,11 @@ function NewReportPage() {
           onLeaderChange={async (leaderId) =>
             setOpts(await getReportFormOptions({ data: { leaderId } }))
           }
-          onSubmit={async (values) => {
+          onSubmit={async (values, again) => {
             const made = await createReport({ data: values })
             toast.success('Report saved')
+            // "Create another report": the form clears for the next one.
+            if (again) return
             await navigate({
               to: '/reports/$reportId',
               params: { reportId: made.id },

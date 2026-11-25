@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BookOpen,
   DoorOpen,
+  PenLine,
   Search,
   Sprout,
 } from 'lucide-react'
@@ -17,8 +18,8 @@ import { DialogActions } from '@/components/responsive-dialog'
 import { RadioCards } from '@/components/radio-cards'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { cellReportSchema, splitList } from '@/lib/cell-reports/schema'
+import { TagsInput } from '@/components/tags-input'
+import { cellReportSchema } from '@/lib/cell-reports/schema'
 import type { CellReportInput } from '@/lib/cell-reports/schema'
 import { CELL_STATUS, CELL_TYPE } from '@/lib/labels'
 import { toLocalInput } from '@/lib/dates'
@@ -26,13 +27,22 @@ import { messageOf } from '@/lib/errors'
 import type { CellStatus, CellType, Gender } from '@/db/schema'
 
 export type ReportFormOptions = {
-  lessons: ReadonlyArray<{ id: string; title: string; seriesTitle: string }>
+  lessons: ReadonlyArray<{
+    id: string
+    title: string
+    seriesId: string
+    seriesTitle: string
+    scriptureReferences: Array<string> | null
+    addedAt: string
+    seriesAddedAt: string
+  }>
   people: ReadonlyArray<{
     id: string
     name: string
     gender: Gender
     cellStatus: CellStatus
     isMyPrimary: boolean
+    isPrimary: boolean
   }>
   leaders: ReadonlyArray<{ id: string; name: string }>
   chooseLeader: boolean
@@ -125,8 +135,36 @@ function loadDraft(key: string): Partial<CellReportInput> | null {
   }
 }
 
-/** A cell group report. A new one keeps a draft on the device until it's
- * saved, so a dropped signal or a closed tab doesn't lose it. */
+/** A tappable row that is a checkbox (v2's "I have an assistant leader"
+ * and "Create another report"). */
+function CheckRow({
+  checked,
+  onChange,
+  children,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex min-h-10 w-fit items-center gap-2.5 text-left text-sm"
+    >
+      <CheckMark on={checked} />
+      {children}
+    </button>
+  )
+}
+
+type LessonMode = 'gcc' | 'custom'
+
+/** A cell group report, laid out as v2's form in three steps. A new one
+ * keeps a draft on the device until it's saved, so a dropped signal or a
+ * closed tab doesn't lose it. */
 export function ReportForm({
   opts,
   initial,
@@ -144,27 +182,32 @@ export function ReportForm({
   /** The portal: the network leader is theirs, shown and not chosen. */
   fixedLeader?: string
   onLeaderChange?: (leaderId: string) => void
-  onSubmit: (values: CellReportInput) => Promise<void>
+  /** `again`: "Create another report" was ticked, so stay on the form. */
+  onSubmit: (values: CellReportInput, again: boolean) => Promise<void>
   onCancel?: () => void
   submitLabel: string
 }) {
-  const start: CellReportInput = initial ?? {
+  const fresh = (): CellReportInput => ({
     type: 'DISCIPLESHIP',
     venue: '',
     date: toLocalInput(new Date()),
     lessonId: opts.suggested ?? undefined,
     attendees: [],
     leaderId: opts.leaderId ?? undefined,
-  }
+    scriptureReferences: [],
+    worship: [],
+    work: [],
+  })
+  const start: CellReportInput = initial ?? fresh()
+  const seriesOf = (lessonId?: string) =>
+    opts.lessons.find((l) => l.id === lessonId)?.seriesId ?? ''
   const [v, setV] = useState<CellReportInput>(start)
-  const [custom, setCustom] = useState(
-    !!initial?.lessonTitle && !initial.lessonId,
+  const [mode, setMode] = useState<LessonMode>(
+    initial?.lessonTitle && !initial.lessonId ? 'custom' : 'gcc',
   )
-  const [scripture, setScripture] = useState(
-    (start.scriptureReferences ?? []).join(', '),
-  )
-  const [worship, setWorship] = useState((start.worship ?? []).join(', '))
-  const [work, setWork] = useState((start.work ?? []).join('\n'))
+  const [seriesId, setSeriesId] = useState(seriesOf(start.lessonId))
+  const [withAssistant, setWithAssistant] = useState(!!initial?.assistantId)
+  const [again, setAgain] = useState(false)
   const [query, setQuery] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [pending, setPending] = useState(false)
@@ -186,23 +229,52 @@ export function ReportForm({
     const draft = loadDraft(draftKey)
     if (!draft) return
     setV((cur) => ({ ...cur, ...draft }))
-    if (draft.lessonTitle && !draft.lessonId) setCustom(true)
-    setScripture((draft.scriptureReferences ?? []).join(', '))
-    setWorship((draft.worship ?? []).join(', '))
-    setWork((draft.work ?? []).join('\n'))
+    if (draft.lessonTitle && !draft.lessonId) setMode('custom')
+    else if (draft.lessonId)
+      setSeriesId(
+        opts.lessons.find((l) => l.id === draft.lessonId)?.seriesId ?? '',
+      )
+    if (draft.assistantId) setWithAssistant(true)
     setRestored(true)
+    // The draft is read once, when the form opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey])
+
+  // Series and lessons newest first, by date added (as in v2).
+  const series = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; at: string }>()
+    for (const l of opts.lessons)
+      if (!seen.has(l.seriesId))
+        seen.set(l.seriesId, {
+          id: l.seriesId,
+          name: l.seriesTitle,
+          at: l.seriesAddedAt,
+        })
+    return [...seen.values()].sort((a, b) => b.at.localeCompare(a.at))
+  }, [opts.lessons])
+  const seriesLessons = useMemo(
+    () =>
+      opts.lessons
+        .filter((l) => l.seriesId === seriesId)
+        .sort((a, b) => b.addedAt.localeCompare(a.addedAt))
+        .map((l) => ({ id: l.id, name: l.title })),
+    [opts.lessons, seriesId],
+  )
+  const lesson = opts.lessons.find((l) => l.id === v.lessonId)
 
   const values = useMemo<CellReportInput>(
     () => ({
       ...v,
-      lessonId: custom ? undefined : v.lessonId,
-      lessonTitle: custom ? v.lessonTitle : undefined,
-      scriptureReferences: splitList(scripture),
-      worship: splitList(worship),
-      work: splitList(work),
+      assistantId: withAssistant ? v.assistantId : undefined,
+      lessonId: mode === 'gcc' ? v.lessonId : undefined,
+      lessonTitle: mode === 'custom' ? v.lessonTitle : undefined,
+      // A GCC lesson carries its own scripture.
+      scriptureReferences:
+        mode === 'gcc'
+          ? (lesson?.scriptureReferences ?? [])
+          : (v.scriptureReferences ?? []),
     }),
-    [v, custom, scripture, worship, work],
+    [v, mode, withAssistant, lesson],
   )
 
   // Only a form someone has typed into is kept as a draft.
@@ -210,18 +282,12 @@ export function ReportForm({
   useEffect(() => {
     if (!draftKey) return
     try {
-      if (
-        JSON.stringify({ ...v, lessonTitle: v.lessonTitle }) === pristine &&
-        !scripture &&
-        !worship &&
-        !work
-      )
-        return
+      if (JSON.stringify(v) === pristine) return
       localStorage.setItem(DRAFT + draftKey, JSON.stringify(values))
     } catch {
       // No storage: the form still works, just without a draft.
     }
-  }, [draftKey, values, v, pristine, scripture, worship, work])
+  }, [draftKey, values, v, pristine])
 
   // Someone who left the network's list since this report was filed still
   // shows, so an edit doesn't drop them.
@@ -237,20 +303,34 @@ export function ReportForm({
           gender: 'MALE' as const,
           cellStatus: 'REGULAR' as const,
           isMyPrimary: false,
+          isPrimary: false,
         })),
     ]
   }, [opts.people, initial])
+  const leaderId = v.leaderId ?? opts.leaderId
+  // Qualified assistants are primary leaders and primary disciples (v2),
+  // never the network leader themself.
+  const assistants = opts.people
+    .filter((p) => (p.isMyPrimary || p.isPrimary) && p.id !== leaderId)
+    .map((p) => ({ id: p.id, name: p.name }))
   const ticked = new Set(v.attendees)
+  const allTicked = people.length > 0 && people.every((p) => ticked.has(p.id))
   const shown = people.filter(
     (p) =>
       !query.trim() ||
       p.name.toLowerCase().includes(query.trim().toLowerCase()),
   )
-  const lessonPeople = opts.lessons.map((l) => ({
-    id: l.id,
-    name: l.title,
-    hint: l.seriesTitle,
-  }))
+
+  const reset = () => {
+    setV(fresh())
+    setMode('gcc')
+    setSeriesId(seriesOf(opts.suggested ?? undefined))
+    setWithAssistant(false)
+    setQuery('')
+    setErrors({})
+    setStep(0)
+    setReached(0)
+  }
 
   return (
     <form
@@ -278,8 +358,9 @@ export function ReportForm({
         setErrors({})
         setPending(true)
         try {
-          await onSubmit(values)
+          await onSubmit(values, again)
           if (draftKey) localStorage.removeItem(DRAFT + draftKey)
+          if (again) reset()
         } catch (error) {
           toast.error(messageOf(error))
         } finally {
@@ -295,14 +376,10 @@ export function ReportForm({
           Your unsaved report is back.{' '}
           <button
             type="button"
-            className="font-medium text-primary"
+            className="font-medium text-primary underline underline-offset-2"
             onClick={() => {
               if (draftKey) localStorage.removeItem(DRAFT + draftKey)
-              setV(start)
-              setCustom(false)
-              setScripture('')
-              setWorship('')
-              setWork('')
+              reset()
               setRestored(false)
             }}
           >
@@ -313,9 +390,9 @@ export function ReportForm({
 
       {step === 0 && (
         <>
-          <FormField label="Type">
+          <FormField label="Cell type">
             <RadioCards<CellType>
-              label="Type"
+              label="Cell type"
               value={v.type}
               onChange={(type) => setV({ ...v, type })}
               options={[
@@ -331,12 +408,18 @@ export function ReportForm({
                   hint: 'Your disciples, a lesson series',
                   icon: BookOpen,
                 },
-                {
-                  value: 'SOULWINNING',
-                  label: CELL_TYPE.SOULWINNING,
-                  hint: 'Sharing the gospel',
-                  icon: Sprout,
-                },
+                // v2's form offered these two; a report already filed as
+                // soul winning keeps its type when edited.
+                ...(initial?.type === 'SOULWINNING'
+                  ? [
+                      {
+                        value: 'SOULWINNING' as const,
+                        label: CELL_TYPE.SOULWINNING,
+                        hint: 'Sharing the gospel',
+                        icon: Sprout,
+                      },
+                    ]
+                  : []),
               ]}
             />
           </FormField>
@@ -354,22 +437,26 @@ export function ReportForm({
                   aria-label="Network leader"
                   people={opts.leaders}
                   value={v.leaderId}
-                  onChange={(leaderId) => {
-                    setV({ ...v, leaderId, attendees: [] })
-                    onLeaderChange?.(leaderId)
+                  onChange={(id) => {
+                    setV({
+                      ...v,
+                      leaderId: id,
+                      attendees: [],
+                      assistantId: undefined,
+                    })
+                    setWithAssistant(false)
+                    onLeaderChange?.(id)
                   }}
-                  placeholder="Choose a leader"
+                  placeholder="Select leader"
+                  searchPlaceholder="Search leaders"
+                  emptyText="No leader by that name."
                 />
               </FormField>
             )
           )}
 
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-            <FormField
-              label="Date and time"
-              htmlFor="r-date"
-              error={errors.date}
-            >
+            <FormField label="Date & time" htmlFor="r-date" error={errors.date}>
               <Input
                 id="r-date"
                 type="datetime-local"
@@ -382,127 +469,225 @@ export function ReportForm({
                 id="r-venue"
                 value={v.venue}
                 onChange={(e) => setV({ ...v, venue: e.target.value })}
-                placeholder="Reyes residence"
+                placeholder="GCC Chapel"
                 aria-invalid={!!errors.venue || undefined}
               />
             </FormField>
           </div>
 
           {!fixedLeader && (
-            <FormField
-              label="Assistant leader"
-              optional
-              hint="If an assistant led this cell group."
-            >
-              <PersonCombobox
-                aria-label="Assistant leader"
-                people={opts.people.filter((p) => p.isMyPrimary)}
-                value={v.assistantId}
-                onChange={(assistantId) =>
-                  setV({ ...v, assistantId: assistantId || undefined })
-                }
-                noneLabel="Nobody"
-                placeholder="Nobody"
-              />
-            </FormField>
+            <div className="flex min-w-0 flex-col gap-2">
+              <CheckRow
+                checked={withAssistant}
+                onChange={(on) => {
+                  setWithAssistant(on)
+                  if (!on)
+                    setV({
+                      ...v,
+                      assistantId: undefined,
+                      attendees: v.attendees.filter((a) => a !== v.assistantId),
+                    })
+                }}
+              >
+                I have an assistant leader
+              </CheckRow>
+              {withAssistant && (
+                <FormField
+                  label="Assistant leader"
+                  hint="Qualified assistants are primary leaders and primary disciples."
+                >
+                  <PersonCombobox
+                    aria-label="Assistant leader"
+                    people={assistants}
+                    value={v.assistantId}
+                    disabled={assistants.length === 0}
+                    onChange={(assistantId) =>
+                      // The assistant was there, so they're ticked as come.
+                      setV({
+                        ...v,
+                        assistantId,
+                        attendees: [
+                          ...v.attendees.filter((a) => a !== v.assistantId),
+                          ...(v.attendees.includes(assistantId)
+                            ? []
+                            : [assistantId]),
+                        ],
+                      })
+                    }
+                    placeholder={
+                      assistants.length === 0
+                        ? 'No primary disciples yet'
+                        : 'Select assistant leader'
+                    }
+                  />
+                </FormField>
+              )}
+            </div>
           )}
         </>
       )}
+
       {step === 1 && (
         <>
-          <FormField
-            label="Lesson"
-            error={errors.lessonId}
-            hint={
-              !custom && opts.suggested && v.lessonId === opts.suggested
-                ? 'Suggested: the lesson after the one you taught last.'
-                : undefined
-            }
-          >
-            {custom ? (
-              <Input
-                aria-label="Your own lesson"
-                value={v.lessonTitle ?? ''}
-                onChange={(e) => setV({ ...v, lessonTitle: e.target.value })}
-                placeholder="The lesson’s title"
-              />
+          <fieldset className="flex min-w-0 flex-col gap-4">
+            <legend className="mb-2 text-[13px] font-medium">
+              Lesson details
+            </legend>
+            <RadioCards<LessonMode>
+              label="Lesson"
+              value={mode}
+              onChange={(next) => {
+                setMode(next)
+                setErrors({})
+              }}
+              options={[
+                {
+                  value: 'gcc',
+                  label: 'GCC Lesson',
+                  hint: 'From a lesson series',
+                  icon: BookOpen,
+                },
+                {
+                  value: 'custom',
+                  label: 'Custom Lesson',
+                  hint: 'Your own title and scripture',
+                  icon: PenLine,
+                },
+              ]}
+            />
+            {mode === 'gcc' ? (
+              <>
+                <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                  <FormField label="Series">
+                    <PersonCombobox
+                      aria-label="Series"
+                      people={series}
+                      value={seriesId}
+                      onChange={(id) => {
+                        setSeriesId(id)
+                        setV({ ...v, lessonId: undefined })
+                      }}
+                      placeholder="Select series"
+                      searchPlaceholder="Search series"
+                      emptyText="No series by that name."
+                    />
+                  </FormField>
+                  <FormField
+                    label="Lesson"
+                    error={errors.lessonId}
+                    hint={
+                      opts.suggested && v.lessonId === opts.suggested
+                        ? 'Suggested: the lesson after the one taught last.'
+                        : undefined
+                    }
+                  >
+                    <PersonCombobox
+                      aria-label="Lesson"
+                      people={seriesLessons}
+                      value={v.lessonId}
+                      disabled={!seriesId}
+                      invalid={!!errors.lessonId}
+                      onChange={(lessonId) => setV({ ...v, lessonId })}
+                      placeholder={
+                        seriesId ? 'Select lesson' : 'Select a series first'
+                      }
+                      searchPlaceholder="Search lessons"
+                      emptyText="No lesson by that name."
+                    />
+                  </FormField>
+                </div>
+                <FormField label="Scripture references">
+                  <p className="min-h-10 border bg-muted/40 px-3 py-2 text-sm break-words text-muted-foreground">
+                    {lesson?.scriptureReferences?.length
+                      ? lesson.scriptureReferences.join(', ')
+                      : 'Comes with the lesson'}
+                  </p>
+                </FormField>
+              </>
             ) : (
-              <PersonCombobox
-                aria-label="Lesson"
-                people={lessonPeople}
-                value={v.lessonId}
-                onChange={(lessonId) => setV({ ...v, lessonId })}
-                placeholder="Choose a lesson"
-              />
+              <>
+                <FormField
+                  label="Lesson title"
+                  htmlFor="r-lesson-title"
+                  error={errors.lessonId}
+                >
+                  <Input
+                    id="r-lesson-title"
+                    value={v.lessonTitle ?? ''}
+                    onChange={(e) =>
+                      setV({ ...v, lessonTitle: e.target.value })
+                    }
+                    placeholder="Lesson title"
+                    aria-invalid={!!errors.lessonId || undefined}
+                  />
+                </FormField>
+                <FormField
+                  label="Scripture references"
+                  htmlFor="r-scripture"
+                  error={errors.scriptureReferences}
+                >
+                  <TagsInput
+                    id="r-scripture"
+                    value={v.scriptureReferences ?? []}
+                    onChange={(scriptureReferences) =>
+                      setV({ ...v, scriptureReferences })
+                    }
+                    placeholder="e.g. John 3:16"
+                    hint="Type a reference, then press Enter."
+                    invalid={!!errors.scriptureReferences}
+                  />
+                </FormField>
+              </>
             )}
-            <button
-              type="button"
-              onClick={() => setCustom(!custom)}
-              className="w-fit text-[13px] font-medium text-primary"
-            >
-              {custom ? 'Choose from the lessons' : 'Use my own lesson'}
-            </button>
-          </FormField>
+          </fieldset>
 
           <FormField
-            label="Scripture"
-            htmlFor="r-scripture"
+            label="Worship"
+            htmlFor="r-worship"
             optional
-            hint="Separate with commas."
+            hint="Did you worship during the cell group? Type a song, then press Enter."
           >
-            <Input
-              id="r-scripture"
-              value={scripture}
-              onChange={(e) => setScripture(e.target.value)}
-              placeholder="Matthew 6:5–15, James 5:16"
+            <TagsInput
+              id="r-worship"
+              value={v.worship ?? []}
+              onChange={(worship) => setV({ ...v, worship })}
+              placeholder="e.g. One Way, Better Is One Day"
             />
           </FormField>
-
-          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-            <FormField
-              label="Worship songs"
-              htmlFor="r-worship"
-              optional
-              hint="Separate with commas."
-            >
-              <Textarea
-                id="r-worship"
-                rows={2}
-                value={worship}
-                onChange={(e) => setWorship(e.target.value)}
-              />
-            </FormField>
-            <FormField
-              label="Follow-up"
-              htmlFor="r-work"
-              optional
-              hint="One per line."
-            >
-              <Textarea
-                id="r-work"
-                rows={2}
-                value={work}
-                onChange={(e) => setWork(e.target.value)}
-              />
-            </FormField>
-          </div>
+          <FormField
+            label="Work"
+            htmlFor="r-work"
+            optional
+            hint="Any plans of the group? Type one, then press Enter."
+          >
+            <TagsInput
+              id="r-work"
+              value={v.work ?? []}
+              onChange={(work) => setV({ ...v, work })}
+              placeholder="e.g. 3x3 Prayer, Follow-up"
+            />
+          </FormField>
         </>
       )}
+
       {step === 2 && (
         <section aria-label="Attendees" className="flex min-w-0 flex-col gap-2">
           <div className="flex min-w-0 items-baseline justify-between gap-3">
             <span className="text-[13px] font-medium">
               Attendees · {ticked.size} of {people.length}
             </span>
-            {ticked.size < people.length && people.length > 0 && (
+            {people.length > 0 && (
               <button
                 type="button"
-                className="shrink-0 text-[13px] font-medium text-primary"
+                className="shrink-0 text-[13px] font-medium text-primary underline-offset-2 hover:underline"
                 onClick={() =>
-                  setV({ ...v, attendees: people.map((p) => p.id) })
+                  setV({
+                    ...v,
+                    attendees: allTicked ? [] : people.map((p) => p.id),
+                  })
                 }
               >
-                Tick everyone
+                {allTicked ? 'Deselect all' : 'Select all'}
               </button>
             )}
           </div>
@@ -521,8 +706,8 @@ export function ReportForm({
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Find a name"
-                aria-label="Find a name"
+                placeholder="Search names"
+                aria-label="Search attendees"
                 className="h-10 w-full min-w-0 border border-input bg-transparent pr-3 pl-9 text-base outline-none focus-visible:border-ring md:text-sm"
               />
             </div>
@@ -530,8 +715,8 @@ export function ReportForm({
           {people.length === 0 ? (
             <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
               {opts.chooseLeader && !v.leaderId
-                ? 'Choose the network leader first.'
-                : 'Nobody in this network yet. Add disciples first.'}
+                ? 'Select a leader first.'
+                : 'No disciple found for this leader.'}
             </p>
           ) : (
             <div className="flex max-h-[26rem] min-w-0 flex-col overflow-y-auto border [&>*+*]:border-t">
@@ -574,6 +759,11 @@ export function ReportForm({
                 )
               })}
             </div>
+          )}
+          {draftKey && (
+            <CheckRow checked={again} onChange={setAgain}>
+              Create another report
+            </CheckRow>
           )}
         </section>
       )}

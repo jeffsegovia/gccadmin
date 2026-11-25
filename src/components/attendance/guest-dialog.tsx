@@ -199,9 +199,9 @@ function GuestForm({
           options={options(GENDER)}
         />
       </FormField>
-      <FormField label="Group" optional>
+      <FormField label="Member Type" optional>
         <ChipChoice
-          label="Group"
+          label="Member Type"
           value={memberType}
           onChange={setMemberType}
           options={GROUPS}

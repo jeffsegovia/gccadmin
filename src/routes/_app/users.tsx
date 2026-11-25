@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
 import { Switch } from '@/components/ui/switch'
 import { messageOf } from '@/lib/errors'
-import { shortDate } from '@/lib/dates'
+import { timeAgo } from '@/lib/dates'
 import { getAccounts, setAccountRole } from '@/server/admin/admin.functions'
 import type { AccountRow } from '@/server/admin/admin.functions'
 
@@ -72,9 +72,23 @@ function UsersPage() {
                 <span className="truncate text-xs text-muted-foreground">
                   {a.email}
                   {a.disciple ? ` · ${a.disciple.name}` : ''}
-                  {a.lastSignInAt
-                    ? ` · last in ${shortDate(a.lastSignInAt)}`
-                    : ''}
+                </span>
+                <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                  <span
+                    className={a.disciple ? 'text-covered' : 'text-caution'}
+                  >
+                    {a.disciple ? 'Account Linked' : 'Unregistered'}
+                  </span>
+                  <span
+                    className={
+                      a.emailVerified ? 'text-covered' : 'text-caution'
+                    }
+                  >
+                    {a.emailVerified ? 'Verified' : 'Unverified'}
+                  </span>
+                  <span>
+                    Last active {a.lastActiveAt ? timeAgo(a.lastActiveAt) : '—'}
+                  </span>
                 </span>
               </span>
               {a.pastor && <Pill tone="men">Pastor</Pill>}
@@ -91,7 +105,7 @@ function UsersPage() {
                   ? 'Admin'
                   : a.role === 'leader'
                     ? 'Leader'
-                    : 'No access'}
+                    : 'Unassigned'}
               </Pill>
             </button>
           ))}

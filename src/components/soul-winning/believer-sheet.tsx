@@ -13,6 +13,7 @@ import {
 } from '@/components/responsive-dialog'
 import { ChipChoice, FormField } from '@/components/form-field'
 import { PendingButton } from '@/components/pending-button'
+import { PersonCombobox } from '@/components/person-combobox'
 import { SubmitButton } from '@/components/submit-button'
 import { Pill } from '@/components/status-pill'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -320,6 +321,7 @@ function EditBeliever({
     email: b.email ?? '',
     address: b.address ?? '',
   })
+  const [handledById, setHandledById] = useState(b.handledById ?? '')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   return (
@@ -336,7 +338,13 @@ function EditBeliever({
         setError(null)
         setPending(true)
         try {
-          await updateNewBeliever({ data: { ...parsed.data, id: b.id } })
+          await updateNewBeliever({
+            data: {
+              ...parsed.data,
+              id: b.id,
+              handledById: handledById || null,
+            },
+          })
           toast.success('Saved')
           await onSaved()
         } catch (err) {
@@ -360,11 +368,25 @@ function EditBeliever({
         options={options(GENDER)}
       />
       <ChipChoice
-        label="Group"
+        label="Member Type"
         value={v.memberType}
         onChange={(memberType) => setV({ ...v, memberType })}
         options={GROUPS}
       />
+      <FormField label="Who handles this new believer?" optional>
+        <PersonCombobox
+          aria-label="Handled By"
+          people={b.handlers}
+          value={handledById}
+          onChange={setHandledById}
+          noneLabel="Their network leader"
+          placeholder={
+            b.handlers.length === 0
+              ? 'No qualified option'
+              : 'Select Handled By'
+          }
+        />
+      </FormField>
       <FormField label="Phone" htmlFor="nb-phone" optional>
         <Input
           id="nb-phone"

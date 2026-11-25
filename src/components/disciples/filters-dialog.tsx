@@ -71,6 +71,7 @@ export type FilterValues = Pick<
   | 'processLevel'
   | 'status'
   | 'leader'
+  | 'handledBy'
 >
 
 export function countFilters(f: FilterValues): number {
@@ -80,7 +81,8 @@ export function countFilters(f: FilterValues): number {
     (f.cellStatus?.length ?? 0) +
     (f.processLevel?.length ?? 0) +
     (f.status && f.status !== 'active' ? 1 : 0) +
-    (f.leader ? 1 : 0)
+    (f.leader ? 1 : 0) +
+    (f.handledBy ? 1 : 0)
   )
 }
 
@@ -90,12 +92,14 @@ export function FiltersDialog({
   value,
   onApply,
   leaders,
+  handlers,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   value: FilterValues
   onApply: (v: FilterValues) => void
   leaders: ReadonlyArray<{ id: string; name: string }>
+  handlers: ReadonlyArray<{ id: string; name: string }>
 }) {
   const [draft, setDraft] = useState<FilterValues>(value)
   return (
@@ -111,7 +115,7 @@ export function FiltersDialog({
           <ResponsiveDialogTitle>Filters</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
         <div className="flex flex-col gap-5">
-          <FormField label="Show">
+          <FormField label="Status">
             <div className="flex flex-wrap gap-1.5">
               {(
                 [
@@ -157,26 +161,40 @@ export function FiltersDialog({
               />
             </FormField>
           )}
+          {handlers.length > 0 && (
+            <FormField label="Handled By">
+              <PersonCombobox
+                aria-label="Handled By"
+                people={handlers}
+                value={draft.handledBy ?? ''}
+                onChange={(v) =>
+                  setDraft({ ...draft, handledBy: v || undefined })
+                }
+                noneLabel="Anyone"
+                placeholder="Anyone"
+              />
+            </FormField>
+          )}
           <Multi
-            label="Group"
+            label="Member Type"
             labels={MEMBER_TYPE}
             value={draft.memberType}
             onChange={(v) => setDraft({ ...draft, memberType: v })}
           />
           <Multi
-            label="Church status"
+            label="Church Status"
             labels={CHURCH_STATUS}
             value={draft.churchStatus}
             onChange={(v) => setDraft({ ...draft, churchStatus: v })}
           />
           <Multi
-            label="Cell status"
+            label="Cell Status"
             labels={CELL_STATUS}
             value={draft.cellStatus}
             onChange={(v) => setDraft({ ...draft, cellStatus: v })}
           />
           <Multi
-            label="Growth step"
+            label="Process Level"
             labels={PROCESS_LEVEL}
             value={draft.processLevel}
             onChange={(v) => setDraft({ ...draft, processLevel: v })}

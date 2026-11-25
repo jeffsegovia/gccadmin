@@ -204,9 +204,11 @@ function SoulWinningPage() {
                     : undefined,
                 })
               }
-              aria-label="Group"
+              aria-label="Member Type"
             >
-              <NativeSelectOption value="">Every group</NativeSelectOption>
+              <NativeSelectOption value="">
+                Every member type
+              </NativeSelectOption>
               {(
                 Object.keys(MEMBER_TYPE) as Array<keyof typeof MEMBER_TYPE>
               ).map((k) => (

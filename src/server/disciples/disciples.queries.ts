@@ -145,3 +145,24 @@ export async function listAssistants(leaderId: string | undefined) {
     )
     .orderBy(asc(disciples.name))
 }
+
+/** Everyone who handles a disciple in what this viewer can see, for v2's
+ * "Handled By" filter. */
+export async function listHandlers(access: Access) {
+  const mine = access.disciple?.id
+  return db
+    .selectDistinct({ id: handler.id, name: handler.name })
+    .from(disciples)
+    .innerJoin(handler, eq(handler.id, disciples.handledById))
+    .where(
+      and(
+        eq(disciples.isDeleted, false),
+        seesEveryone(access)
+          ? undefined
+          : mine
+            ? or(eq(disciples.leaderId, mine), eq(disciples.handledById, mine))
+            : sql`false`,
+      ),
+    )
+    .orderBy(asc(handler.name))
+}

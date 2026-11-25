@@ -88,7 +88,8 @@ function DisciplePage() {
   const d = data.disciple
   const router = useRouter()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<Tab>('cell')
+  // v2 opened a disciple on Details.
+  const [tab, setTab] = useState<Tab>('details')
   const [sharing, setSharing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -104,12 +105,13 @@ function DisciplePage() {
     }
   }
 
+  // v2's tabs, in its order.
   const tabs: Array<{ value: Tab; label: string }> = [
-    { value: 'cell', label: 'Attendance' },
     { value: 'details', label: 'Details' },
-    { value: 'lessons', label: 'Lessons' },
+    { value: 'lessons', label: 'Lessons Taken' },
+    { value: 'cell', label: 'Cell Groups' },
+    { value: 'disciples', label: 'Handled Disciples' },
   ]
-  if (data.handled.length) tabs.push({ value: 'disciples', label: 'Disciples' })
 
   return (
     <Page
@@ -288,10 +290,10 @@ function DisciplePage() {
                 ['Phone', d.contactNo || '—'],
                 ['Address', d.address || '—'],
                 ['Network', d.leaderName ?? '—'],
-                ['Handled by', d.handledByName ?? d.leaderName ?? '—'],
-                ['Cell status', CELL_STATUS[d.cellStatus]],
+                ['Handled By', d.handledByName ?? d.leaderName ?? '—'],
+                ['Cell Status', CELL_STATUS[d.cellStatus]],
                 [
-                  'Growth step',
+                  'Process Level',
                   `${PROCESS_LEVEL[d.processLevel]} · ${PROCESS_STATUS[d.processLevelStatus]}`,
                 ],
               ].map(([k, v]) => (
@@ -326,7 +328,12 @@ function DisciplePage() {
               </Group>
             ))}
 
-          {tab === 'disciples' && (
+          {tab === 'disciples' && data.handled.length === 0 && (
+            <p className="border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+              No disciples being handled yet.
+            </p>
+          )}
+          {tab === 'disciples' && data.handled.length > 0 && (
             <Group>
               {data.handled.map((h) => (
                 <Link

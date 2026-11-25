@@ -30,6 +30,7 @@ import {
 } from '@/server/auth/access.server'
 import type { Access } from '@/server/auth/access.server'
 import {
+  attendeeChoices,
   lessonChoices,
   rangeBounds,
 } from '@/server/cell-reports/cell-reports.server'
@@ -281,6 +282,8 @@ export const getNewBeliever = createServerFn({ method: 'GET' })
           address: newBelievers.address,
           leaderName: leader.name,
           handledByName: handler.name,
+          handledById: newBelievers.handledById,
+          networkLeaderId: newBelievers.networkLeaderId,
           discipleProfileId: newBelievers.discipleProfileId,
           createdAt: newBelievers.createdAt,
         })
@@ -308,8 +311,13 @@ export const getNewBeliever = createServerFn({ method: 'GET' })
       lessonsTakenBy([data.id]),
     ])
     const mine = taken.get(data.id) ?? new Map<string, Date>()
+    // v2: anyone in the believer's network can handle them.
+    const handlers = (
+      await attendeeChoices({ leaderId: b.networkLeaderId })
+    ).map((p) => ({ id: p.id, name: p.name }))
     return {
       ...b,
+      handlers,
       sessions,
       lessons: all.map((l) => ({
         ...l,
@@ -496,10 +504,24 @@ async function requireBelieverAccess(access: Access, id: string) {
 }
 
 export const updateNewBeliever = createServerFn({ method: 'POST' })
-  .validator(newBelieverSchema.extend({ id: z.string() }))
+  .validator(
+    newBelieverSchema.extend({
+      id: z.string(),
+      handledById: z.string().nullable().optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     const access = await requireAccess()
     await requireBelieverAccess(access, data.id)
+    if (data.handledById) {
+      const [b] = await db
+        .select({ leaderId: newBelievers.networkLeaderId })
+        .from(newBelievers)
+        .where(eq(newBelievers.id, data.id))
+      const allowed = await attendeeChoices({ leaderId: b.leaderId })
+      if (!allowed.some((p) => p.id === data.handledById))
+        throw new AccessError('Choose someone in their network.')
+    }
     await db
       .update(newBelievers)
       .set({
@@ -509,6 +531,9 @@ export const updateNewBeliever = createServerFn({ method: 'POST' })
         contactNo: data.contactNo || null,
         email: data.email || null,
         address: data.address || null,
+        ...(data.handledById !== undefined
+          ? { handledById: data.handledById }
+          : {}),
       })
       .where(eq(newBelievers.id, data.id))
   })

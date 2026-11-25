@@ -25,7 +25,12 @@ import {
 } from '@/lib/disciples/schema'
 import type { DiscipleInput } from '@/lib/disciples/schema'
 import { dayToDate } from '@/lib/dates'
-import { listAssistants, listDisciples, listLeaders } from './disciples.queries'
+import {
+  listAssistants,
+  listDisciples,
+  listHandlers,
+  listLeaders,
+} from './disciples.queries'
 import {
   attendanceHistory,
   cellGroupCount,
@@ -41,13 +46,15 @@ export const getDisciplesPage = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const access = await requireAccess()
     const everyone = seesEveryone(access)
-    const [list, leaders] = await Promise.all([
+    const [list, leaders, handlers] = await Promise.all([
       listDisciples(access, data),
       everyone ? listLeaders() : Promise.resolve([]),
+      listHandlers(access),
     ])
     return {
       ...list,
       leaders,
+      handlers,
       everyone,
       scope: data.scope ?? (everyone ? 'all' : 'mine'),
       myId: access.disciple?.id ?? null,

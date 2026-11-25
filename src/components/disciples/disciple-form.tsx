@@ -167,7 +167,7 @@ export function DiscipleForm({
             {...register('contactNo')}
           />
         </FormField>
-        <FormField label="Group" htmlFor="d-type">
+        <FormField label="Member Type" htmlFor="d-type">
           <Controller
             control={control}
             name="memberType"
@@ -196,13 +196,13 @@ export function DiscipleForm({
       </div>
 
       <div className="grid gap-4 border-t pt-5 sm:grid-cols-2">
-        <FormField label="Church status" className="sm:col-span-2">
+        <FormField label="Church Status" className="sm:col-span-2">
           <Controller
             control={control}
             name="churchStatus"
             render={({ field }) => (
               <ChipChoice
-                label="Church status"
+                label="Church Status"
                 value={field.value}
                 onChange={field.onChange}
                 options={options(CHURCH_STATUS)}
@@ -210,7 +210,7 @@ export function DiscipleForm({
             )}
           />
         </FormField>
-        <FormField label="Cell status" htmlFor="d-cell">
+        <FormField label="Cell Status" htmlFor="d-cell">
           <Controller
             control={control}
             name="cellStatus"
@@ -224,7 +224,7 @@ export function DiscipleForm({
             )}
           />
         </FormField>
-        <FormField label="Growth step" htmlFor="d-level">
+        <FormField label="Process Level" htmlFor="d-level">
           <Controller
             control={control}
             name="processLevel"
@@ -277,7 +277,7 @@ export function DiscipleForm({
             </FormField>
           )}
           <FormField
-            label="Handled by"
+            label="Handled By"
             optional
             hint="An assistant leader in the network."
           >

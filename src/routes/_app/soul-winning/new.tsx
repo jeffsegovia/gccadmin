@@ -237,7 +237,7 @@ function NewSessionPage() {
                   options={options(GENDER)}
                 />
                 <ChipChoice
-                  label="Group"
+                  label="Member Type"
                   value={s.memberType === 'UNCATEGORIZED' ? null : s.memberType}
                   onChange={(t) =>
                     setSouls(

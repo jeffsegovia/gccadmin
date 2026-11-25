@@ -223,8 +223,8 @@ function DisciplesPage() {
                   {[
                     'Name',
                     'Leader',
-                    'Group',
-                    'Growth step',
+                    'Member Type',
+                    'Process Level',
                     'Church',
                     'Cell',
                     'Portal',
@@ -349,6 +349,7 @@ function DisciplesPage() {
         onOpenChange={setFiltering}
         value={search}
         leaders={data.leaders}
+        handlers={data.handlers}
         onApply={(f) => setSearch({ ...f })}
       />
       <ImportDialog

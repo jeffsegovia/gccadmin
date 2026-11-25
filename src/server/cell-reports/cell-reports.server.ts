@@ -67,6 +67,20 @@ export function rangeBounds(range: ReportRange): [Date, Date] | null {
       return [manilaDayStart(month), manilaDayStart(nextMonth(month))]
     case 'last_month':
       return [manilaDayStart(prevMonth(month)), manilaDayStart(month)]
+    case 'year_to_date': {
+      const year = today.slice(0, 4)
+      return [
+        manilaDayStart(`${year}-01-01`),
+        manilaDayStart(addDays(today, 1)),
+      ]
+    }
+    case 'last_year': {
+      const year = Number(today.slice(0, 4))
+      return [
+        manilaDayStart(`${year - 1}-01-01`),
+        manilaDayStart(`${year}-01-01`),
+      ]
+    }
     default:
       return null
   }

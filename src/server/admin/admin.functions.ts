@@ -69,6 +69,11 @@ function summarize(u: ClerkUser) {
     lastSignInAt: u.lastSignInAt
       ? new Date(u.lastSignInAt).toISOString()
       : null,
+    // v2's Users table: Email Verified? and Last Active At.
+    emailVerified: u.primaryEmailAddress?.verification?.status === 'verified',
+    lastActiveAt: u.lastActiveAt
+      ? new Date(u.lastActiveAt).toISOString()
+      : null,
   }
 }
 

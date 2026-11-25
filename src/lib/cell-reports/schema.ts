@@ -50,16 +50,21 @@ export const REPORT_RANGES = [
   'last_week',
   'this_month',
   'last_month',
+  'year_to_date',
+  'last_year',
   'all',
 ] as const
 export type ReportRange = (typeof REPORT_RANGES)[number]
 
 export const RANGE_LABEL: Record<ReportRange, string> = {
-  this_week: 'This week',
-  last_week: 'Last week',
-  this_month: 'This month',
-  last_month: 'Last month',
-  all: 'All time',
+  // v2's words for its date ranges.
+  this_week: 'This Week',
+  last_week: 'Last Week',
+  this_month: 'This Month',
+  last_month: 'Last Month',
+  year_to_date: 'Year To Date (YTD)',
+  last_year: 'Last Year',
+  all: 'All Time',
 }
 
 export const listReportsSchema = z.object({

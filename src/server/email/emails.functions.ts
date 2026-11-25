@@ -51,6 +51,49 @@ function requireEmail() {
     )
 }
 
+/** Who a reminder can go to, for the confirmation: each leader's email
+ * (if their account is linked), when they last reported, and whether they
+ * were reminded in the last 20 hours. */
+export const getReminderRecipients = createServerFn({ method: 'GET' })
+  .validator(z.object({ leaderIds: z.array(z.string()).min(1).max(100) }))
+  .handler(async ({ data }) => {
+    await requireAdmin()
+    const since = new Date(Date.now() - 20 * 3_600_000)
+    const [rows, recent] = await Promise.all([
+      db
+        .select({
+          id: disciples.id,
+          name: disciples.name,
+          email: users.email,
+          last: max(cellReports.date),
+        })
+        .from(disciples)
+        .leftJoin(users, eq(users.clerkId, disciples.userAccountId))
+        .leftJoin(cellReports, eq(cellReports.leaderId, disciples.id))
+        .where(inArray(disciples.id, data.leaderIds))
+        .groupBy(disciples.id, disciples.name, users.email)
+        .orderBy(disciples.name),
+      db
+        .select({ key: emailLogs.key })
+        .from(emailLogs)
+        .where(
+          and(
+            eq(emailLogs.kind, 'report-reminder'),
+            inArray(emailLogs.key, data.leaderIds),
+            gte(emailLogs.sentAt, since),
+          ),
+        ),
+    ])
+    const reminded = new Set(recent.map((r) => r.key))
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      last: r.last ? new Date(r.last).toISOString() : null,
+      remindedToday: reminded.has(r.id),
+    }))
+  })
+
 /** Remind leaders to file this week's cell report (Home's "Not reported"
  * and Leaders). A leader already reminded in the last 20 hours is
  * skipped; one quiet for 14 days or more gets the catch-up wording. */

@@ -41,7 +41,6 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
 
   const [
     [discipleTotal],
-    statusRows,
     [primaryTotal],
     reportedLeaders,
     [souls],
@@ -60,17 +59,6 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
           networkOnly(disciples.leaderId),
         ),
       ),
-    db
-      .select({ status: disciples.churchStatus, n: count() })
-      .from(disciples)
-      .where(
-        and(
-          eq(disciples.isDeleted, false),
-          eq(disciples.isActive, true),
-          networkOnly(disciples.leaderId),
-        ),
-      )
-      .groupBy(disciples.churchStatus),
     db
       .select({ n: count() })
       .from(disciples)
@@ -184,7 +172,6 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
   return {
     everyone,
     discipleTotal: discipleTotal.n,
-    churchStatus: Object.fromEntries(statusRows.map((r) => [r.status, r.n])),
     leadersReported: reported.size,
     leaderTotal: primaryTotal.n,
     newSouls: souls.n,

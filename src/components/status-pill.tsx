@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { cn } from 'cn'
 import type {
   CellStatus,
+  CellType,
+  SoulWinningReportType,
   ChurchStatus,
   Gender,
   MemberType,
@@ -148,5 +150,40 @@ export function LessonTag({ custom }: { custom: boolean }) {
     <Pill tone={custom ? 'neutral' : 'primary'}>
       {custom ? 'Custom' : 'GCC Lesson'}
     </Pill>
+  )
+}
+
+/* One color per report kind, everywhere (badges, charts, PDF): the
+   Insights series colors, checked for color-blind separation. */
+export const KIND_COLOR = {
+  OPEN: 'var(--series-1)',
+  DISCIPLESHIP: 'var(--series-2)',
+  SOULWINNING: 'var(--series-3)',
+  SOUL_WINNING: 'var(--series-3)',
+  CONSOLIDATION: 'var(--series-4)',
+} as const
+
+const KIND_LABEL = {
+  OPEN: 'Open Cell',
+  DISCIPLESHIP: 'Discipleship',
+  SOULWINNING: 'Soul Winning',
+  SOUL_WINNING: 'Soul Winning',
+  CONSOLIDATION: 'Consolidation',
+} as const
+
+/** A report's kind as a badge in its color: Open Cell, Discipleship, Soul
+ * Winning, Consolidation. */
+export function KindPill({ kind }: { kind: CellType | SoulWinningReportType }) {
+  const color = KIND_COLOR[kind]
+  return (
+    <span
+      className="inline-flex h-5 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] leading-none font-medium whitespace-nowrap"
+      style={{
+        color,
+        background: `color-mix(in oklab, ${color} 16%, transparent)`,
+      }}
+    >
+      {KIND_LABEL[kind]}
+    </span>
   )
 }

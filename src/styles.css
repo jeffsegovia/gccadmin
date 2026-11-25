@@ -38,6 +38,7 @@
   --covered: oklch(0.5 0.12 155);
   --caution: oklch(0.55 0.15 55);
   --short: oklch(0.55 0.21 27);
+  --rose: oklch(0.62 0.19 5);
   --men: oklch(0.5 0.13 245);
   --women: oklch(0.52 0.16 350);
   --chart-1: oklch(0.6 0.12 75);
@@ -77,6 +78,7 @@
   --covered: oklch(0.8 0.13 158);
   --caution: oklch(0.77 0.15 55);
   --short: oklch(0.71 0.17 22);
+  --rose: oklch(0.74 0.15 5);
   --men: oklch(0.8 0.1 240);
   --women: oklch(0.8 0.1 350);
   --chart-1: oklch(0.8 0.12 80);
@@ -127,6 +129,8 @@
   --color-covered: var(--covered);
   --color-caution: var(--caution);
   --color-short: var(--short);
+  /* Birthdays. */
+  --color-rose: var(--rose);
   --color-men: var(--men);
   --color-women: var(--women);
   --color-chart-1: var(--chart-1);

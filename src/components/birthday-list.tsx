@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router'
 import { Cake } from 'lucide-react'
-import { cn } from 'cn'
 import { Pill } from '@/components/status-pill'
 import { Group, RowChevron } from '@/components/ui/list'
 import { longDay } from '@/lib/dates'
@@ -34,13 +33,7 @@ export function BirthdayList({
               params={{ discipleId: b.id }}
               className="flex min-h-12 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
             >
-              <Cake
-                aria-hidden="true"
-                className={cn(
-                  'size-4 shrink-0',
-                  b.date === today ? 'text-primary' : 'text-muted-foreground',
-                )}
-              />
+              <Cake aria-hidden="true" className="size-4 shrink-0 text-rose" />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium">{b.name}</span>
                 <span className="truncate text-xs text-muted-foreground">

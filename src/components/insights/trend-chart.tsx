@@ -11,12 +11,10 @@ export type TrendSeries = {
 
 const H = 230
 const PAD = { top: 18, right: 8, bottom: 26, left: 30 }
-const GAP = 2
 
-/** Reports over time as stacked bars: one bar per period, its height the
- * total, split by series from the baseline up in a fixed order. A legend
- * above; only the latest bar carries its total; hovering or tapping a
- * period shows each series and the total. */
+/** Reports over time as v2 drew them: each period has one bar per
+ * series side by side, from the baseline. A legend above; hovering or
+ * tapping a period shows each series and the total. */
 export function TrendChart({
   labels,
   series,
@@ -43,7 +41,7 @@ export function TrendChart({
   const totals = labels.map((_, i) =>
     series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0),
   )
-  const max = Math.max(1, ...totals)
+  const max = Math.max(1, ...series.flatMap((s) => s.values))
   // A rounded top so the gridlines land on whole numbers.
   const step = max <= 4 ? 1 : max <= 10 ? 2 : max <= 40 ? 5 : 10
   const top = Math.ceil(max / step) * step
@@ -51,7 +49,10 @@ export function TrendChart({
   const plotW = width - PAD.left - PAD.right
   const plotH = H - PAD.top - PAD.bottom
   const band = plotW / Math.max(1, n)
-  const barW = Math.max(6, Math.min(44, band * 0.62))
+  const k = Math.max(1, series.length)
+  // Bars of a period sit together, a hairline apart.
+  const barW = Math.max(3, Math.min(22, (band * 0.72 - (k - 1) * 2) / k))
+  const groupW = barW * k + (k - 1) * 2
   const cx = (i: number) => PAD.left + band * i + band / 2
   const y = (v: number) => PAD.top + plotH - (v / top) * plotH
   const every = Math.max(1, Math.ceil(56 / band))
@@ -105,38 +106,25 @@ export function TrendChart({
             </g>
           ))}
           {labels.map((l, i) => {
-            const x0 = cx(i) - barW / 2
-            let base = y(0)
+            const x0 = cx(i) - groupW / 2
             return (
               <g key={l} opacity={hover === null || hover === i ? 1 : 0.45}>
-                {series.map((s) => {
+                {series.map((s, j) => {
                   const v = s.values[i] ?? 0
                   if (!v) return null
-                  const h = (v / top) * plotH
-                  base -= h
-                  // A gap of the card's color between stacked segments.
-                  const drawn = Math.max(1, h - GAP)
+                  const h = Math.max(1, (v / top) * plotH)
                   return (
                     <rect
                       key={s.key}
-                      x={x0}
-                      y={base + (h - drawn)}
+                      x={x0 + j * (barW + 2)}
+                      y={y(0) - h}
                       width={barW}
-                      height={drawn}
+                      height={h}
+                      rx={Math.min(3, barW / 3)}
                       fill={s.color}
                     />
                   )
                 })}
-                {i === n - 1 && totals[i] > 0 && (
-                  <text
-                    x={cx(i)}
-                    y={y(totals[i]) - 6}
-                    textAnchor="middle"
-                    className="fill-foreground text-[11px] font-medium"
-                  >
-                    {totals[i]}
-                  </text>
-                )}
                 {i % every === (n - 1) % every && (
                   <text
                     x={cx(i)}
@@ -169,12 +157,12 @@ export function TrendChart({
             )}
             style={
               cx(hover) > width / 2
-                ? { right: width - cx(hover) + barW / 2 + 8 }
-                : { left: cx(hover) + barW / 2 + 8 }
+                ? { right: width - cx(hover) + groupW / 2 + 8 }
+                : { left: cx(hover) + groupW / 2 + 8 }
             }
           >
             <span className="font-medium">{labels[hover]}</span>
-            {[...series].reverse().map((s) => (
+            {series.map((s) => (
               <span key={s.key} className="flex items-center gap-2">
                 <span
                   aria-hidden="true"

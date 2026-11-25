@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ArrowRight,
@@ -24,7 +25,7 @@ import {
   InsightCard,
   rangeText,
 } from '@/components/insights/reports-filed'
-import { KIND_COLOR, Pill } from '@/components/status-pill'
+import { Pill } from '@/components/status-pill'
 import { RowChevron } from '@/components/ui/list'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
@@ -61,18 +62,30 @@ export const Route = createFileRoute('/_app/insights')({
 })
 
 const KIND_LABEL: Record<Kind, string> = {
-  open: 'Open cell',
+  open: 'Open Cell',
   discipleship: 'Discipleship',
-  soulWinning: 'Soul winning',
+  soulWinning: 'Soul Winning',
   consolidation: 'Consolidation',
 }
+// v2's Cell Report Trend colors.
 const KIND_COLORS: Record<Kind, string> = {
-  open: 'var(--series-1)',
-  discipleship: 'var(--series-2)',
-  soulWinning: 'var(--series-3)',
-  consolidation: 'var(--series-4)',
+  discipleship: 'var(--chart-1)',
+  open: 'var(--chart-2)',
+  soulWinning: 'var(--chart-3)',
+  consolidation: 'var(--chart-4)',
 }
 const KINDS = Object.keys(KIND_LABEL) as Array<Kind>
+
+/** v2's trend views: All is cell groups (Discipleship and Open Cell);
+ * soul winning and consolidation each have their own. */
+const SHOW = {
+  all: { label: 'All', kinds: ['discipleship', 'open'] },
+  discipleship: { label: 'Discipleship', kinds: ['discipleship'] },
+  open: { label: 'Open Cell', kinds: ['open'] },
+  soulWinning: { label: 'Soul Winning', kinds: ['soulWinning'] },
+  consolidation: { label: 'Consolidation', kinds: ['consolidation'] },
+} satisfies Record<string, { label: string; kinds: Array<Kind> }>
+type Show = keyof typeof SHOW
 
 function monthName(day: string) {
   return new Intl.DateTimeFormat('en-US', {
@@ -93,6 +106,7 @@ function InsightsPage() {
   const d = data.disciples
 
   const filedRange = search.filed ?? 'this_week'
+  const [show, setShow] = useState<Show>('all')
 
   return (
     <Page
@@ -145,7 +159,7 @@ function InsightsPage() {
               <BookOpen
                 aria-hidden="true"
                 className="size-4"
-                style={{ color: KIND_COLOR.SOUL_WINNING }}
+                style={{ color: 'var(--chart-4)' }}
               />
             }
           >
@@ -158,7 +172,7 @@ function InsightsPage() {
               <HeartHandshake
                 aria-hidden="true"
                 className="size-4"
-                style={{ color: KIND_COLOR.CONSOLIDATION }}
+                style={{ color: 'var(--chart-3)' }}
               />
             }
           >
@@ -171,7 +185,7 @@ function InsightsPage() {
               <Users
                 aria-hidden="true"
                 className="size-4"
-                style={{ color: KIND_COLOR.OPEN }}
+                style={{ color: 'var(--chart-1)' }}
               />
             }
           >
@@ -215,26 +229,40 @@ function InsightsPage() {
           data.period === 'weeks' ? 'The last 12 weeks' : 'The last 6 months'
         }
         action={
-          <Segmented
-            label="Trend by"
-            size="sm"
-            className="w-40"
-            value={data.period}
-            onChange={(period) =>
-              set({ period: period === 'weeks' ? undefined : period })
-            }
-            options={[
-              { value: 'weeks', label: 'Weekly' },
-              { value: 'months', label: 'Monthly' },
-            ]}
-          />
+          <div className="flex items-center gap-2">
+            <NativeSelect
+              size="sm"
+              value={show}
+              onChange={(e) => setShow(e.target.value as Show)}
+              aria-label="Show"
+            >
+              {(Object.keys(SHOW) as Array<Show>).map((v) => (
+                <NativeSelectOption key={v} value={v}>
+                  {SHOW[v].label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <Segmented
+              label="Trend by"
+              size="sm"
+              className="w-40"
+              value={data.period}
+              onChange={(period) =>
+                set({ period: period === 'weeks' ? undefined : period })
+              }
+              options={[
+                { value: 'weeks', label: 'Weekly' },
+                { value: 'months', label: 'Monthly' },
+              ]}
+            />
+          </div>
         }
       >
         <div className="flex min-w-0 flex-col gap-3 p-4">
           <TrendChart
             ariaLabel={`Reports filed per ${data.period === 'weeks' ? 'week' : 'month'}, by kind`}
             labels={labels}
-            series={KINDS.map((kind) => ({
+            series={SHOW[show].kinds.map((kind) => ({
               key: kind,
               label: KIND_LABEL[kind],
               color: KIND_COLORS[kind],
@@ -369,9 +397,9 @@ function InsightsPage() {
                             {n}/{d.total} ({share}%)
                           </span>
                         </span>
-                        <span className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <span className="h-1.5 overflow-hidden rounded-full bg-chart-1/20">
                           <span
-                            className="block h-full rounded-full bg-primary"
+                            className="block h-full rounded-full bg-chart-1"
                             style={{ width: `${share}%` }}
                           />
                         </span>
@@ -413,9 +441,10 @@ function InsightsSkeleton() {
 }
 
 const ATTENDED = [
-  ['nacs', 'Not yet attended (NACS)', 'var(--muted-foreground)', 0.45],
-  ['acs', 'Attended (ACS)', 'var(--primary)', 1],
-  ['regular', 'Regular', 'var(--covered)', 1],
+  // v2's colors for these.
+  ['nacs', 'Not yet attended (NACS)', 'var(--chart-2)', 1],
+  ['acs', 'Attended (ACS)', 'var(--chart-3)', 1],
+  ['regular', 'Regular', 'var(--chart-4)', 1],
 ] as const
 
 /** v2's Church Attendance By Member Type: a donut per member type

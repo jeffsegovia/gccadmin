@@ -147,7 +147,7 @@ function HomePage() {
                           'w-full',
                           i === data.sundays.length - 1
                             ? 'bg-primary'
-                            : 'bg-chart-4',
+                            : 'bg-muted-foreground/40',
                         )}
                         style={{
                           height: `${Math.max(2, (s.total / maxSunday) * 100)}%`,

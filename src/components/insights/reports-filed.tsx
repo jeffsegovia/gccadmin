@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Calendar, TrendingDown, TrendingUp } from 'lucide-react'
 import { cn } from 'cn'
-import { KIND_COLOR } from '@/components/status-pill'
 import { Switch } from '@/components/ui/switch'
 import { RANGE_LABEL } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
@@ -136,10 +135,11 @@ const BEFORE: Partial<Record<ReportRange, string>> = {
   last_year: 'the year before',
 }
 
+// v2's chart colors: Discipleship blue, Open rose.
 const CELL_KINDS = [
-  ['discipleship', 'Discipleship', KIND_COLOR.DISCIPLESHIP],
-  ['open', 'Open Cell', KIND_COLOR.OPEN],
-  ['soulWinning', 'Soul Winning', KIND_COLOR.SOUL_WINNING],
+  ['discipleship', 'Discipleship', 'var(--chart-1)'],
+  ['open', 'Open Cell', 'var(--chart-2)'],
+  ['soulWinning', 'Soul Winning', 'var(--chart-3)'],
 ] as const
 
 const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0)
@@ -198,7 +198,7 @@ export function CellGroupsBody({ data }: { data: Filed }) {
                 <span className="flex items-center gap-2">
                   <span
                     aria-hidden="true"
-                    className="size-2.5 shrink-0 rounded-sm bg-primary"
+                    className="size-2.5 shrink-0 rounded-sm bg-chart-1"
                   />
                   With Assistant
                 </span>
@@ -301,7 +301,7 @@ function Ring({ value }: { value: number }) {
         fill="none"
         strokeWidth="9"
         strokeLinecap="round"
-        className="stroke-primary"
+        className="stroke-chart-1"
         strokeDasharray={`${(value / 100) * c} ${c}`}
         style={{ opacity: value ? 1 : 0 }}
       />
@@ -412,7 +412,7 @@ function Bar({
       search={to}
       title={`${name}: ${n} ${n === 1 ? 'cell group' : 'cell groups'}`}
       className={cn(
-        'relative flex min-w-0 items-center overflow-hidden rounded-md bg-muted/60 hover:bg-muted',
+        'relative flex min-w-0 items-center overflow-hidden rounded-md bg-chart-1/10 hover:bg-chart-1/15',
         small ? 'h-6 text-xs' : 'h-7 text-[13px]',
       )}
     >
@@ -420,7 +420,7 @@ function Bar({
         aria-hidden="true"
         className={cn(
           'absolute inset-y-0 left-0 rounded-md',
-          small ? 'bg-primary/20' : 'bg-primary/35',
+          small ? 'bg-chart-1/25' : 'bg-chart-1/45',
         )}
         style={{ width: `${Math.max(n ? 4 : 0, share * 100)}%` }}
       />

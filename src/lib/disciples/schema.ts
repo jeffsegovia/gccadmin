@@ -40,6 +40,20 @@ export const discipleSchema = z.object({
 })
 export type DiscipleInput = z.input<typeof discipleSchema>
 
+/** A disciple added from someone's own page (the portal): their leader's
+ * network, handled by them; the Growth Process starts at None. */
+export const portalDiscipleSchema = discipleSchema.pick({
+  name: true,
+  address: true,
+  birthdate: true,
+  gender: true,
+  contactNo: true,
+  memberType: true,
+  cellStatus: true,
+  churchStatus: true,
+})
+export type PortalDiscipleInput = z.input<typeof portalDiscipleSchema>
+
 export const discipleIdSchema = z.object({ id: z.string().min(1) })
 
 export const listDisciplesSchema = z.object({

@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import { db } from '@/db'
@@ -10,10 +10,15 @@ import {
   disciplePortalLinks,
   disciples,
   lessons,
+  newBelievers,
+  soulWinningNewBelievers,
+  soulWinningReports,
   users,
 } from '@/db/schema'
 import { dateTime, dayToDate, fromLocalInput, manilaDay } from '@/lib/dates'
 import { cellReportSchema } from '@/lib/cell-reports/schema'
+import { portalDiscipleSchema } from '@/lib/disciples/schema'
+import { newBelieverSchema } from '@/lib/soul-winning/schema'
 import type { CellReportInput } from '@/lib/cell-reports/schema'
 import { CELL_TYPE } from '@/lib/labels'
 import { portalReportEmail } from '@/lib/email/templates'
@@ -240,18 +245,206 @@ async function notifyLeader(
 }
 
 /** The portal's own reports, newest first. */
+/** The portal's own reports of every kind, newest first: cell groups it
+ * led (as the assistant) and soul-winning or consolidation sessions, each
+ * with its kind, when, how many came and the lesson. */
 export const getPortalReports = createServerFn({ method: 'GET' })
+  .validator(tokenSchema)
+  .handler(async ({ data }) => {
+    const row = await discipleFor(data.token)
+    const me = row.disciple.id
+    const [cells, sessions] = await Promise.all([
+      db
+        .select({
+          id: cellReports.id,
+          date: cellReports.date,
+          venue: cellReports.venue,
+          type: cellReports.type,
+          topic: sql<
+            string | null
+          >`coalesce(${lessons.title}, ${cellReports.lessonTitle})`,
+          attendees:
+            sql<number>`(select count(*) from ${attendedCellGroups} where ${attendedCellGroups.cellReportId} = ${cellReports.id})`.mapWith(
+              Number,
+            ),
+        })
+        .from(cellReports)
+        .leftJoin(lessons, eq(lessons.id, cellReports.lessonId))
+        .where(eq(cellReports.assistantId, me))
+        .orderBy(desc(cellReports.date))
+        .limit(30),
+      db
+        .select({
+          id: soulWinningReports.id,
+          date: soulWinningReports.date,
+          venue: soulWinningReports.venue,
+          type: soulWinningReports.type,
+          topic: lessons.title,
+          attendees:
+            sql<number>`(select count(*) from ${soulWinningNewBelievers} where ${soulWinningNewBelievers.reportId} = ${soulWinningReports.id})`.mapWith(
+              Number,
+            ),
+        })
+        .from(soulWinningReports)
+        .leftJoin(lessons, eq(lessons.id, soulWinningReports.lessonId))
+        .where(eq(soulWinningReports.assistantLeaderId, me))
+        .orderBy(desc(soulWinningReports.date))
+        .limit(30),
+    ])
+    return [...cells, ...sessions]
+      .sort((x, y) => y.date.getTime() - x.date.getTime())
+      .slice(0, 40)
+  })
+
+/** The disciples this disciple handles (their "Disciples" tab). */
+export const getPortalDisciples = createServerFn({ method: 'GET' })
   .validator(tokenSchema)
   .handler(async ({ data }) => {
     const row = await discipleFor(data.token)
     return db
       .select({
-        id: cellReports.id,
-        date: cellReports.date,
-        venue: cellReports.venue,
+        id: disciples.id,
+        name: disciples.name,
+        memberType: disciples.memberType,
+        cellStatus: disciples.cellStatus,
+        churchStatus: disciples.churchStatus,
+        processLevel: disciples.processLevel,
+        contactNo: disciples.contactNo,
       })
-      .from(cellReports)
-      .where(eq(cellReports.assistantId, row.disciple.id))
-      .orderBy(desc(cellReports.date))
-      .limit(10)
+      .from(disciples)
+      .where(
+        and(
+          eq(disciples.handledById, row.disciple.id),
+          eq(disciples.isDeleted, false),
+          eq(disciples.isActive, true),
+        ),
+      )
+      .orderBy(asc(disciples.name))
+  })
+
+/** Someone this disciple handles, added from their page: in their
+ * leader's network, handled by them, at the start of the Growth Process. */
+export const createPortalDisciple = createServerFn({ method: 'POST' })
+  .validator(tokenSchema.extend({ disciple: portalDiscipleSchema }))
+  .handler(async ({ data }) => {
+    const row = await discipleFor(data.token)
+    const d = row.disciple
+    if (!d.leaderId)
+      throw new Error('Ask your leader to add you to a network first.')
+    const v = data.disciple
+    const [made] = await db
+      .insert(disciples)
+      .values({
+        name: v.name,
+        address: v.address,
+        birthdate: dayToDate(v.birthdate),
+        gender: v.gender,
+        contactNo: v.contactNo?.trim() || null,
+        memberType: v.memberType,
+        cellStatus: v.cellStatus,
+        churchStatus: v.churchStatus,
+        processLevel: 'NONE',
+        processLevelStatus: 'NOT_STARTED',
+        isMyPrimary: false,
+        leaderId: d.leaderId,
+        handledById: d.id,
+      })
+      .returning({ id: disciples.id })
+    return made
+  })
+
+/** What a soul-winning or consolidation session from the portal needs:
+ * the lessons, and the new believers this disciple handles. */
+export const getPortalSessionForm = createServerFn({ method: 'GET' })
+  .validator(tokenSchema)
+  .handler(async ({ data }) => {
+    const row = await discipleFor(data.token)
+    const [allLessons, believers] = await Promise.all([
+      lessonChoices(),
+      db
+        .select({ id: newBelievers.id, name: newBelievers.name })
+        .from(newBelievers)
+        .where(
+          and(
+            eq(newBelievers.handledById, row.disciple.id),
+            isNull(newBelievers.discipleProfileId),
+          ),
+        )
+        .orderBy(asc(newBelievers.name)),
+    ])
+    return { lessons: allLessons, believers }
+  })
+
+/** A soul-winning session (new believers won) or a consolidation (the
+ * believers this disciple handles), filed in their leader's network with
+ * them as the one who won or followed up. */
+export const createPortalSession = createServerFn({ method: 'POST' })
+  .validator(
+    tokenSchema.extend({
+      kind: z.enum(['SOUL_WINNING', 'CONSOLIDATION']),
+      venue: z.string().trim().min(1, { message: 'Where was it?' }).max(200),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
+      lessonId: z.string().min(1, { message: 'Choose the lesson' }),
+      newBelievers: z.array(newBelieverSchema).max(50).default([]),
+      newBelieverIds: z.array(z.string()).max(100).default([]),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const row = await discipleFor(data.token)
+    const d = row.disciple
+    if (!d.leaderId)
+      throw new Error('Ask your leader to add you to a network first.')
+    const leaderId = d.leaderId
+    if (data.kind === 'SOUL_WINNING' && data.newBelievers.length === 0)
+      throw new Error('Add at least one new believer.')
+    if (data.kind === 'CONSOLIDATION') {
+      if (data.newBelieverIds.length === 0)
+        throw new Error('Tick at least one believer.')
+      const mine = await db
+        .select({ id: newBelievers.id })
+        .from(newBelievers)
+        .where(
+          and(
+            inArray(newBelievers.id, data.newBelieverIds),
+            eq(newBelievers.handledById, d.id),
+          ),
+        )
+      if (mine.length !== new Set(data.newBelieverIds).size)
+        throw new Error('You can only follow up the believers you handle.')
+    }
+    return db.transaction(async (tx) => {
+      const ids =
+        data.kind === 'SOUL_WINNING'
+          ? (
+              await tx
+                .insert(newBelievers)
+                .values(
+                  data.newBelievers.map((b) => ({
+                    name: b.name,
+                    gender: b.gender,
+                    memberType: b.memberType,
+                    contactNo: b.contactNo || null,
+                    networkLeaderId: leaderId,
+                    handledById: d.id,
+                  })),
+                )
+                .returning({ id: newBelievers.id })
+            ).map((b) => b.id)
+          : [...new Set(data.newBelieverIds)]
+      const [report] = await tx
+        .insert(soulWinningReports)
+        .values({
+          venue: data.venue,
+          date: fromLocalInput(data.date),
+          lessonId: data.lessonId,
+          type: data.kind,
+          networkLeaderId: leaderId,
+          assistantLeaderId: d.id,
+        })
+        .returning({ id: soulWinningReports.id })
+      await tx
+        .insert(soulWinningNewBelievers)
+        .values(ids.map((id) => ({ newBelieverId: id, reportId: report.id })))
+      return report
+    })
   })

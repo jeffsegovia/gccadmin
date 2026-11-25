@@ -1,7 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
-import { BookOpen, Check, DoorOpen, Search, Sprout } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  DoorOpen,
+  Search,
+  Sprout,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from 'cn'
+import { CheckMark } from '@/components/check-mark'
 import { FormField } from '@/components/form-field'
 import { PersonCombobox } from '@/components/person-combobox'
 import { SubmitButton } from '@/components/submit-button'
@@ -33,6 +41,80 @@ export type ReportFormOptions = {
 }
 
 const DRAFT = 'gcc-report-draft:v1:'
+
+/** The form in three short steps, so a phone never scrolls through all of
+ * it at once: the meeting, what was taught, then who came. */
+const STEPS = ['Meeting', 'Lesson', 'Who came'] as const
+const STEP_OF: Record<string, number> = {
+  type: 0,
+  leaderId: 0,
+  date: 0,
+  venue: 0,
+  assistantId: 0,
+  lessonId: 1,
+  lessonTitle: 1,
+  scriptureReferences: 1,
+  worship: 1,
+  work: 1,
+  attendees: 2,
+}
+const LAST = STEPS.length - 1
+
+function errorsOf(values: CellReportInput) {
+  const parsed = cellReportSchema.safeParse(values)
+  const found: Record<string, string> = {}
+  if (!parsed.success)
+    for (const i of parsed.error.issues) found[String(i.path[0])] ??= i.message
+  return { parsed, found }
+}
+
+function StepBar({
+  step,
+  reached,
+  onPick,
+}: {
+  step: number
+  reached: number
+  onPick: (step: number) => void
+}) {
+  return (
+    <ol aria-label="Steps" className="grid grid-cols-3 gap-1.5">
+      {STEPS.map((label, i) => {
+        const can = i <= reached && i !== step
+        return (
+          <li key={label} className="min-w-0">
+            <button
+              type="button"
+              disabled={!can}
+              aria-current={i === step ? 'step' : undefined}
+              onClick={() => onPick(i)}
+              className="flex w-full min-w-0 flex-col gap-1.5 text-left disabled:cursor-default"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'h-1 w-full',
+                  i <= step ? 'bg-primary' : 'bg-foreground/12',
+                )}
+              />
+              <span
+                className={cn(
+                  'truncate text-xs',
+                  i === step
+                    ? 'font-semibold text-foreground'
+                    : 'text-muted-foreground',
+                  can && 'hover:text-foreground',
+                )}
+              >
+                {i + 1}. {label}
+              </span>
+            </button>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
 
 function loadDraft(key: string): Partial<CellReportInput> | null {
   try {
@@ -87,6 +169,17 @@ export function ReportForm({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [pending, setPending] = useState(false)
   const [restored, setRestored] = useState(false)
+  // An edit can jump to any step; a new report opens them in turn.
+  const [step, setStep] = useState(0)
+  const [reached, setReached] = useState(initial ? LAST : 0)
+  const top = useRef<HTMLDivElement>(null)
+  const go = (next: number) => {
+    setStep(next)
+    setReached((r) => Math.max(r, next))
+    requestAnimationFrame(() =>
+      top.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
+    )
+  }
 
   useEffect(() => {
     if (!draftKey) return
@@ -165,13 +258,21 @@ export function ReportForm({
       className="flex min-w-0 flex-col gap-5"
       onSubmit={async (e) => {
         e.preventDefault()
-        const parsed = cellReportSchema.safeParse(values)
+        const { parsed, found } = errorsOf(values)
+        // Next checks only this step's fields; the last step checks all.
+        const here = Object.fromEntries(
+          Object.entries(found).filter(([k]) => (STEP_OF[k] ?? LAST) <= step),
+        )
+        if (step < LAST) {
+          setErrors(here)
+          if (Object.keys(here).length === 0) go(step + 1)
+          return
+        }
         if (!parsed.success) {
-          const next: Record<string, string> = {}
-          for (const i of parsed.error.issues)
-            next[String(i.path[0])] ??= i.message
-          setErrors(next)
-          toast.error(Object.values(next)[0] ?? 'Check the form')
+          setErrors(found)
+          const first = Object.keys(found)[0]
+          go(Math.min(...Object.keys(found).map((k) => STEP_OF[k] ?? LAST)))
+          toast.error(found[first] ?? 'Check the form')
           return
         }
         setErrors({})
@@ -186,6 +287,9 @@ export function ReportForm({
         }
       }}
     >
+      <div ref={top} className="scroll-mt-4">
+        <StepBar step={step} reached={reached} onPick={go} />
+      </div>
       {restored && (
         <p className="border border-caution/30 bg-caution/10 px-3 py-2 text-[13px]">
           Your unsaved report is back.{' '}
@@ -207,284 +311,306 @@ export function ReportForm({
         </p>
       )}
 
-      <FormField label="Type">
-        <RadioCards<CellType>
-          label="Type"
-          value={v.type}
-          onChange={(type) => setV({ ...v, type })}
-          options={[
-            {
-              value: 'OPEN',
-              label: CELL_TYPE.OPEN,
-              hint: 'Anyone welcome, guests too',
-              icon: DoorOpen,
-            },
-            {
-              value: 'DISCIPLESHIP',
-              label: CELL_TYPE.DISCIPLESHIP,
-              hint: 'Your disciples, a lesson series',
-              icon: BookOpen,
-            },
-            {
-              value: 'SOULWINNING',
-              label: CELL_TYPE.SOULWINNING,
-              hint: 'Sharing the gospel',
-              icon: Sprout,
-            },
-          ]}
-        />
-      </FormField>
-
-      {fixedLeader ? (
-        <FormField label="Network leader">
-          <p className="flex h-10 items-center border bg-muted/40 px-3 text-sm">
-            {fixedLeader}
-          </p>
-        </FormField>
-      ) : (
-        opts.chooseLeader && (
-          <FormField label="Network leader">
-            <PersonCombobox
-              aria-label="Network leader"
-              people={opts.leaders}
-              value={v.leaderId}
-              onChange={(leaderId) => {
-                setV({ ...v, leaderId, attendees: [] })
-                onLeaderChange?.(leaderId)
-              }}
-              placeholder="Choose a leader"
+      {step === 0 && (
+        <>
+          <FormField label="Type">
+            <RadioCards<CellType>
+              label="Type"
+              value={v.type}
+              onChange={(type) => setV({ ...v, type })}
+              options={[
+                {
+                  value: 'OPEN',
+                  label: CELL_TYPE.OPEN,
+                  hint: 'Anyone welcome, guests too',
+                  icon: DoorOpen,
+                },
+                {
+                  value: 'DISCIPLESHIP',
+                  label: CELL_TYPE.DISCIPLESHIP,
+                  hint: 'Your disciples, a lesson series',
+                  icon: BookOpen,
+                },
+                {
+                  value: 'SOULWINNING',
+                  label: CELL_TYPE.SOULWINNING,
+                  hint: 'Sharing the gospel',
+                  icon: Sprout,
+                },
+              ]}
             />
           </FormField>
-        )
+
+          {fixedLeader ? (
+            <FormField label="Network leader">
+              <p className="flex h-10 items-center border bg-muted/40 px-3 text-sm">
+                {fixedLeader}
+              </p>
+            </FormField>
+          ) : (
+            opts.chooseLeader && (
+              <FormField label="Network leader">
+                <PersonCombobox
+                  aria-label="Network leader"
+                  people={opts.leaders}
+                  value={v.leaderId}
+                  onChange={(leaderId) => {
+                    setV({ ...v, leaderId, attendees: [] })
+                    onLeaderChange?.(leaderId)
+                  }}
+                  placeholder="Choose a leader"
+                />
+              </FormField>
+            )
+          )}
+
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+            <FormField
+              label="Date and time"
+              htmlFor="r-date"
+              error={errors.date}
+            >
+              <Input
+                id="r-date"
+                type="datetime-local"
+                value={v.date}
+                onChange={(e) => setV({ ...v, date: e.target.value })}
+              />
+            </FormField>
+            <FormField label="Venue" htmlFor="r-venue" error={errors.venue}>
+              <Input
+                id="r-venue"
+                value={v.venue}
+                onChange={(e) => setV({ ...v, venue: e.target.value })}
+                placeholder="Reyes residence"
+                aria-invalid={!!errors.venue || undefined}
+              />
+            </FormField>
+          </div>
+
+          {!fixedLeader && (
+            <FormField
+              label="Assistant leader"
+              optional
+              hint="If an assistant led this cell group."
+            >
+              <PersonCombobox
+                aria-label="Assistant leader"
+                people={opts.people.filter((p) => p.isMyPrimary)}
+                value={v.assistantId}
+                onChange={(assistantId) =>
+                  setV({ ...v, assistantId: assistantId || undefined })
+                }
+                noneLabel="Nobody"
+                placeholder="Nobody"
+              />
+            </FormField>
+          )}
+        </>
       )}
-
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-        <FormField label="Date and time" htmlFor="r-date" error={errors.date}>
-          <Input
-            id="r-date"
-            type="datetime-local"
-            value={v.date}
-            onChange={(e) => setV({ ...v, date: e.target.value })}
-          />
-        </FormField>
-        <FormField label="Venue" htmlFor="r-venue" error={errors.venue}>
-          <Input
-            id="r-venue"
-            value={v.venue}
-            onChange={(e) => setV({ ...v, venue: e.target.value })}
-            placeholder="Reyes residence"
-            aria-invalid={!!errors.venue || undefined}
-          />
-        </FormField>
-      </div>
-
-      <FormField
-        label="Lesson"
-        error={errors.lessonId}
-        hint={
-          !custom && opts.suggested && v.lessonId === opts.suggested
-            ? 'Suggested: the lesson after the one you taught last.'
-            : undefined
-        }
-      >
-        {custom ? (
-          <Input
-            aria-label="Your own lesson"
-            value={v.lessonTitle ?? ''}
-            onChange={(e) => setV({ ...v, lessonTitle: e.target.value })}
-            placeholder="The lesson’s title"
-          />
-        ) : (
-          <PersonCombobox
-            aria-label="Lesson"
-            people={lessonPeople}
-            value={v.lessonId}
-            onChange={(lessonId) => setV({ ...v, lessonId })}
-            placeholder="Choose a lesson"
-          />
-        )}
-        <button
-          type="button"
-          onClick={() => setCustom(!custom)}
-          className="w-fit text-[13px] font-medium text-primary"
-        >
-          {custom ? 'Choose from the lessons' : 'Use my own lesson'}
-        </button>
-      </FormField>
-
-      <FormField
-        label="Scripture"
-        htmlFor="r-scripture"
-        optional
-        hint="Separate with commas."
-      >
-        <Input
-          id="r-scripture"
-          value={scripture}
-          onChange={(e) => setScripture(e.target.value)}
-          placeholder="Matthew 6:5–15, James 5:16"
-        />
-      </FormField>
-
-      <section aria-label="Who came" className="flex min-w-0 flex-col gap-2">
-        <div className="flex min-w-0 items-baseline justify-between gap-3">
-          <span className="text-[13px] font-medium">
-            Who came · {ticked.size} of {people.length}
-          </span>
-          {ticked.size < people.length && people.length > 0 && (
+      {step === 1 && (
+        <>
+          <FormField
+            label="Lesson"
+            error={errors.lessonId}
+            hint={
+              !custom && opts.suggested && v.lessonId === opts.suggested
+                ? 'Suggested: the lesson after the one you taught last.'
+                : undefined
+            }
+          >
+            {custom ? (
+              <Input
+                aria-label="Your own lesson"
+                value={v.lessonTitle ?? ''}
+                onChange={(e) => setV({ ...v, lessonTitle: e.target.value })}
+                placeholder="The lesson’s title"
+              />
+            ) : (
+              <PersonCombobox
+                aria-label="Lesson"
+                people={lessonPeople}
+                value={v.lessonId}
+                onChange={(lessonId) => setV({ ...v, lessonId })}
+                placeholder="Choose a lesson"
+              />
+            )}
             <button
               type="button"
-              className="shrink-0 text-[13px] font-medium text-primary"
-              onClick={() => setV({ ...v, attendees: people.map((p) => p.id) })}
+              onClick={() => setCustom(!custom)}
+              className="w-fit text-[13px] font-medium text-primary"
             >
-              Tick everyone
+              {custom ? 'Choose from the lessons' : 'Use my own lesson'}
             </button>
-          )}
-        </div>
-        {errors.attendees && (
-          <p role="alert" className="text-xs text-destructive">
-            {errors.attendees}
-          </p>
-        )}
-        {people.length > 8 && (
-          <div className="relative">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          </FormField>
+
+          <FormField
+            label="Scripture"
+            htmlFor="r-scripture"
+            optional
+            hint="Separate with commas."
+          >
+            <Input
+              id="r-scripture"
+              value={scripture}
+              onChange={(e) => setScripture(e.target.value)}
+              placeholder="Matthew 6:5–15, James 5:16"
             />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a name"
-              aria-label="Find a name"
-              className="h-10 w-full min-w-0 border border-input bg-transparent pr-3 pl-9 text-base outline-none focus-visible:border-ring md:text-sm"
-            />
+          </FormField>
+
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+            <FormField
+              label="Worship songs"
+              htmlFor="r-worship"
+              optional
+              hint="Separate with commas."
+            >
+              <Textarea
+                id="r-worship"
+                rows={2}
+                value={worship}
+                onChange={(e) => setWorship(e.target.value)}
+              />
+            </FormField>
+            <FormField
+              label="Follow-up"
+              htmlFor="r-work"
+              optional
+              hint="One per line."
+            >
+              <Textarea
+                id="r-work"
+                rows={2}
+                value={work}
+                onChange={(e) => setWork(e.target.value)}
+              />
+            </FormField>
           </div>
-        )}
-        {people.length === 0 ? (
-          <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-            {opts.chooseLeader && !v.leaderId
-              ? 'Choose the network leader first.'
-              : 'Nobody in this network yet. Add disciples first.'}
-          </p>
-        ) : (
-          <div className="flex max-h-[26rem] min-w-0 flex-col overflow-y-auto border [&>*+*]:border-t">
-            {shown.map((p) => {
-              const on = ticked.has(p.id)
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="checkbox"
-                  aria-checked={on}
-                  onClick={() => {
-                    const next = new Set(ticked)
-                    if (on) next.delete(p.id)
-                    else next.add(p.id)
-                    setV({ ...v, attendees: [...next] })
-                  }}
-                  className={cn(
-                    'flex min-h-12 min-w-0 items-center gap-3 px-3 text-left',
-                    on && 'bg-covered/8',
-                  )}
-                >
-                  <span
-                    aria-hidden="true"
+        </>
+      )}
+      {step === 2 && (
+        <section aria-label="Who came" className="flex min-w-0 flex-col gap-2">
+          <div className="flex min-w-0 items-baseline justify-between gap-3">
+            <span className="text-[13px] font-medium">
+              Who came · {ticked.size} of {people.length}
+            </span>
+            {ticked.size < people.length && people.length > 0 && (
+              <button
+                type="button"
+                className="shrink-0 text-[13px] font-medium text-primary"
+                onClick={() =>
+                  setV({ ...v, attendees: people.map((p) => p.id) })
+                }
+              >
+                Tick everyone
+              </button>
+            )}
+          </div>
+          {errors.attendees && (
+            <p role="alert" className="text-xs text-destructive">
+              {errors.attendees}
+            </p>
+          )}
+          {people.length > 8 && (
+            <div className="relative">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Find a name"
+                aria-label="Find a name"
+                className="h-10 w-full min-w-0 border border-input bg-transparent pr-3 pl-9 text-base outline-none focus-visible:border-ring md:text-sm"
+              />
+            </div>
+          )}
+          {people.length === 0 ? (
+            <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+              {opts.chooseLeader && !v.leaderId
+                ? 'Choose the network leader first.'
+                : 'Nobody in this network yet. Add disciples first.'}
+            </p>
+          ) : (
+            <div className="flex max-h-[26rem] min-w-0 flex-col overflow-y-auto border [&>*+*]:border-t">
+              {shown.map((p) => {
+                const on = ticked.has(p.id)
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={on}
+                    onClick={() => {
+                      const next = new Set(ticked)
+                      if (on) next.delete(p.id)
+                      else next.add(p.id)
+                      setV({ ...v, attendees: [...next] })
+                    }}
                     className={cn(
-                      'h-6 w-1 shrink-0',
-                      p.gender === 'MALE' ? 'bg-men' : 'bg-women',
-                    )}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
-                    {p.name}
-                  </span>
-                  {p.cellStatus !== 'REGULAR' && (
-                    <span className="shrink-0 text-xs text-caution">
-                      {CELL_STATUS[p.cellStatus]}
-                    </span>
-                  )}
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'grid size-5 shrink-0 place-items-center border-[1.5px]',
-                      on
-                        ? 'border-covered bg-covered text-background'
-                        : 'border-foreground/25',
+                      'flex min-h-12 min-w-0 items-center gap-3 px-3 text-left',
+                      on && 'bg-covered/8',
                     )}
                   >
-                    {on && <Check className="size-3" strokeWidth={3} />}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </section>
-
-      {!fixedLeader && (
-        <FormField
-          label="Assistant leader"
-          optional
-          hint="If an assistant led this cell group."
-        >
-          <PersonCombobox
-            aria-label="Assistant leader"
-            people={opts.people.filter((p) => p.isMyPrimary)}
-            value={v.assistantId}
-            onChange={(assistantId) =>
-              setV({ ...v, assistantId: assistantId || undefined })
-            }
-            noneLabel="Nobody"
-            placeholder="Nobody"
-          />
-        </FormField>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'h-6 w-1 shrink-0',
+                        p.gender === 'MALE' ? 'bg-men' : 'bg-women',
+                      )}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
+                      {p.name}
+                    </span>
+                    {p.cellStatus !== 'REGULAR' && (
+                      <span className="shrink-0 text-xs text-caution">
+                        {CELL_STATUS[p.cellStatus]}
+                      </span>
+                    )}
+                    <CheckMark on={on} />
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </section>
       )}
 
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-        <FormField
-          label="Worship songs"
-          htmlFor="r-worship"
-          optional
-          hint="Separate with commas."
-        >
-          <Textarea
-            id="r-worship"
-            rows={2}
-            value={worship}
-            onChange={(e) => setWorship(e.target.value)}
-          />
-        </FormField>
-        <FormField
-          label="Follow-up"
-          htmlFor="r-work"
-          optional
-          hint="One per line."
-        >
-          <Textarea
-            id="r-work"
-            rows={2}
-            value={work}
-            onChange={(e) => setWork(e.target.value)}
-          />
-        </FormField>
-      </div>
-
       <DialogActions>
-        {onCancel && (
+        {step === 0 ? (
+          onCancel && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={onCancel}
+              disabled={pending}
+            >
+              Cancel
+            </Button>
+          )
+        ) : (
           <Button
             type="button"
             variant="secondary"
             size="lg"
-            onClick={onCancel}
+            onClick={() => go(step - 1)}
             disabled={pending}
           >
-            Cancel
+            <ArrowLeft aria-hidden="true" /> Back
           </Button>
         )}
-        <SubmitButton size="lg" pending={pending}>
-          {submitLabel}
-        </SubmitButton>
+        {step < LAST ? (
+          <Button type="submit" size="lg" data-short="Next">
+            Next: {STEPS[step + 1]} <ArrowRight aria-hidden="true" />
+          </Button>
+        ) : (
+          <SubmitButton size="lg" pending={pending}>
+            {submitLabel}
+          </SubmitButton>
+        )}
       </DialogActions>
     </form>
   )

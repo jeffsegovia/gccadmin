@@ -46,5 +46,16 @@ export const listSoulWinningSchema = z.object({
   range: z.enum(REPORT_RANGES).optional(),
   mine: z.boolean().optional(),
   q: z.string().optional(),
+  /** Sessions: one network leader's (admins and pastors). Believers: won
+   * in that leader's network. */
+  leader: z.string().optional(),
+  assistant: z.string().optional(),
+  /** Believers: who handles them (v2's "Won by"). */
+  wonBy: z.string().optional(),
+  memberType: z.array(z.enum(memberType.enumValues)).optional(),
+  /** Believers: which lessons to track (v2's View). */
+  lessons: z.enum(['soul-winning', 'consolidation']).optional(),
+  /** Believers: only those at one session (v2's Track). */
+  session: z.string().optional(),
 })
 export type SoulWinningSearch = z.infer<typeof listSoulWinningSchema>

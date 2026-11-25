@@ -83,9 +83,53 @@ link at `/me/preview-portal-joshua-reyes`).
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 ```
 
+## Branches
+
+As in Osamu: work on `feat/*`, `fix/*`, `release/*` or `hotfix/*`
+branches and open pull requests into `development`. Merging into
+`development` deploys staging (a Vercel preview); merging `development`
+into `main` deploys production.
+
 ## Deploying to Vercel
 
-Import the repo; Vercel detects the build (`vite build`, Nitro picks the
-Vercel preset). Set the variables from `.env.template` (production Clerk
-keys, `DATABASE_URL` as the pooled connection string), and run
-`pnpm db:migrate` against production once before switching traffic.
+GitHub Actions deploys (`.github/workflows/deploy.yml`), not Vercel's Git
+integration (`vercel.json` turns that off so nothing deploys twice). On a
+push to `main` or `development` it runs the format check, lint, type
+check and tests, applies `migrations/` to that environment's database,
+then builds with `vercel build` (Nitro picks the Vercel preset) and
+deploys the prebuilt output.
+
+Set up once:
+
+1. Create the Vercel project (`vercel link`) and set the variables from
+   `.env.template` for Production and Preview (production Clerk keys,
+   `DATABASE_URL` as the pooled connection string, `CRON_SECRET`).
+2. In GitHub, add two environments, `production` and `development`, each
+   with the secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+   (from `.vercel/project.json`) and `DATABASE_URL`. Optionally set the
+   variable `STAGING_DOMAIN` on `development` to alias each staging
+   deploy.
+
+## Emails
+
+The copies are in `src/lib/email/templates.ts`; `pnpm email:preview`
+writes them all to `email-preview.html`. Scheduled emails run from
+Vercel Cron (`vite.config.ts` lists the schedule, in UTC):
+
+| Email                         | When (Manila) | To                                                              |
+| ----------------------------- | ------------- | --------------------------------------------------------------- |
+| Weekly nudge                  | Saturday 5 PM | Primary leaders with no report this week                        |
+| Weekly summary and birthdays  | Monday 7 AM   | Admins and pastors; each leader with birthdays in their network |
+| Overdue reports               | Monday 8 AM   | Primary leaders with no report in 14 days                       |
+| Attendance still open         | Monday 9 AM   | Admins, if last Sunday isn't locked                             |
+| Report from a disciple's page | When filed    | Their network leader                                            |
+
+They send only with `EMAIL_REMINDERS=on`.
+
+## Share image and shortcuts
+
+`public/og.png` (the link preview) and the installed app's shortcut icons
+(`public/shortcuts/`) are drawn by `pnpm images` with the preinstalled
+Chromium. The shortcuts (long-press the app icon) are in
+`public/manifest.webmanifest`: New cell report, Take attendance, Add a
+disciple and New soul-winning session.

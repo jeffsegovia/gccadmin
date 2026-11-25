@@ -10,7 +10,7 @@ const db = drizzle({ client: pool })
 
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`)
 const at = (iso: string) => new Date(`${iso}:00.000+08:00`)
-const pick = <T>(list: ReadonlyArray<T>, i: number) => list[i % list.length]!
+const pick = <T>(list: ReadonlyArray<T>, i: number) => list[i % list.length]
 
 async function main() {
   const existing = await db
@@ -32,7 +32,7 @@ async function main() {
       .insert(s.disciples)
       .values({ address: 'Morong, Rizal', birthdate: day('1995-03-14'), ...v })
       .returning({ id: s.disciples.id })
-    return row!.id
+    return row.id
   }
   const pastor = await mk({
     name: 'Ptr. John De Guzman',
@@ -165,12 +165,32 @@ async function main() {
     const [l] = await db
       .insert(s.lessons)
       .values({
-        lessonSeriesId: series!.id,
+        lessonSeriesId: series.id,
         title,
         scriptureReferences: ['Ephesians 2:8-9'],
       })
       .returning()
-    lessonIds.push(l!.id)
+    lessonIds.push(l.id)
+  }
+
+  // The series new believers are tracked against (v2: by series title).
+  const swLessons: Record<string, Array<string>> = {}
+  for (const [title, names] of [
+    ['Soul-Winning', ['The Gospel', 'Assurance of Salvation']],
+    ['Consolidation', ['New Life', 'Prayer', 'The Church']],
+  ] as const) {
+    const [sr] = await db
+      .insert(s.lessonSeries)
+      .values({ title, tags: ['Soul winning'] })
+      .returning()
+    swLessons[title] = []
+    for (const name of names) {
+      const [l] = await db
+        .insert(s.lessons)
+        .values({ lessonSeriesId: sr.id, title: name })
+        .returning()
+      swLessons[title].push(l.id)
+    }
   }
 
   // Cell reports over the last month.
@@ -194,7 +214,7 @@ async function main() {
       const members = ids.filter((_, k) => k % 3 === i).slice(0, 6)
       await db
         .insert(s.attendedCellGroups)
-        .values(members.map((m) => ({ cellReportId: r!.id, discipleId: m })))
+        .values(members.map((m) => ({ cellReportId: r.id, discipleId: m })))
     }
   }
 
@@ -219,7 +239,7 @@ async function main() {
         invitedById: pick(ids, i),
       })
       .returning()
-    guestIds.push(g!.id)
+    guestIds.push(g.id)
   }
   for (let w = 8; w >= 0; w--) {
     const d = new Date(sunday.getTime() - w * 7 * 86_400_000)
@@ -233,12 +253,12 @@ async function main() {
     const present = ids.filter((_, k) => (k + w) % 4 !== 0)
     await db
       .insert(s.attendanceDisciples)
-      .values(present.map((p) => ({ attendanceId: a!.id, discipleId: p })))
+      .values(present.map((p) => ({ attendanceId: a.id, discipleId: p })))
     const here = guestIds.filter((_, k) => k <= 8 - w && (k + w) % 2 === 0)
     if (here.length)
       await db
         .insert(s.attendanceNewComers)
-        .values(here.map((g) => ({ attendanceId: a!.id, newComerId: g })))
+        .values(here.map((g) => ({ attendanceId: a.id, newComerId: g })))
   }
 
   // A soul-winning session this month.
@@ -247,11 +267,12 @@ async function main() {
     .values({
       venue: 'Plaza Rizal',
       date: at(`${today.toISOString().slice(0, 10)}T16:00`),
-      lessonId: lessonIds[0]!,
+      lessonId: swLessons['Soul-Winning'][0],
       networkLeaderId: mark,
       assistantLeaderId: joshua,
     })
     .returning()
+  const won: Array<string> = []
   for (const name of ['Liam Torres', 'Grace Villanueva']) {
     const [b] = await db
       .insert(s.newBelievers)
@@ -264,7 +285,33 @@ async function main() {
       .returning()
     await db
       .insert(s.soulWinningNewBelievers)
-      .values({ newBelieverId: b!.id, reportId: sw!.id })
+      .values({ newBelieverId: b.id, reportId: sw.id })
+    won.push(b.id)
+  }
+  // Follow-ups: Liam has taken a few more lessons than Grace.
+  for (const [i, lessonId] of [
+    swLessons['Soul-Winning'][1],
+    swLessons.Consolidation[0],
+  ].entries()) {
+    const [r] = await db
+      .insert(s.soulWinningReports)
+      .values({
+        venue: 'Torres residence',
+        date: at(`${today.toISOString().slice(0, 10)}T1${8 + i}:00`),
+        lessonId,
+        type: 'CONSOLIDATION',
+        networkLeaderId: mark,
+        assistantLeaderId: joshua,
+      })
+      .returning()
+    await db
+      .insert(s.soulWinningNewBelievers)
+      .values(
+        (i === 0 ? won : won.slice(0, 1)).map((id) => ({
+          newBelieverId: id,
+          reportId: r.id,
+        })),
+      )
   }
 
   // Joshua's portal link, for trying /me/<token>.

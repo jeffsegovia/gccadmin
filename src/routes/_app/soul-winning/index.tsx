@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   Link,
   createFileRoute,
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
-import { Plus, Sprout, Trash2 } from 'lucide-react'
+import { Check, ListChecks, Plus, Sprout, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Empty, Page } from '@/components/shell/page'
 import { ReportsTabs } from '@/components/reports-tabs'
@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { BelieverSheet } from '@/components/soul-winning/believer-sheet'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
 import { listSoulWinningSchema } from '@/lib/soul-winning/schema'
@@ -50,6 +51,8 @@ function SoulWinningPage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const router = useRouter()
   const [removing, setRemoving] = useState<string | null>(null)
+  const [open, setOpen] = useState<string | null>(null)
+  const close = useCallback(() => setOpen(null), [])
   const view = search.view ?? 'sessions'
   const range: ReportRange = search.range ?? 'this_month'
   const set = (next: Partial<typeof search>) =>
@@ -120,6 +123,7 @@ function SoulWinningPage() {
         />
         {view === 'sessions' && (
           <NativeSelect
+            className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
             size="lg"
             value={range}
             onChange={(e) => set({ range: e.target.value as ReportRange })}
@@ -131,6 +135,98 @@ function SoulWinningPage() {
               </NativeSelectOption>
             ))}
           </NativeSelect>
+        )}
+        {data.everyone && data.leaders.length > 0 && (
+          <NativeSelect
+            className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
+            size="lg"
+            value={search.leader ?? ''}
+            onChange={(e) =>
+              set({ leader: e.target.value || undefined, wonBy: undefined })
+            }
+            aria-label="Network leader"
+          >
+            <NativeSelectOption value="">Every leader</NativeSelectOption>
+            {data.leaders.map((l) => (
+              <NativeSelectOption key={l.id} value={l.id}>
+                {l.name}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        )}
+        {view === 'sessions' && (
+          <NativeSelect
+            className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
+            size="lg"
+            value={search.type ?? ''}
+            onChange={(e) =>
+              set({
+                type: (e.target.value || undefined) as typeof search.type,
+              })
+            }
+            aria-label="Kind"
+          >
+            <NativeSelectOption value="">Both kinds</NativeSelectOption>
+            <NativeSelectOption value="SOUL_WINNING">
+              Soul winning
+            </NativeSelectOption>
+            <NativeSelectOption value="CONSOLIDATION">
+              Consolidation
+            </NativeSelectOption>
+          </NativeSelect>
+        )}
+        {view === 'souls' && (
+          <>
+            {data.winners.length > 0 && (
+              <NativeSelect
+                className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
+                size="lg"
+                value={search.wonBy ?? ''}
+                onChange={(e) => set({ wonBy: e.target.value || undefined })}
+                aria-label="Won by"
+              >
+                <NativeSelectOption value="">Won by anyone</NativeSelectOption>
+                {data.winners.map((w) => (
+                  <NativeSelectOption key={w.id} value={w.id}>
+                    {w.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            )}
+            <NativeSelect
+              className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
+              size="lg"
+              value={search.memberType?.[0] ?? ''}
+              onChange={(e) =>
+                set({
+                  memberType: e.target.value
+                    ? [e.target.value as keyof typeof MEMBER_TYPE]
+                    : undefined,
+                })
+              }
+              aria-label="Group"
+            >
+              <NativeSelectOption value="">Every group</NativeSelectOption>
+              {(
+                Object.keys(MEMBER_TYPE) as Array<keyof typeof MEMBER_TYPE>
+              ).map((k) => (
+                <NativeSelectOption key={k} value={k}>
+                  {MEMBER_TYPE[k]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <Segmented
+              label="Lessons"
+              className="w-full sm:w-80"
+              value={search.lessons ?? 'all'}
+              onChange={(v) => set({ lessons: v === 'all' ? undefined : v })}
+              options={[
+                { value: 'all', label: 'All lessons' },
+                { value: 'soul-winning', label: 'Soul winning' },
+                { value: 'consolidation', label: 'Consolidation' },
+              ]}
+            />
+          </>
         )}
         {data.everyone && data.myId && (
           <Segmented
@@ -181,6 +277,17 @@ function SoulWinningPage() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={`Track the believers at ${s.venue}`}
+                  title="Track their lessons"
+                  onClick={() =>
+                    set({ view: 'souls', session: s.id, q: undefined })
+                  }
+                >
+                  <ListChecks aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   aria-label="Delete session"
                   onClick={() => setRemoving(s.id)}
                 >
@@ -197,6 +304,25 @@ function SoulWinningPage() {
             placeholder="Search new believers"
             onChange={(q) => set({ q })}
           />
+          {search.session && (
+            <div className="flex min-w-0 items-center gap-2 border bg-card px-3 py-2 text-sm">
+              <ListChecks
+                aria-hidden="true"
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+              <span className="min-w-0 flex-1 truncate">
+                At {data.sessionName ?? 'one session'}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Show every believer"
+                onClick={() => set({ session: undefined })}
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </div>
+          )}
           {data.souls.length === 0 ? (
             <Empty
               icon={Sprout}
@@ -205,49 +331,142 @@ function SoulWinningPage() {
               }
             />
           ) : (
-            <Group>
-              {data.souls.map((b) => (
-                <div
-                  key={b.id}
-                  className="flex min-h-14 min-w-0 items-center gap-3 px-3.5 py-2"
-                >
-                  <GenderBar gender={b.gender} />
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-[15px] font-medium">
-                      {b.name}
+            <>
+              {/* Phones: a row each with a bar of lessons taken. */}
+              <Group className="lg:hidden">
+                {data.souls.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setOpen(b.id)}
+                    className="flex min-h-15 w-full min-w-0 items-center gap-3 px-3.5 py-2 text-left hover:bg-muted/50"
+                  >
+                    <GenderBar gender={b.gender} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="truncate text-[15px] font-medium">
+                        {b.name}
+                      </span>
+                      <LessonBar
+                        total={data.lessons.length}
+                        taken={b.taken.length}
+                      />
+                      <span className="truncate text-xs text-muted-foreground">
+                        {MEMBER_TYPE[b.memberType]}
+                        {b.handledByName
+                          ? ` · ${b.handledByName}`
+                          : b.leaderName
+                            ? ` · ${b.leaderName}`
+                            : ''}
+                      </span>
                     </span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {MEMBER_TYPE[b.memberType]} · won {shortDate(b.createdAt)}{' '}
-                      · {b.sessions} {b.sessions === 1 ? 'session' : 'sessions'}
-                      {b.handledByName
-                        ? ` · ${b.handledByName}`
-                        : b.leaderName
-                          ? ` · ${b.leaderName}`
-                          : ''}
-                    </span>
-                  </span>
-                  {b.discipleProfileId ? (
-                    <Link
-                      to="/disciples/$discipleId"
-                      params={{ discipleId: b.discipleProfileId }}
-                    >
+                    {b.discipleProfileId ? (
                       <Pill tone="covered">Disciple</Pill>
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/disciples/new"
-                      search={{ fromBeliever: b.id }}
-                      className="shrink-0 text-[13px] font-medium text-primary"
-                    >
-                      Make disciple
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </Group>
+                    ) : (
+                      b.complete && <Pill tone="covered">Ready</Pill>
+                    )}
+                  </button>
+                ))}
+              </Group>
+              {/* Wide screens: v2's table, a column per lesson. */}
+              <div className="overflow-x-auto border bg-card max-lg:hidden dark:border-transparent">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-muted-foreground">
+                      <th
+                        scope="col"
+                        className="min-w-48 px-3 py-2.5 font-medium"
+                      >
+                        New believer
+                      </th>
+                      <th
+                        scope="col"
+                        className="min-w-36 px-3 py-2.5 font-medium"
+                      >
+                        Handled by
+                      </th>
+                      {data.lessons.map((l) => (
+                        <th
+                          key={l.id}
+                          scope="col"
+                          title={`${l.seriesTitle}: ${l.title}`}
+                          className="w-24 max-w-28 px-2 py-2.5 text-center text-[11px] leading-tight font-medium"
+                        >
+                          <span className="line-clamp-2">{l.title}</span>
+                        </th>
+                      ))}
+                      <th
+                        scope="col"
+                        className="px-3 py-2.5 text-right font-medium"
+                      >
+                        Taken
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.souls.map((b) => {
+                      const has = new Set(b.taken)
+                      return (
+                        <tr
+                          key={b.id}
+                          onClick={() => setOpen(b.id)}
+                          className="cursor-pointer border-t hover:bg-muted/50"
+                        >
+                          <th
+                            scope="row"
+                            className="px-3 py-2 text-left font-normal"
+                          >
+                            <button
+                              type="button"
+                              className="flex min-w-0 flex-col text-left"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpen(b.id)
+                              }}
+                            >
+                              <span className="font-medium">{b.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {MEMBER_TYPE[b.memberType]}
+                                {b.discipleProfileId ? ' · Disciple' : ''}
+                              </span>
+                            </button>
+                          </th>
+                          <td className="px-3 py-2 text-[13px]">
+                            {b.handledByName ?? b.leaderName ?? '—'}
+                          </td>
+                          {data.lessons.map((l) => (
+                            <td key={l.id} className="px-2 py-2 text-center">
+                              {has.has(l.id) ? (
+                                <span className="text-covered" title="Taken">
+                                  <Check
+                                    aria-label="Taken"
+                                    className="mx-auto size-4"
+                                    strokeWidth={3}
+                                  />
+                                </span>
+                              ) : (
+                                <span
+                                  aria-label="Not taken"
+                                  className="text-muted-foreground/50"
+                                >
+                                  ·
+                                </span>
+                              )}
+                            </td>
+                          ))}
+                          <td className="numeric px-3 py-2 text-right">
+                            {b.taken.length}/{data.lessons.length}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </>
       )}
+      <BelieverSheet id={open} onClose={close} />
       <AlertDialog
         open={!!removing}
         onOpenChange={(o) => !o && setRemoving(null)}
@@ -280,5 +499,29 @@ function SoulWinningPage() {
         </AlertDialogContent>
       </AlertDialog>
     </Page>
+  )
+}
+
+function LessonBar({ total, taken }: { total: number; taken: number }) {
+  if (total === 0) return null
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <span
+        aria-hidden="true"
+        className="flex h-1.5 max-w-40 min-w-0 flex-1 gap-px"
+      >
+        {Array.from({ length: total }, (_, i) => (
+          <span
+            key={i}
+            className={
+              i < taken ? 'flex-1 bg-covered' : 'flex-1 bg-foreground/12'
+            }
+          />
+        ))}
+      </span>
+      <span className="numeric shrink-0 text-xs text-muted-foreground">
+        {taken} of {total} lessons
+      </span>
+    </span>
   )
 }

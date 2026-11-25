@@ -9,6 +9,7 @@ import { appConfig } from '@/config/site'
 import { THEME_BAR, themeScript } from '@/lib/theme'
 import type { ThemePreference } from '@/lib/theme'
 import { getThemePreference } from '@/server/theme/theme.functions'
+import { getSiteUrl } from '@/server/site.functions'
 import { DEV_AUTH } from '@/lib/auth/dev'
 
 import appCss from '../styles.css?url'
@@ -34,7 +35,13 @@ function themeColorMeta(theme: ThemePreference | undefined) {
 }
 
 export const Route = createRootRoute({
-  loader: async () => ({ theme: await getThemePreference() }),
+  loader: async () => {
+    const [theme, site] = await Promise.all([
+      getThemePreference(),
+      getSiteUrl(),
+    ])
+    return { theme, site }
+  },
   staleTime: Infinity,
   shouldReload: false,
   head: ({ loaderData }) => ({
@@ -48,6 +55,19 @@ export const Route = createRootRoute({
       { name: 'description', content: appConfig.description },
       { property: 'og:site_name', content: appConfig.title },
       { property: 'og:locale', content: 'en_PH' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:title', content: appConfig.title },
+      { property: 'og:description', content: appConfig.description },
+      // Crawlers want an absolute address for the share image.
+      { property: 'og:image', content: `${loaderData?.site ?? ''}/og.png` },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      {
+        property: 'og:image:alt',
+        content: 'GCC Admin, Grace City Church',
+      },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:image', content: `${loaderData?.site ?? ''}/og.png` },
       ...themeColorMeta(loaderData?.theme),
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       {

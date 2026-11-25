@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, asc, desc, eq, gte } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import { db } from '@/db'
@@ -9,9 +9,15 @@ import {
   cellReports,
   disciplePortalLinks,
   disciples,
+  lessons,
+  users,
 } from '@/db/schema'
-import { dayToDate, manilaDay } from '@/lib/dates'
+import { dateTime, dayToDate, fromLocalInput, manilaDay } from '@/lib/dates'
 import { cellReportSchema } from '@/lib/cell-reports/schema'
+import type { CellReportInput } from '@/lib/cell-reports/schema'
+import { CELL_TYPE } from '@/lib/labels'
+import { portalReportEmail } from '@/lib/email/templates'
+import { automaticEmailsOn, sendEmails, site } from '@/server/email/send.server'
 import {
   attendeeChoices,
   insertReport,
@@ -176,11 +182,64 @@ export const createPortalReport = createServerFn({ method: 'POST' })
     )
     if (data.report.attendees.some((id) => !allowed.has(id)))
       throw new Error('You can only report the people you handle.')
-    return insertReport(
+    const made = await insertReport(
       { ...data.report, assistantId: d.id, leaderId: d.leaderId },
       d.leaderId,
     )
+    // Tell the network leader (once automatic emails are on); a failed
+    // email never fails the report.
+    if (automaticEmailsOn())
+      await notifyLeader(d.leaderId, d.name, made.id, data.report).catch(
+        (e: unknown) => console.error('Portal report email failed', e),
+      )
+    return made
   })
+
+async function notifyLeader(
+  leaderId: string,
+  discipleName: string,
+  reportId: string,
+  report: CellReportInput,
+) {
+  const [to] = await db
+    .select({ name: disciples.name, email: users.email })
+    .from(disciples)
+    .innerJoin(users, eq(users.clerkId, disciples.userAccountId))
+    .where(eq(disciples.id, leaderId))
+  if (!to) return
+  const [names, [lesson]] = await Promise.all([
+    report.attendees.length
+      ? db
+          .select({ name: disciples.name })
+          .from(disciples)
+          .where(inArray(disciples.id, report.attendees))
+      : Promise.resolve([]),
+    report.lessonId
+      ? db
+          .select({ title: lessons.title })
+          .from(lessons)
+          .where(eq(lessons.id, report.lessonId))
+      : Promise.resolve([]),
+  ])
+  await sendEmails([
+    {
+      to: to.email,
+      email: portalReportEmail(
+        { site: site() },
+        {
+          leader: to.name,
+          disciple: discipleName,
+          type: CELL_TYPE[report.type],
+          date: dateTime(fromLocalInput(report.date)),
+          venue: report.venue,
+          lesson: lesson?.title ?? report.lessonTitle ?? null,
+          attendees: names.map((n) => n.name),
+          reportId,
+        },
+      ),
+    },
+  ])
+}
 
 /** The portal's own reports, newest first. */
 export const getPortalReports = createServerFn({ method: 'GET' })

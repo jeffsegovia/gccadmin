@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { and, eq, ilike } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/db'
+import { missingLessons } from '@/server/soul-winning/believers.server'
 import {
   disciplePortalLinks,
   disciples,
@@ -157,6 +158,13 @@ export const createDisciple = createServerFn({ method: 'POST' })
       ? (data.leaderId ?? access.disciple?.id)
       : access.disciple?.id
     if (!leaderId) throw new AccessError('Choose their network leader.')
+    if (data.fromNewBelieverId) {
+      const missing = await missingLessons(data.fromNewBelieverId)
+      if (missing.length)
+        throw new AccessError(
+          `They can become a disciple once every soul-winning and consolidation lesson is taken (${missing.length} to go).`,
+        )
+    }
     const [created] = await db
       .insert(disciples)
       .values({ ...valuesOf(data), leaderId })

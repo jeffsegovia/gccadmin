@@ -228,6 +228,74 @@ function InsightsPage() {
         </div>
       </Section>
 
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+        <Section title={`Soul winning · ${data.yearToDate.year} so far`}>
+          <div className="grid grid-cols-3 border bg-card dark:border-transparent [&>*+*]:border-l">
+            {(
+              [
+                ['Sessions', data.yearToDate.soulWinning],
+                ['Consolidation', data.yearToDate.consolidation],
+                ['New believers', data.yearToDate.believers],
+              ] as const
+            ).map(([label, n]) => (
+              <div
+                key={label}
+                className="flex min-w-0 flex-col gap-0.5 px-3 py-3 sm:px-4"
+              >
+                <span className="truncate text-xs text-muted-foreground">
+                  {label}
+                </span>
+                <span className="numeric text-2xl font-semibold">{n}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+        <Section title="Cell groups this week">
+          <div className="flex min-w-0 flex-col border bg-card dark:border-transparent">
+            <div className="grid grid-cols-2 border-b [&>*+*]:border-l">
+              <div className="flex min-w-0 flex-col gap-0.5 px-3 py-3 sm:px-4">
+                <span className="truncate text-xs text-muted-foreground">
+                  Reported
+                </span>
+                <span className="numeric text-2xl font-semibold">
+                  {data.cellGroupsThisWeek.total}
+                </span>
+              </div>
+              <div className="flex min-w-0 flex-col gap-0.5 px-3 py-3 sm:px-4">
+                <span className="truncate text-xs text-muted-foreground">
+                  With an assistant
+                </span>
+                <span className="numeric text-2xl font-semibold">
+                  {data.cellGroupsThisWeek.withAssistant}
+                </span>
+              </div>
+            </div>
+            <h3 className="px-3 pt-3 text-[13px] font-medium text-muted-foreground sm:px-4">
+              Disciples leading cell groups
+            </h3>
+            {data.cellGroupsThisWeek.assistants.length === 0 ? (
+              <p className="px-3 pt-1 pb-3 text-sm text-muted-foreground sm:px-4">
+                None this week yet.
+              </p>
+            ) : (
+              <ul className="flex flex-col px-3 pb-2 sm:px-4 [&>*+*]:border-t">
+                {data.cellGroupsThisWeek.assistants.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex min-w-0 items-center gap-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 truncate">{a.name}</span>
+                    <span className="numeric shrink-0 text-muted-foreground">
+                      {a.n} {a.n === 1 ? 'group' : 'groups'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Section>
+      </div>
+
       <Section title={`Disciples · ${d.total}`}>
         <div className="grid min-w-0 gap-4 lg:grid-cols-3">
           {(
@@ -274,6 +342,10 @@ function InsightsSkeleton() {
       >
         <Skeleton className="h-64 w-full" />
         <Skeleton className="h-80 w-full" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-28" />
+          <Skeleton className="h-28" />
+        </div>
         <div className="grid gap-4 lg:grid-cols-3">
           <Skeleton className="h-56" />
           <Skeleton className="h-56" />

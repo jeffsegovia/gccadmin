@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Check, Plus, X, HeartHandshake, Sprout } from 'lucide-react'
+import { Plus, X, HeartHandshake, Sprout } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { cn } from 'cn'
+import { CheckMark } from '@/components/check-mark'
 import { Page } from '@/components/shell/page'
 import { ChipChoice, FormField } from '@/components/form-field'
 import { PersonCombobox } from '@/components/person-combobox'
@@ -313,17 +314,7 @@ function NewSessionPage() {
                       <span className="min-w-0 flex-1 truncate font-medium">
                         {b.name}
                       </span>
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          'grid size-5 shrink-0 place-items-center border-[1.5px]',
-                          on
-                            ? 'border-covered bg-covered text-background'
-                            : 'border-foreground/25',
-                        )}
-                      >
-                        {on && <Check className="size-3" strokeWidth={3} />}
-                      </span>
+                      <CheckMark on={on} />
                     </button>
                   )
                 })}

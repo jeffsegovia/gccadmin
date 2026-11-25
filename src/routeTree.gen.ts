@@ -41,6 +41,7 @@ import { Route as AppReportsNewRouteImport } from './routes/_app/reports/new'
 import { Route as AppSoulWinningIndexRouteImport } from './routes/_app/soul-winning/index'
 import { Route as AppSoulWinningNewRouteImport } from './routes/_app/soul-winning/new'
 import { Route as FocusAttendanceAttendanceIdRouteImport } from './routes/_focus/attendance/$attendanceId'
+import { Route as ApiCronJobRouteImport } from './routes/api/cron/$job'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -201,6 +202,11 @@ const FocusAttendanceAttendanceIdRoute =
     path: '/attendance/$attendanceId',
     getParentRoute: () => FocusRoute,
   } as any)
+const ApiCronJobRoute = ApiCronJobRouteImport.update({
+  id: '/api/cron/$job',
+  path: '/api/cron/$job',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/reports/new': typeof AppReportsNewRoute
   '/soul-winning/new': typeof AppSoulWinningNewRoute
   '/attendance/$attendanceId': typeof FocusAttendanceAttendanceIdRoute
+  '/api/cron/$job': typeof ApiCronJobRoute
   '/attendance/': typeof AppAttendanceIndexRoute
   '/disciples/': typeof AppDisciplesIndexRoute
   '/lessons/': typeof AppLessonsIndexRoute
@@ -259,6 +266,7 @@ export interface FileRoutesByTo {
   '/reports/new': typeof AppReportsNewRoute
   '/soul-winning/new': typeof AppSoulWinningNewRoute
   '/attendance/$attendanceId': typeof FocusAttendanceAttendanceIdRoute
+  '/api/cron/$job': typeof ApiCronJobRoute
   '/attendance': typeof AppAttendanceIndexRoute
   '/disciples': typeof AppDisciplesIndexRoute
   '/lessons': typeof AppLessonsIndexRoute
@@ -294,6 +302,7 @@ export interface FileRoutesById {
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/soul-winning/new': typeof AppSoulWinningNewRoute
   '/_focus/attendance/$attendanceId': typeof FocusAttendanceAttendanceIdRoute
+  '/api/cron/$job': typeof ApiCronJobRoute
   '/_app/attendance/': typeof AppAttendanceIndexRoute
   '/_app/disciples/': typeof AppDisciplesIndexRoute
   '/_app/lessons/': typeof AppLessonsIndexRoute
@@ -328,6 +337,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/soul-winning/new'
     | '/attendance/$attendanceId'
+    | '/api/cron/$job'
     | '/attendance/'
     | '/disciples/'
     | '/lessons/'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/soul-winning/new'
     | '/attendance/$attendanceId'
+    | '/api/cron/$job'
     | '/attendance'
     | '/disciples'
     | '/lessons'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/_app/reports/new'
     | '/_app/soul-winning/new'
     | '/_focus/attendance/$attendanceId'
+    | '/api/cron/$job'
     | '/_app/attendance/'
     | '/_app/disciples/'
     | '/_app/lessons/'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   MeTokenRoute: typeof MeTokenRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
+  ApiCronJobRoute: typeof ApiCronJobRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -637,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FocusAttendanceAttendanceIdRouteImport
       parentRoute: typeof FocusRoute
     }
+    '/api/cron/$job': {
+      id: '/api/cron/$job'
+      path: '/api/cron/$job'
+      fullPath: '/api/cron/$job'
+      preLoaderRoute: typeof ApiCronJobRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -723,6 +743,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeTokenRoute: MeTokenRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
+  ApiCronJobRoute: ApiCronJobRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,105 @@
+name: Deploy
+
+# Osamu's flow: work on feat/* (or fix/*, release/*, hotfix/*) branches,
+# merge into development to deploy a preview (staging), and into main to
+# deploy production. Every deploy runs the checks first.
+on:
+  push:
+    branches:
+      - main
+      - development
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
+    permissions:
+      contents: read
+
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+
+    steps:
+      # ----------------------------------------
+      # Checkout
+      # ----------------------------------------
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # ----------------------------------------
+      # Node / pnpm
+      # ----------------------------------------
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ----------------------------------------
+      # Quality checks
+      # ----------------------------------------
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # ----------------------------------------
+      # Database (additive SQL in migrations/)
+      # ----------------------------------------
+
+      - name: Apply database migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # ----------------------------------------
+      # Vercel (build here, deploy the prebuilt output)
+      # ----------------------------------------
+
+      - name: Pull Vercel settings and environment variables
+        run: pnpm dlx vercel@latest pull --yes --environment=$VERCEL_ENV --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: pnpm dlx vercel@latest build ${{ github.ref_name == 'main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to production
+        if: github.ref_name == 'main'
+        run: pnpm dlx vercel@latest deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to staging
+        if: github.ref_name == 'development'
+        run: |
+          url=$(pnpm dlx vercel@latest deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ vars.STAGING_DOMAIN }}" ]; then
+            pnpm dlx vercel@latest alias set "$url" "${{ vars.STAGING_DOMAIN }}" --token=${{ secrets.VERCEL_TOKEN }}
+          fi

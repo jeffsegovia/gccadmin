@@ -40,6 +40,10 @@ import {
 } from '@/server/disciples/disciples.queries'
 import { fromLocalInput } from '@/lib/dates'
 import {
+  lessonsTakenBy,
+  trackedLessons,
+} from '@/server/soul-winning/believers.server'
+import {
   consolidationSchema,
   listSoulWinningSchema,
   newBelieverSchema,
@@ -75,7 +79,16 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const access = await requireAccess()
     const bounds = rangeBounds(data.range ?? 'this_month')
-    const parts: Array<SQL | undefined> = [scopeOf(access, data.mine)]
+    const everyone = seesEveryone(access)
+    const parts: Array<SQL | undefined> = [
+      scopeOf(access, data.mine),
+      everyone && data.leader
+        ? eq(soulWinningReports.networkLeaderId, data.leader)
+        : undefined,
+      data.assistant
+        ? eq(soulWinningReports.assistantLeaderId, data.assistant)
+        : undefined,
+    ]
     if (bounds)
       parts.push(
         gte(soulWinningReports.date, bounds[0]),
@@ -140,6 +153,15 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
             .orderBy(desc(soulWinningReports.date))
             .limit(200)
 
+    const believerScope =
+      everyone && !data.mine
+        ? undefined
+        : access.disciple
+          ? or(
+              eq(newBelievers.networkLeaderId, access.disciple.id),
+              eq(newBelievers.handledById, access.disciple.id),
+            )
+          : sql`false`
     const souls =
       data.view !== 'souls'
         ? []
@@ -149,45 +171,151 @@ export const getSoulWinningPage = createServerFn({ method: 'GET' })
               name: newBelievers.name,
               gender: newBelievers.gender,
               memberType: newBelievers.memberType,
-              contactNo: newBelievers.contactNo,
-              email: newBelievers.email,
-              address: newBelievers.address,
               leaderName: leader.name,
               handledByName: handler.name,
               discipleProfileId: newBelievers.discipleProfileId,
               createdAt: newBelievers.createdAt,
-              sessions:
-                sql<number>`(select count(*) from ${soulWinningNewBelievers} where ${soulWinningNewBelievers.newBelieverId} = ${newBelievers.id})`.mapWith(
-                  Number,
-                ),
             })
             .from(newBelievers)
             .leftJoin(leader, eq(leader.id, newBelievers.networkLeaderId))
             .leftJoin(handler, eq(handler.id, newBelievers.handledById))
             .where(
               and(
-                seesEveryone(access) && !data.mine
-                  ? undefined
-                  : access.disciple
-                    ? or(
-                        eq(newBelievers.networkLeaderId, access.disciple.id),
-                        eq(newBelievers.handledById, access.disciple.id),
-                      )
-                    : sql`false`,
+                believerScope,
+                everyone && data.leader
+                  ? eq(newBelievers.networkLeaderId, data.leader)
+                  : undefined,
+                data.wonBy
+                  ? eq(newBelievers.handledById, data.wonBy)
+                  : undefined,
+                data.memberType?.length
+                  ? inArray(newBelievers.memberType, data.memberType)
+                  : undefined,
+                data.session
+                  ? inArray(
+                      newBelievers.id,
+                      db
+                        .select({ id: soulWinningNewBelievers.newBelieverId })
+                        .from(soulWinningNewBelievers)
+                        .where(
+                          eq(soulWinningNewBelievers.reportId, data.session),
+                        ),
+                    )
+                  : undefined,
                 data.q?.trim()
                   ? ilike(newBelievers.name, likeTerm(data.q))
                   : undefined,
               ),
             )
-            .orderBy(desc(newBelievers.createdAt))
+            .orderBy(asc(newBelievers.name), desc(newBelievers.createdAt))
             .limit(300)
+
+    // Lesson tracking, as v2's New believers table: the soul-winning and
+    // consolidation lessons each believer has taken.
+    const [allLessons, taken, leaders, winners] =
+      data.view === 'souls'
+        ? await Promise.all([
+            trackedLessons(),
+            lessonsTakenBy(souls.map((s) => s.id)),
+            everyone ? listLeaders() : Promise.resolve([]),
+            db
+              .selectDistinct({ id: handler.id, name: handler.name })
+              .from(newBelievers)
+              .innerJoin(handler, eq(handler.id, newBelievers.handledById))
+              .where(believerScope)
+              .orderBy(asc(handler.name)),
+          ])
+        : [
+            [],
+            new Map<string, Map<string, Date>>(),
+            everyone ? await listLeaders() : [],
+            [],
+          ]
+    const shownLessons = data.lessons
+      ? allLessons.filter((l) => l.kind === data.lessons)
+      : allLessons
 
     return {
       stats,
       sessions,
-      souls,
+      souls: souls.map((s) => {
+        const mine = taken.get(s.id) ?? new Map<string, Date>()
+        return {
+          ...s,
+          taken: shownLessons.filter((l) => mine.has(l.id)).map((l) => l.id),
+          complete:
+            allLessons.length > 0 && allLessons.every((l) => mine.has(l.id)),
+        }
+      }),
+      lessons: shownLessons,
+      leaders,
+      winners,
+      sessionName: data.session
+        ? ((
+            await db
+              .select({ venue: soulWinningReports.venue })
+              .from(soulWinningReports)
+              .where(eq(soulWinningReports.id, data.session))
+          )[0]?.venue ?? null)
+        : null,
       myId: access.disciple?.id ?? null,
-      everyone: seesEveryone(access),
+      everyone,
+    }
+  })
+
+/** One new believer: their details, sessions and lessons. */
+export const getNewBeliever = createServerFn({ method: 'GET' })
+  .validator(z.object({ id: z.string() }))
+  .handler(async ({ data }) => {
+    const access = await requireAccess()
+    await requireBelieverAccess(access, data.id)
+    const [[b], sessions, all, taken] = await Promise.all([
+      db
+        .select({
+          id: newBelievers.id,
+          name: newBelievers.name,
+          gender: newBelievers.gender,
+          memberType: newBelievers.memberType,
+          contactNo: newBelievers.contactNo,
+          email: newBelievers.email,
+          address: newBelievers.address,
+          leaderName: leader.name,
+          handledByName: handler.name,
+          discipleProfileId: newBelievers.discipleProfileId,
+          createdAt: newBelievers.createdAt,
+        })
+        .from(newBelievers)
+        .leftJoin(leader, eq(leader.id, newBelievers.networkLeaderId))
+        .leftJoin(handler, eq(handler.id, newBelievers.handledById))
+        .where(eq(newBelievers.id, data.id)),
+      db
+        .select({
+          id: soulWinningReports.id,
+          date: soulWinningReports.date,
+          type: soulWinningReports.type,
+          venue: soulWinningReports.venue,
+          lessonTitle: lessons.title,
+        })
+        .from(soulWinningNewBelievers)
+        .innerJoin(
+          soulWinningReports,
+          eq(soulWinningReports.id, soulWinningNewBelievers.reportId),
+        )
+        .leftJoin(lessons, eq(lessons.id, soulWinningReports.lessonId))
+        .where(eq(soulWinningNewBelievers.newBelieverId, data.id))
+        .orderBy(desc(soulWinningReports.date)),
+      trackedLessons(),
+      lessonsTakenBy([data.id]),
+    ])
+    const mine = taken.get(data.id) ?? new Map<string, Date>()
+    return {
+      ...b,
+      sessions,
+      lessons: all.map((l) => ({
+        ...l,
+        takenOn: mine.get(l.id)?.toISOString() ?? null,
+      })),
+      complete: all.length > 0 && all.every((l) => mine.has(l.id)),
     }
   })
 

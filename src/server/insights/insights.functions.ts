@@ -1,10 +1,16 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, count, eq, gte, lt, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, gte, isNotNull, lt, or, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import type { SQL } from 'drizzle-orm'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import { db } from '@/db'
-import { cellReports, disciples, soulWinningReports } from '@/db/schema'
+import {
+  cellReports,
+  disciples,
+  soulWinningNewBelievers,
+  soulWinningReports,
+} from '@/db/schema'
 import { requireAccess, seesEveryone } from '@/server/auth/access.server'
 import { cached } from '@/server/cache.server'
 import { rangeBounds } from '@/server/cell-reports/cell-reports.server'
@@ -125,7 +131,12 @@ export const getInsights = createServerFn({ method: 'GET' })
       const bucketCell = sql<string>`to_char(date_trunc('${sql.raw(unit)}', ${manila(cellReports.date)}), 'YYYY-MM-DD')`
       const bucketSw = sql<string>`to_char(date_trunc('${sql.raw(unit)}', ${manila(soulWinningReports.date)}), 'YYYY-MM-DD')`
 
-      const [cellTally, swTally, cellTrend, swTrend, people] =
+      // v2's dashboard: soul winning year to date, and this week's cell
+      // groups led by an assistant (a disciple leading their own group).
+      const yearFrom = manilaDayStart(`${today.slice(0, 4)}-01-01`)
+      const week = rangeBounds('this_week')!
+      const assistant = alias(disciples, 'assistant')
+      const [cellTally, swTally, cellTrend, swTrend, people, [ytd], [cg], led] =
         await Promise.all([
           db
             .select({ type: cellReports.type, ...cellTallyCols })
@@ -178,6 +189,56 @@ export const getInsights = createServerFn({ method: 'GET' })
               disciples.churchStatus,
               disciples.cellStatus,
             ),
+          db
+            .select({
+              soulWinning:
+                sql<number>`count(distinct ${soulWinningReports.id}) filter (where ${soulWinningReports.type} = 'SOUL_WINNING')`.mapWith(
+                  Number,
+                ),
+              consolidation:
+                sql<number>`count(distinct ${soulWinningReports.id}) filter (where ${soulWinningReports.type} = 'CONSOLIDATION')`.mapWith(
+                  Number,
+                ),
+              believers:
+                sql<number>`count(distinct ${soulWinningNewBelievers.newBelieverId}) filter (where ${soulWinningReports.type} = 'SOUL_WINNING')`.mapWith(
+                  Number,
+                ),
+            })
+            .from(soulWinningReports)
+            .leftJoin(
+              soulWinningNewBelievers,
+              eq(soulWinningNewBelievers.reportId, soulWinningReports.id),
+            )
+            .where(and(gte(soulWinningReports.date, yearFrom), swScope)),
+          db
+            .select({
+              total: count(),
+              withAssistant:
+                sql<number>`count(${cellReports.assistantId})`.mapWith(Number),
+            })
+            .from(cellReports)
+            .where(
+              and(
+                gte(cellReports.date, week[0]),
+                lt(cellReports.date, week[1]),
+                cellScope,
+              ),
+            ),
+          db
+            .select({ id: assistant.id, name: assistant.name, n: count() })
+            .from(cellReports)
+            .innerJoin(assistant, eq(assistant.id, cellReports.assistantId))
+            .where(
+              and(
+                gte(cellReports.date, week[0]),
+                lt(cellReports.date, week[1]),
+                isNotNull(cellReports.assistantId),
+                eq(assistant.isMyPrimary, true),
+                cellScope,
+              ),
+            )
+            .groupBy(assistant.id, assistant.name)
+            .orderBy(desc(count()), assistant.name),
         ])
 
       const tallies = Object.fromEntries(
@@ -236,6 +297,8 @@ export const getInsights = createServerFn({ method: 'GET' })
         period,
         tallies,
         trend,
+        yearToDate: { year: today.slice(0, 4), ...ytd },
+        cellGroupsThisWeek: { ...cg, assistants: led },
         disciples: {
           memberType: byType,
           churchStatus: byChurch,

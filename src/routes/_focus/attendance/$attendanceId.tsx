@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from 'cn'
+import { CheckMark } from '@/components/check-mark'
 import { GuestDialog } from '@/components/attendance/guest-dialog'
 import { ServiceDialog } from '@/components/attendance/service-dialog'
 import { useAttendanceSync } from '@/components/attendance/use-attendance-sync'
@@ -201,17 +202,7 @@ function Mark({
             </span>
           )}
         </span>
-        <span
-          aria-hidden="true"
-          className={cn(
-            'grid size-5 shrink-0 place-items-center border-[1.5px] transition-colors',
-            on
-              ? 'border-covered bg-covered text-background'
-              : 'border-foreground/25',
-          )}
-        >
-          {on && <Check className="size-3.5" strokeWidth={3} />}
-        </span>
+        <CheckMark on={on} />
       </button>
       {end}
     </div>

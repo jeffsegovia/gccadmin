@@ -2,15 +2,23 @@
   "id": "/home",
   "name": "GCC Admin",
   "short_name": "GCC Admin",
-  "description": "The cell group and attendance system of Grace City Church.",
+  "description": "Cell reports, disciples, soul winning and Sunday attendance for Grace City Church.",
   "start_url": "/home",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
     {
       "src": "/icon-maskable-192.png",
       "sizes": "192x192",
@@ -26,14 +34,59 @@
   ],
   "shortcuts": [
     {
-      "name": "Take attendance",
-      "url": "/attendance",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "name": "New cell report",
+      "short_name": "Cell report",
+      "description": "File a cell group report",
+      "url": "/reports/new",
+      "icons": [
+        {
+          "src": "/shortcuts/report.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "name": "New cell report",
-      "url": "/reports/new",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "name": "Take attendance",
+      "short_name": "Attendance",
+      "description": "Mark who came on Sunday",
+      "url": "/attendance",
+      "icons": [
+        {
+          "src": "/shortcuts/attendance.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Add a disciple",
+      "short_name": "Disciple",
+      "description": "Add someone to your network",
+      "url": "/disciples/new",
+      "icons": [
+        {
+          "src": "/shortcuts/disciple.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "New soul-winning session",
+      "short_name": "Soul winning",
+      "description": "Record new believers won",
+      "url": "/soul-winning/new",
+      "icons": [
+        {
+          "src": "/shortcuts/soul-winning.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
-  ]
+  ],
+  "lang": "en-PH",
+  "orientation": "portrait",
+  "categories": ["productivity", "lifestyle"]
 }

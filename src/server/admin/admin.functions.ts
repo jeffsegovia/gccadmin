@@ -1,7 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import { clerkClient } from '@clerk/tanstack-react-start/server'
 import { and, asc, count, eq, ilike, inArray, isNotNull } from 'drizzle-orm'
-import { Resend } from 'resend'
+import { reportReminderEmail } from '@/lib/email/templates'
+import { sendEmails, site } from '@/server/email/send.server'
 import { z } from 'zod'
 import { db } from '@/db'
 import { disciples, users } from '@/db/schema'
@@ -225,14 +226,10 @@ export const sendReportReminders = createServerFn({ method: 'POST' })
       .where(inArray(disciples.id, data.leaderIds))
     if (!rows.length)
       throw new AccessError('None of them have a linked account with an email.')
-    const resend = new Resend(key)
-    const site = process.env.SITE_URL ?? 'https://gccadmin.vercel.app'
-    await resend.batch.send(
+    await sendEmails(
       rows.map((r) => ({
-        from,
         to: r.email,
-        subject: 'Reminder: your cell group report',
-        text: `Hi ${r.name.split(' ')[0]}!\n\nThis is a friendly reminder to file your cell group report for this week in GCC Admin.\n\n${site}/reports/new\n\nThank you and God bless!\nGrace City Church`,
+        email: reportReminderEmail({ site: site() }, { name: r.name }),
       })),
     )
     return { sent: rows.length, skipped: data.leaderIds.length - rows.length }

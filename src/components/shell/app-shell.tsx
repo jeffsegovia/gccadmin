@@ -200,10 +200,6 @@ export function AppShell({
       <div className="md:flex">
         <Sidebar isAdmin={isAdmin} />
         <div className="min-w-0 flex-1 pb-[calc(3.5rem+1px+env(safe-area-inset-bottom))] md:pb-0">
-          {/* v2's standing reminder, on every page. */}
-          <p className="border-b bg-secondary px-4 py-2 text-xs text-secondary-foreground">
-            Gawa tayo lagi ng Cell Reports 🙏.
-          </p>
           {children}
         </div>
       </div>

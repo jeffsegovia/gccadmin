@@ -27,7 +27,7 @@ import { ServiceDialog } from '@/components/attendance/service-dialog'
 import { useAttendanceSync } from '@/components/attendance/use-attendance-sync'
 import type { SyncStatus } from '@/components/attendance/use-attendance-sync'
 import { Pill } from '@/components/status-pill'
-import { Segmented } from '@/components/ui/segmented'
+import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -720,10 +720,8 @@ function SheetPage() {
         </p>
 
         <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
-          <Segmented
+          <UnderlineTabs
             label="View"
-            scroll
-            className="w-full md:w-auto md:min-w-[36rem]"
             value={tab}
             onChange={setTab}
             options={[

@@ -13,7 +13,6 @@ import { ListSearch } from '@/components/list-search'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants, Button } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
-import { Segmented } from '@/components/ui/segmented'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
   AlertDialog,
@@ -26,6 +25,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { BelieverSheet } from '@/components/soul-winning/believer-sheet'
+import { SoulWinningFiltersDialog } from '@/components/soul-winning/filters-dialog'
+import { FilterBar } from '@/components/filter-bar'
+import type { ActiveFilter } from '@/components/filter-bar'
+import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
 import { SOUL_PAGE, listSoulWinningSchema } from '@/lib/soul-winning/schema'
@@ -62,6 +65,60 @@ function SoulWinningPage() {
         ? 'CONSOLIDATION'
         : 'SOUL_WINNING'
   const conso = tab === 'CONSOLIDATION'
+  const [filtering, setFiltering] = useState(false)
+  const nameOf = (
+    list: ReadonlyArray<{ id: string; name: string }>,
+    id?: string,
+  ) => list.find((p) => p.id === id)?.name ?? 'Someone'
+  // Each filter that's on, as a chip that removes it.
+  const active: Array<ActiveFilter> = [
+    ...(search.mine
+      ? [{ key: 'mine', label: 'Mine', clear: () => set({ mine: undefined }) }]
+      : []),
+    ...(search.leader
+      ? [
+          {
+            key: 'leader',
+            label: `Network: ${nameOf(data.leaders, search.leader)}`,
+            clear: () => set({ leader: undefined }),
+          },
+        ]
+      : []),
+    ...(view === 'souls' && search.wonBy
+      ? [
+          {
+            key: 'wonBy',
+            label: `Won by ${nameOf(data.winners, search.wonBy)}`,
+            clear: () => set({ wonBy: undefined }),
+          },
+        ]
+      : []),
+    ...(view === 'souls'
+      ? (search.memberType ?? []).map((t) => ({
+          key: `type-${t}`,
+          label: MEMBER_TYPE[t],
+          clear: () =>
+            set({
+              memberType:
+                (search.memberType ?? []).filter((x) => x !== t).length > 0
+                  ? (search.memberType ?? []).filter((x) => x !== t)
+                  : undefined,
+            }),
+        }))
+      : []),
+    ...(view === 'souls' && search.lessons
+      ? [
+          {
+            key: 'lessons',
+            label:
+              search.lessons === 'soul-winning'
+                ? 'Soul Winning lessons'
+                : 'Consolidation lessons',
+            clear: () => set({ lessons: undefined }),
+          },
+        ]
+      : []),
+  ]
   const track = (id: string) =>
     set({ view: 'souls', type: undefined, session: id, q: undefined })
   const range: ReportRange = search.range ?? 'this_month'
@@ -124,33 +181,50 @@ function SoulWinningPage() {
           </div>
         ))}
       </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        {/* v2's three pages, as tabs. */}
-        <Segmented
-          label="Show"
-          className="w-full lg:w-[28rem]"
-          value={tab}
-          onChange={(v) =>
-            set(
-              v === 'souls'
-                ? { view: 'souls', type: undefined }
-                : {
-                    view: undefined,
-                    session: undefined,
-                    type: v === 'CONSOLIDATION' ? 'CONSOLIDATION' : undefined,
-                  },
-            )
-          }
-          options={[
-            { value: 'SOUL_WINNING', label: 'Soul Winning' },
-            { value: 'CONSOLIDATION', label: 'Consolidation' },
-            { value: 'souls', label: 'New Believers' },
-          ]}
-        />
-        {view === 'sessions' && (
+      {/* v2's three pages, as plain tabs. */}
+      <UnderlineTabs
+        label="Show"
+        value={tab}
+        onChange={(v) =>
+          set(
+            v === 'souls'
+              ? { view: 'souls', type: undefined }
+              : {
+                  view: undefined,
+                  session: undefined,
+                  type: v === 'CONSOLIDATION' ? 'CONSOLIDATION' : undefined,
+                },
+          )
+        }
+        options={[
+          { value: 'SOUL_WINNING', label: 'Soul Winning' },
+          { value: 'CONSOLIDATION', label: 'Consolidation' },
+          { value: 'souls', label: 'New Believers' },
+        ]}
+      />
+      <FilterBar
+        active={active}
+        onOpen={() => setFiltering(true)}
+        onClearAll={() =>
+          set({
+            mine: undefined,
+            leader: undefined,
+            wonBy: undefined,
+            memberType: undefined,
+            lessons: undefined,
+          })
+        }
+      >
+        {view === 'souls' ? (
+          <ListSearch
+            value={search.q}
+            placeholder="Search new believers"
+            onChange={(q) => set({ q })}
+          />
+        ) : (
           <NativeSelect
-            className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
             size="lg"
+            className="w-full sm:w-56"
             value={range}
             onChange={(e) => set({ range: e.target.value as ReportRange })}
             aria-label="When"
@@ -162,92 +236,31 @@ function SoulWinningPage() {
             ))}
           </NativeSelect>
         )}
-        {data.everyone && data.leaders.length > 0 && (
-          <NativeSelect
-            className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
-            size="lg"
-            value={search.leader ?? ''}
-            onChange={(e) =>
-              set({ leader: e.target.value || undefined, wonBy: undefined })
-            }
-            aria-label="Network leader"
-          >
-            <NativeSelectOption value="">Every leader</NativeSelectOption>
-            {data.leaders.map((l) => (
-              <NativeSelectOption key={l.id} value={l.id}>
-                {l.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        )}
-        {view === 'souls' && (
-          <>
-            {data.winners.length > 0 && (
-              <NativeSelect
-                className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
-                size="lg"
-                value={search.wonBy ?? ''}
-                onChange={(e) => set({ wonBy: e.target.value || undefined })}
-                aria-label="Won by"
-              >
-                <NativeSelectOption value="">Won by anyone</NativeSelectOption>
-                {data.winners.map((w) => (
-                  <NativeSelectOption key={w.id} value={w.id}>
-                    {w.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            )}
-            <NativeSelect
-              className="max-sm:min-w-0 max-sm:flex-1 max-sm:basis-[calc(50%-0.25rem)]"
-              size="lg"
-              value={search.memberType?.[0] ?? ''}
-              onChange={(e) =>
-                set({
-                  memberType: e.target.value
-                    ? [e.target.value as keyof typeof MEMBER_TYPE]
-                    : undefined,
-                })
-              }
-              aria-label="Member Type"
-            >
-              <NativeSelectOption value="">
-                Every member type
-              </NativeSelectOption>
-              {(
-                Object.keys(MEMBER_TYPE) as Array<keyof typeof MEMBER_TYPE>
-              ).map((k) => (
-                <NativeSelectOption key={k} value={k}>
-                  {MEMBER_TYPE[k]}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-            <Segmented
-              label="Lessons"
-              className="w-full sm:w-80"
-              value={search.lessons ?? 'all'}
-              onChange={(v) => set({ lessons: v === 'all' ? undefined : v })}
-              options={[
-                { value: 'all', label: 'All lessons' },
-                { value: 'soul-winning', label: 'Soul winning' },
-                { value: 'consolidation', label: 'Consolidation' },
-              ]}
-            />
-          </>
-        )}
-        {data.everyone && data.myId && (
-          <Segmented
-            label="Whose"
-            className="w-48"
-            value={search.mine ? 'mine' : 'all'}
-            onChange={(v) => set({ mine: v === 'mine' ? true : undefined })}
-            options={[
-              { value: 'all', label: 'Everyone' },
-              { value: 'mine', label: 'Mine' },
-            ]}
-          />
-        )}
-      </div>
+      </FilterBar>
+      <SoulWinningFiltersDialog
+        open={filtering}
+        onOpenChange={setFiltering}
+        value={{
+          mine: search.mine,
+          leader: search.leader,
+          wonBy: search.wonBy,
+          memberType: search.memberType,
+          lessons: search.lessons,
+        }}
+        onApply={(f) =>
+          set({
+            mine: f.mine,
+            leader: f.leader,
+            wonBy: f.wonBy,
+            memberType: f.memberType,
+            lessons: f.lessons,
+          })
+        }
+        believers={view === 'souls'}
+        canChooseWhose={data.everyone && !!data.myId}
+        leaders={data.everyone ? data.leaders : []}
+        winners={data.winners}
+      />
 
       {view === 'sessions' ? (
         data.sessions.length === 0 ? (
@@ -378,11 +391,6 @@ function SoulWinningPage() {
         )
       ) : (
         <>
-          <ListSearch
-            value={search.q}
-            placeholder="Search new believers"
-            onChange={(q) => set({ q })}
-          />
           {search.session && (
             <div className="flex min-w-0 items-center gap-2 border bg-card px-3 py-2 text-sm rounded-xl">
               <ListChecks

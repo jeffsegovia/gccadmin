@@ -30,7 +30,7 @@ back or kept on purpose, with the reason.
 - [x] Disciples filters: Handled By (v2's filter).
 - [x] Date ranges: Year To Date (YTD) and Last Year on cell reports and
       soul winning.
-- [x] The banner on every page: "Gawa tayo lagi ng Cell Reports 🙏."
+- [x] The banner on every page: "Gawa tayo lagi ng Cell Reports 🙏." Removed at Jeff's request (25 November 2026).
 - [x] New believer edit: Who handles this new believer?
 - [x] Users: Email verified column.
 - [x] Attendance sheet views as v2: Leaders (male and female leaders),

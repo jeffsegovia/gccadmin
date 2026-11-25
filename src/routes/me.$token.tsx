@@ -17,8 +17,8 @@ import { GrowthBar, Weeks } from '@/components/disciples/progress'
 import { FormField } from '@/components/form-field'
 import { SubmitButton } from '@/components/submit-button'
 import { Input } from '@/components/ui/input'
+import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Segmented } from '@/components/ui/segmented'
 import { Group } from '@/components/ui/list'
 import { RadioCards } from '@/components/radio-cards'
 import {
@@ -140,7 +140,7 @@ function PortalPage() {
           </Button>
         </div>
 
-        <Segmented
+        <UnderlineTabs
           label="Sections"
           value={tab}
           onChange={setTab}

@@ -6,7 +6,6 @@ import {
   Download,
   Ellipsis,
   Link2,
-  ListFilter,
   Plus,
   Upload,
   Users,
@@ -27,7 +26,6 @@ import {
   countFilters,
 } from '@/components/disciples/filters-dialog'
 import { ImportDialog } from '@/components/disciples/import-dialog'
-import { Segmented } from '@/components/ui/segmented'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
 import {
@@ -38,7 +36,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { listDisciplesSchema } from '@/lib/disciples/schema'
 import { writeDisciplesFile } from '@/lib/disciples/spreadsheet'
-import { MEMBER_TYPE } from '@/lib/labels'
+import {
+  CELL_STATUS,
+  CHURCH_STATUS,
+  MEMBER_TYPE,
+  PROCESS_LEVEL,
+} from '@/lib/labels'
+import { FilterBar } from '@/components/filter-bar'
+import type { ActiveFilter } from '@/components/filter-bar'
+import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { manilaDay } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
 import {
@@ -91,6 +97,57 @@ function DisciplesPage() {
       replace: true,
     })
   const filters = countFilters(search)
+  const nameIn = (
+    list: ReadonlyArray<{ id: string; name: string }>,
+    id: string,
+  ) => list.find((p) => p.id === id)?.name ?? 'Someone'
+  // Each filter that's on, as a chip that removes it.
+  const multi = <TKey extends string>(
+    key: 'memberType' | 'churchStatus' | 'cellStatus' | 'processLevel',
+    values: ReadonlyArray<TKey> | undefined,
+    words: Record<TKey, string>,
+  ): Array<ActiveFilter> =>
+    (values ?? []).map((v) => ({
+      key: `${key}-${v}`,
+      label: words[v],
+      clear: () => {
+        const rest = (values ?? []).filter((x) => x !== v)
+        setSearch({ [key]: rest.length ? rest : undefined })
+      },
+    }))
+  const activeFilters: Array<ActiveFilter> = [
+    ...(search.status && search.status !== 'active'
+      ? [
+          {
+            key: 'status',
+            label: search.status === 'inactive' ? 'Inactive' : 'Assistants',
+            clear: () => setSearch({ status: undefined }),
+          },
+        ]
+      : []),
+    ...(search.leader
+      ? [
+          {
+            key: 'leader',
+            label: `Network: ${nameIn(data.leaders, search.leader)}`,
+            clear: () => setSearch({ leader: undefined }),
+          },
+        ]
+      : []),
+    ...(search.handledBy
+      ? [
+          {
+            key: 'handledBy',
+            label: `Handled by ${nameIn(data.handlers, search.handledBy)}`,
+            clear: () => setSearch({ handledBy: undefined }),
+          },
+        ]
+      : []),
+    ...multi('memberType', search.memberType, MEMBER_TYPE),
+    ...multi('churchStatus', search.churchStatus, CHURCH_STATUS),
+    ...multi('cellStatus', search.cellStatus, CELL_STATUS),
+    ...multi('processLevel', search.processLevel, PROCESS_LEVEL),
+  ]
   const pages = Math.max(1, Math.ceil(data.total / data.pageSize))
   const from = data.total ? (data.page - 1) * data.pageSize + 1 : 0
   const to = Math.min(data.total, data.page * data.pageSize)
@@ -147,39 +204,38 @@ function DisciplesPage() {
         </>
       }
     >
-      <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
-        {data.everyone && data.myId && (
-          <Segmented
-            label="Whose"
-            className="md:w-64"
-            value={data.scope}
-            onChange={(scope) => setSearch({ scope })}
-            options={[
-              { value: 'mine', label: 'Mine' },
-              { value: 'all', label: 'Everyone' },
-            ]}
-          />
-        )}
-        <div className="flex min-w-0 flex-1 gap-2">
-          <ListSearch
-            value={search.q}
-            placeholder="Search disciples"
-            onChange={(q) => setSearch({ q })}
-          />
-          <Button
-            variant={filters ? 'outline' : 'secondary'}
-            size="lg"
-            className={cn(
-              'h-11 shrink-0 md:h-10',
-              filters && 'border-primary/50 text-primary',
-            )}
-            onClick={() => setFiltering(true)}
-          >
-            <ListFilter aria-hidden="true" /> Filters
-            {filters ? ` · ${filters}` : ''}
-          </Button>
-        </div>
-      </div>
+      {data.everyone && data.myId && (
+        <UnderlineTabs
+          label="Whose"
+          value={data.scope}
+          onChange={(scope) => setSearch({ scope })}
+          options={[
+            { value: 'mine', label: 'Mine' },
+            { value: 'all', label: 'Everyone' },
+          ]}
+        />
+      )}
+      <FilterBar
+        active={activeFilters}
+        onOpen={() => setFiltering(true)}
+        onClearAll={() =>
+          setSearch({
+            status: undefined,
+            leader: undefined,
+            handledBy: undefined,
+            memberType: undefined,
+            churchStatus: undefined,
+            cellStatus: undefined,
+            processLevel: undefined,
+          })
+        }
+      >
+        <ListSearch
+          value={search.q}
+          placeholder="Search disciples"
+          onChange={(q) => setSearch({ q })}
+        />
+      </FilterBar>
 
       {data.rows.length === 0 ? (
         <Empty

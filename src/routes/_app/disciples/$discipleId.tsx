@@ -32,9 +32,9 @@ import {
 import { PersonCombobox } from '@/components/person-combobox'
 import { PendingButton } from '@/components/pending-button'
 import { FormField } from '@/components/form-field'
+import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
-import { Segmented } from '@/components/ui/segmented'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -217,12 +217,11 @@ function DisciplePage() {
       <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
         <div className="flex min-w-0 flex-col gap-5">
           <GrowthBar level={d.processLevel} status={d.processLevelStatus} />
-          <Segmented
+          <UnderlineTabs
             label="Sections"
             value={tab}
             onChange={setTab}
             options={tabs}
-            className="lg:w-fit lg:min-w-96"
           />
 
           {tab === 'cell' && (

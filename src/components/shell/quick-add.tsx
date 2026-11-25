@@ -102,7 +102,7 @@ export function QuickAddFab() {
         aria-expanded={open}
         aria-controls="quick-add"
         onClick={() => setOpen(!open)}
-        className="fixed right-4 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom)+1rem)] z-40 grid size-14 place-items-center bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/0.35)] transition-transform active:scale-95"
+        className="fixed right-4 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom)+1rem)] z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/0.35)] transition-transform active:scale-95"
       >
         <Plus
           aria-hidden="true"

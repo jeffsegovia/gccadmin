@@ -9,11 +9,12 @@ import {
 } from 'lucide-react'
 import { Empty, Page } from '@/components/shell/page'
 import { ReportsTabs } from '@/components/reports-tabs'
+import { FilterBar } from '@/components/filter-bar'
+import { ReportFiltersDialog } from '@/components/cell-reports/filters-dialog'
+import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { ReportRow as ReportItem } from '@/components/cell-reports/report-row'
-import { PersonCombobox } from '@/components/person-combobox'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
-import { Segmented } from '@/components/ui/segmented'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
   RANGE_LABEL,
@@ -45,6 +46,7 @@ function ReportsPage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const range: ReportRange = search.range ?? 'this_week'
   const [pdf, setPdf] = useState(false)
+  const [filtering, setFiltering] = useState(false)
   const set = (next: Partial<typeof search>) =>
     void navigate({
       search: (prev) => ({ ...prev, ...next, page: undefined }),
@@ -87,11 +89,44 @@ function ReportsPage() {
       }
     >
       <ReportsTabs on="cell" />
-      {/* When and type share the row, half each. */}
-      <div className="grid min-w-0 grid-cols-2 gap-2">
+      <UnderlineTabs
+        label="Type"
+        value={search.type ?? 'ALL'}
+        onChange={(v) => set({ type: v === 'ALL' ? undefined : v })}
+        options={[
+          { value: 'ALL', label: 'All' },
+          { value: 'OPEN', label: 'Open Cell' },
+          { value: 'DISCIPLESHIP', label: 'Discipleship' },
+          { value: 'SOULWINNING', label: 'Soul Winning' },
+        ]}
+      />
+      <FilterBar
+        active={[
+          ...(search.mine
+            ? [
+                {
+                  key: 'mine',
+                  label: 'Mine',
+                  clear: () => set({ mine: undefined }),
+                },
+              ]
+            : []),
+          ...(search.leader
+            ? [
+                {
+                  key: 'leader',
+                  label: `Leader: ${data.leaders.find((l) => l.id === search.leader)?.name ?? 'Someone'}`,
+                  clear: () => set({ leader: undefined }),
+                },
+              ]
+            : []),
+        ]}
+        onOpen={() => setFiltering(true)}
+        onClearAll={() => set({ mine: undefined, leader: undefined })}
+      >
         <NativeSelect
           size="lg"
-          className="w-full"
+          className="w-full sm:w-56"
           value={range}
           onChange={(e) => set({ range: e.target.value as ReportRange })}
           aria-label="When"
@@ -102,51 +137,15 @@ function ReportsPage() {
             </NativeSelectOption>
           ))}
         </NativeSelect>
-        <NativeSelect
-          size="lg"
-          className="w-full"
-          value={search.type ?? ''}
-          onChange={(e) =>
-            set({ type: (e.target.value || undefined) as never })
-          }
-          aria-label="Type"
-        >
-          <NativeSelectOption value="">All types</NativeSelectOption>
-          <NativeSelectOption value="OPEN">Open Cell</NativeSelectOption>
-          <NativeSelectOption value="DISCIPLESHIP">
-            Discipleship
-          </NativeSelectOption>
-          <NativeSelectOption value="SOULWINNING">
-            Soul Winning
-          </NativeSelectOption>
-        </NativeSelect>
-      </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        {data.myId && (
-          <Segmented
-            label="Whose"
-            className="w-48"
-            value={search.mine ? 'mine' : 'all'}
-            onChange={(v) => set({ mine: v === 'mine' ? true : undefined })}
-            options={[
-              { value: 'all', label: 'Everyone' },
-              { value: 'mine', label: 'Mine' },
-            ]}
-          />
-        )}
-        {data.canFilterLeader && (
-          <div className="w-full sm:w-64">
-            <PersonCombobox
-              aria-label="Leader"
-              people={data.leaders}
-              value={search.leader ?? ''}
-              onChange={(leader) => set({ leader: leader || undefined })}
-              noneLabel="Every leader"
-              placeholder="Every leader"
-            />
-          </div>
-        )}
-      </div>
+      </FilterBar>
+      <ReportFiltersDialog
+        open={filtering}
+        onOpenChange={setFiltering}
+        value={{ mine: search.mine, leader: search.leader }}
+        onApply={(f) => set({ mine: f.mine, leader: f.leader })}
+        canChooseWhose={!!data.myId}
+        leaders={data.canFilterLeader ? data.leaders : []}
+      />
 
       {data.rows.length === 0 ? (
         <Empty icon={ClipboardList} title="No reports in this range.">

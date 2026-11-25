@@ -120,9 +120,20 @@ function ReportsPage() {
                 },
               ]
             : []),
+          ...(search.assistant
+            ? [
+                {
+                  key: 'assistant',
+                  label: `Led by ${data.rows.find((r) => r.assistantId === search.assistant)?.assistantName ?? 'a disciple'}`,
+                  clear: () => set({ assistant: undefined }),
+                },
+              ]
+            : []),
         ]}
         onOpen={() => setFiltering(true)}
-        onClearAll={() => set({ mine: undefined, leader: undefined })}
+        onClearAll={() =>
+          set({ mine: undefined, leader: undefined, assistant: undefined })
+        }
       >
         <NativeSelect
           size="lg"

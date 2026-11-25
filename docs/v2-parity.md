@@ -37,11 +37,17 @@ back or kept on purpose, with the reason.
       Male, Female (by network, with subtotals), Returnees, New Comers;
       the statistics: present, male, female, new comers, returnees, and
       by member type.
-- [x] Insights: v2's Cell Groups card with its date range (by kind,
-      change from the period before, with an assistant or by the
-      primary), Cell Groups by Leaders (male and female leaders, Show
-      breakdown), Church Attendance By Member Type. Recent Cell Groups is
-      Home's Cell groups this week (All reports for the rest).
+- [x] Insights is v2's dashboard (25 November 2026): its cards in its
+      order, each with a dated line and an action. Soul Winning Activity
+      (year to date, with v2's note); Cell Groups with its date range
+      (Reported Cell Groups, Cell Groups Handled with the ring, Cell
+      Group Trend against the period before, View Reports), Cell Groups
+      by Leaders (male and female leaders, one color; Show Breakdown on,
+      listing each leader's assistants, each bar opening their reports);
+      Cell Report Trend; Church Attendance By Member Type as donuts;
+      Disciples with Cell Groups (opens the reports they led); Member
+      Statistics (each row opens Disciples filtered). Recent Cell Groups
+      is Home's Cell groups this week (All reports for the rest).
 - [x] Lists that v2 paged and v3 capped (soul-winning sessions, new
       believers): paged, nothing hidden.
 - [x] Soul winning, Consolidation and New Believers as tabs (v2's pages),

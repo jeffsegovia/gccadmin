@@ -1,7 +1,14 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  ArrowRight,
+  BookOpen,
+  Flame,
+  HeartHandshake,
+  Users,
+} from 'lucide-react'
 import { z } from 'zod'
-import { Page, Section } from '@/components/shell/page'
-import { CountBars, TrendChart } from '@/components/insights/trend-chart'
+import { Page } from '@/components/shell/page'
+import { TrendChart } from '@/components/insights/trend-chart'
 import { Segmented } from '@/components/ui/segmented'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CELL_STATUS, CHURCH_STATUS, MEMBER_TYPE } from '@/lib/labels'
@@ -10,7 +17,15 @@ import {
   getInsights,
   getReportsFiled,
 } from '@/server/insights/insights.functions'
-import { ReportsFiled } from '@/components/insights/reports-filed'
+import {
+  BigStat,
+  CardColumns,
+  CellGroupsBody,
+  InsightCard,
+  rangeText,
+} from '@/components/insights/reports-filed'
+import { KIND_COLOR, Pill } from '@/components/status-pill'
+import { RowChevron } from '@/components/ui/list'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
@@ -51,7 +66,7 @@ const KIND_LABEL: Record<Kind, string> = {
   soulWinning: 'Soul winning',
   consolidation: 'Consolidation',
 }
-const KIND_COLOR: Record<Kind, string> = {
+const KIND_COLORS: Record<Kind, string> = {
   open: 'var(--series-1)',
   discipleship: 'var(--series-2)',
   soulWinning: 'var(--series-3)',
@@ -77,11 +92,17 @@ function InsightsPage() {
   )
   const d = data.disciples
 
+  const filedRange = search.filed ?? 'this_week'
+
   return (
     <Page
       wide
       title="Insights"
-      description={data.everyone ? 'The whole church' : 'Your network'}
+      description={
+        data.everyone
+          ? 'Quick insights on cell groups and members.'
+          : 'Quick insights on your network’s cell groups and members.'
+      }
       action={
         data.canChooseScope && (
           <Segmented
@@ -97,80 +118,75 @@ function InsightsPage() {
         )
       }
     >
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-        <Section title={`Soul winning · ${data.yearToDate.year} so far`}>
-          <div className="grid grid-cols-3 border bg-card dark:border-transparent [&>*+*]:border-l rounded-xl overflow-hidden">
-            {(
-              [
-                ['Sessions', data.yearToDate.soulWinning],
-                ['Consolidation', data.yearToDate.consolidation],
-                ['New believers', data.yearToDate.believers],
-              ] as const
-            ).map(([label, n]) => (
-              <div
-                key={label}
-                className="flex min-w-0 flex-col gap-0.5 px-3 py-3 sm:px-4"
-              >
-                <span className="truncate text-xs text-muted-foreground">
-                  {label}
-                </span>
-                <span className="numeric text-2xl font-semibold">{n}</span>
-              </div>
-            ))}
-          </div>
-        </Section>
-        <Section title="Cell groups this week">
-          <div className="flex min-w-0 flex-col border bg-card dark:border-transparent rounded-xl">
-            <div className="grid grid-cols-2 border-b [&>*+*]:border-l">
-              <div className="flex min-w-0 flex-col gap-0.5 px-3 py-3 sm:px-4">
-                <span className="truncate text-xs text-muted-foreground">
-                  Reported
-                </span>
-                <span className="numeric text-2xl font-semibold">
-                  {data.cellGroupsThisWeek.total}
-                </span>
-              </div>
-              <div className="flex min-w-0 flex-col gap-0.5 px-3 py-3 sm:px-4">
-                <span className="truncate text-xs text-muted-foreground">
-                  With an assistant
-                </span>
-                <span className="numeric text-2xl font-semibold">
-                  {data.cellGroupsThisWeek.withAssistant}
-                </span>
-              </div>
-            </div>
-            <h3 className="px-3 pt-3 text-[13px] font-medium text-muted-foreground sm:px-4">
-              Disciples leading cell groups
-            </h3>
-            {data.cellGroupsThisWeek.assistants.length === 0 ? (
-              <p className="px-3 pt-1 pb-3 text-sm text-muted-foreground sm:px-4">
-                None this week yet.
-              </p>
-            ) : (
-              <ul className="flex flex-col px-3 pb-2 sm:px-4 [&>*+*]:border-t">
-                {data.cellGroupsThisWeek.assistants.map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex min-w-0 items-center gap-3 py-2 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 truncate">{a.name}</span>
-                    <span className="numeric shrink-0 text-muted-foreground">
-                      {a.n} {a.n === 1 ? 'group' : 'groups'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </Section>
-      </div>
+      <InsightCard
+        title="Soul Winning Activity"
+        description={`Year to date (${data.yearToDate.year})`}
+        action={
+          <Link
+            to="/soul-winning"
+            className="flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
+          >
+            View Reports <ArrowRight aria-hidden="true" className="size-3.5" />
+          </Link>
+        }
+        footer={
+          <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <Flame aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+            Based on reports submitted through the Soul Winning module. Sessions
+            and new believers are tracked separately from cell group reports.
+          </p>
+        }
+      >
+        <CardColumns>
+          <BigStat
+            label="SW Sessions"
+            n={data.yearToDate.soulWinning}
+            icon={
+              <BookOpen
+                aria-hidden="true"
+                className="size-4"
+                style={{ color: KIND_COLOR.SOUL_WINNING }}
+              />
+            }
+          >
+            soul winning sessions
+          </BigStat>
+          <BigStat
+            label="Conso Sessions"
+            n={data.yearToDate.consolidation}
+            icon={
+              <HeartHandshake
+                aria-hidden="true"
+                className="size-4"
+                style={{ color: KIND_COLOR.CONSOLIDATION }}
+              />
+            }
+          >
+            consolidation sessions
+          </BigStat>
+          <BigStat
+            label="New Believers"
+            n={data.yearToDate.believers}
+            icon={
+              <Users
+                aria-hidden="true"
+                className="size-4"
+                style={{ color: KIND_COLOR.OPEN }}
+              />
+            }
+          >
+            believers recorded
+          </BigStat>
+        </CardColumns>
+      </InsightCard>
 
-      <Section
-        title="Reports filed"
+      <InsightCard
+        title="Cell Groups"
+        description={rangeText(data.filed.days)}
         action={
           <NativeSelect
             size="sm"
-            value={search.filed ?? 'this_week'}
+            value={filedRange}
             onChange={(e) =>
               set({
                 filed:
@@ -188,16 +204,15 @@ function InsightsPage() {
             ))}
           </NativeSelect>
         }
+        footer={data.summary && <SummaryEmail status={data.summary} />}
       >
-        <ReportsFiled data={data.filed} />
-        {data.summary && <SummaryEmail status={data.summary} />}
-      </Section>
+        <CellGroupsBody data={data.filed} />
+      </InsightCard>
 
-      <Section
-        title={
-          data.period === 'weeks'
-            ? 'Trend · last 12 weeks'
-            : 'Trend · last 6 months'
+      <InsightCard
+        title="Cell Report Trend"
+        description={
+          data.period === 'weeks' ? 'The last 12 weeks' : 'The last 6 months'
         }
         action={
           <Segmented
@@ -215,14 +230,14 @@ function InsightsPage() {
           />
         }
       >
-        <div className="flex min-w-0 flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl">
+        <div className="flex min-w-0 flex-col gap-3 p-4">
           <TrendChart
             ariaLabel={`Reports filed per ${data.period === 'weeks' ? 'week' : 'month'}, by kind`}
             labels={labels}
             series={KINDS.map((kind) => ({
               key: kind,
               label: KIND_LABEL[kind],
-              color: KIND_COLOR[kind],
+              color: KIND_COLORS[kind],
               values: data.trend.map((p) => p[kind]),
             }))}
           />
@@ -269,41 +284,106 @@ function InsightsPage() {
             </div>
           </details>
         </div>
-      </Section>
+      </InsightCard>
 
-      <Section title={`Disciples · ${d.total}`}>
-        <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+        <InsightCard
+          className="lg:col-span-2"
+          title="Church Attendance By Member Type"
+          description="As of today"
+        >
+          <ChurchAttendanceByType rows={d.attendanceByType} />
+        </InsightCard>
+        <InsightCard title="Disciples with Cell Groups" description="This week">
+          {data.cellGroupsThisWeek.assistants.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">
+              No disciple has led a cell group this week yet.
+            </p>
+          ) : (
+            <ul className="flex min-w-0 flex-col py-1 [&>*+*]:border-t">
+              {data.cellGroupsThisWeek.assistants.map((a) => (
+                <li key={a.id}>
+                  <Link
+                    to="/reports"
+                    search={{ assistant: a.id, range: 'this_week' }}
+                    className="flex min-h-14 min-w-0 items-center gap-3 px-4 py-2 hover:bg-muted/50"
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-medium">
+                        {a.name}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        Assistant Leader
+                      </span>
+                    </span>
+                    <Pill>
+                      {a.n} {a.n === 1 ? 'cell group' : 'cell groups'}
+                    </Pill>
+                    <RowChevron />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </InsightCard>
+      </div>
+
+      <InsightCard title="Member Statistics" description="As of today">
+        <CardColumns>
           {(
             [
-              ['By Member Type', d.memberType, MEMBER_TYPE],
-              ['By Church Status', d.churchStatus, CHURCH_STATUS],
-              ['By Cell Status', d.cellStatus, CELL_STATUS],
+              ['Members by Type', 'memberType', d.memberType, MEMBER_TYPE],
+              [
+                'Members by Cell Status',
+                'cellStatus',
+                d.cellStatus,
+                CELL_STATUS,
+              ],
+              [
+                'Members by Church Status',
+                'churchStatus',
+                d.churchStatus,
+                CHURCH_STATUS,
+              ],
             ] as const
-          ).map(([title, rows, words]) => (
-            <div
-              key={title}
-              className="flex min-w-0 flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl"
-            >
-              <h3 className="text-[13px] font-medium text-muted-foreground">
-                {title}
-              </h3>
-              <CountBars
-                total={d.total}
-                rows={(Object.keys(words) as Array<keyof typeof words>).map(
-                  (key) => ({
-                    label: (words as Record<string, string>)[key],
-                    n:
-                      (rows as ReadonlyArray<{ key: string; n: number }>).find(
-                        (r) => r.key === key,
-                      )?.n ?? 0,
-                  }),
-                )}
-              />
+          ).map(([title, key, rows, words]) => (
+            <div key={title} className="flex min-w-0 flex-col gap-3 p-4">
+              <h3 className="text-[13px] font-medium">{title}</h3>
+              <ul className="flex flex-col gap-1">
+                {Object.entries(words).map(([value, word]) => {
+                  const n =
+                    (rows as ReadonlyArray<{ key: string; n: number }>).find(
+                      (r) => r.key === value,
+                    )?.n ?? 0
+                  const share = d.total ? Math.round((n / d.total) * 100) : 0
+                  return (
+                    <li key={value}>
+                      <Link
+                        to="/disciples"
+                        search={{ [key]: [value] }}
+                        className="-mx-2 flex min-w-0 flex-col gap-1.5 rounded-md px-2 py-1.5 hover:bg-muted/50"
+                      >
+                        <span className="flex min-w-0 items-baseline justify-between gap-2 text-[13px]">
+                          <span className="truncate">{word}</span>
+                          <span className="numeric shrink-0 text-xs text-muted-foreground">
+                            {n}/{d.total} ({share}%)
+                          </span>
+                        </span>
+                        <span className="h-1.5 overflow-hidden rounded-full bg-muted">
+                          <span
+                            className="block h-full rounded-full bg-primary"
+                            style={{ width: `${share}%` }}
+                          />
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
             </div>
           ))}
-        </div>
-        <ChurchAttendanceByType rows={d.attendanceByType} />
-      </Section>
+        </CardColumns>
+      </InsightCard>
     </Page>
   )
 }
@@ -333,13 +413,13 @@ function InsightsSkeleton() {
 }
 
 const ATTENDED = [
-  ['nacs', 'Not yet attended (NACS)', 'bg-muted-foreground/45'],
-  ['acs', 'Attended (ACS)', 'bg-primary'],
-  ['regular', 'Regular', 'bg-covered'],
+  ['nacs', 'Not yet attended (NACS)', 'var(--muted-foreground)', 0.45],
+  ['acs', 'Attended (ACS)', 'var(--primary)', 1],
+  ['regular', 'Regular', 'var(--covered)', 1],
 ] as const
 
-/** v2's Church Attendance By Member Type: each group's split of NACS,
- * ACS and Regular, with the counts beside it. */
+/** v2's Church Attendance By Member Type: a donut per member type
+ * (NACS, ACS and Regular), its total and the type in the middle. */
 function ChurchAttendanceByType({
   rows,
 }: {
@@ -350,48 +430,95 @@ function ChurchAttendanceByType({
     regular: number
   }>
 }) {
+  const shown = rows.filter((r) => r.nacs + r.acs + r.regular > 0)
+  const r = 40
+  const c = 2 * Math.PI * r
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 dark:border-transparent">
-      <h3 className="text-[13px] font-medium text-muted-foreground">
-        Church Attendance By Member Type
-      </h3>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-        {ATTENDED.map(([k, label, color]) => (
+    <div className="flex min-w-0 flex-col gap-4 p-4">
+      {shown.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No disciples yet.</p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+          {shown.map((row) => {
+            const total = row.nacs + row.acs + row.regular
+            let at = 0
+            return (
+              <li
+                key={row.type}
+                className="flex min-w-0 flex-col items-center gap-2 text-center"
+                title={`${MEMBER_TYPE[row.type]}: NACS ${row.nacs}, ACS ${row.acs}, Regular ${row.regular}`}
+              >
+                <svg
+                  viewBox="0 0 100 100"
+                  className="size-28 max-w-full"
+                  role="img"
+                  aria-label={`${MEMBER_TYPE[row.type]}: ${total} in all, ${row.nacs} not yet attended, ${row.acs} attended, ${row.regular} regular`}
+                >
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r={r}
+                    fill="none"
+                    strokeWidth="12"
+                    className="stroke-muted"
+                  />
+                  {ATTENDED.map(([k, , color, opacity]) => {
+                    const len = (row[k] / total) * c
+                    const offset = at
+                    at += len
+                    return row[k] ? (
+                      <circle
+                        key={k}
+                        cx="50"
+                        cy="50"
+                        r={r}
+                        fill="none"
+                        strokeWidth="12"
+                        stroke={color}
+                        strokeOpacity={opacity}
+                        strokeDasharray={`${Math.max(0, len - 1)} ${c}`}
+                        strokeDashoffset={-offset}
+                        transform="rotate(-90 50 50)"
+                      />
+                    ) : null
+                  })}
+                  <text
+                    x="50"
+                    y="47"
+                    textAnchor="middle"
+                    className="numeric fill-foreground text-[18px] font-semibold"
+                  >
+                    {total}
+                  </text>
+                  <text
+                    x="50"
+                    y="62"
+                    textAnchor="middle"
+                    className="fill-muted-foreground text-[9px]"
+                  >
+                    {MEMBER_TYPE[row.type]}
+                  </text>
+                </svg>
+                <span className="numeric text-xs text-muted-foreground">
+                  {row.nacs} · {row.acs} · {row.regular}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+        {ATTENDED.map(([k, label, color, opacity]) => (
           <span key={k} className="flex items-center gap-1.5">
-            <span aria-hidden="true" className={`size-2 rounded-sm ${color}`} />
+            <span
+              aria-hidden="true"
+              className="size-2.5 rounded-sm"
+              style={{ background: color, opacity }}
+            />
             {label}
           </span>
         ))}
       </div>
-      <ul className="flex flex-col gap-2.5">
-        {rows.map((r) => {
-          const total = r.nacs + r.acs + r.regular
-          return (
-            <li
-              key={r.type}
-              className="grid grid-cols-[minmax(0,5.5rem)_minmax(0,1fr)_auto] items-center gap-3 text-[13px]"
-              title={`${MEMBER_TYPE[r.type]}: NACS ${r.nacs}, ACS ${r.acs}, Regular ${r.regular}`}
-            >
-              <span className="truncate">{MEMBER_TYPE[r.type]}</span>
-              <span className="flex h-2.5 gap-px overflow-hidden rounded-full bg-muted">
-                {ATTENDED.map(([k, , color]) =>
-                  r[k] ? (
-                    <span
-                      key={k}
-                      className={color}
-                      style={{ flexGrow: r[k] }}
-                    />
-                  ) : null,
-                )}
-              </span>
-              <span className="numeric text-right whitespace-nowrap text-muted-foreground">
-                {r.nacs} · {r.acs} · {r.regular}
-                <span className="sr-only"> of {total}</span>
-              </span>
-            </li>
-          )
-        })}
-      </ul>
     </div>
   )
 }

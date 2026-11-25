@@ -404,7 +404,8 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
             )
           : undefined
       const leader = alias(disciples, 'filed_leader')
-      const [cell, sw, prevCell, prevSw, assisted, byLeader] =
+      const helper = alias(disciples, 'filed_assistant')
+      const [cell, sw, prevCell, prevSw, assisted, byLeader, byAssistant] =
         await Promise.all([
           db
             .select({ type: cellReports.type, n: count() })
@@ -458,6 +459,19 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
               ),
             )
             .groupBy(leader.id, leader.name, leader.gender, cellReports.type),
+          // v2's Show breakdown: each leader's cell groups led by their
+          // assistants.
+          db
+            .select({
+              leaderId: cellReports.leaderId,
+              id: helper.id,
+              name: helper.name,
+              n: count(),
+            })
+            .from(cellReports)
+            .innerJoin(helper, eq(helper.id, cellReports.assistantId))
+            .where(and(cellIn(bounds), cellScope))
+            .groupBy(cellReports.leaderId, helper.id, helper.name),
         ])
       const c = (t: string) => cell.find((r) => r.type === t)?.n ?? 0
       const w = (t: string) => sw.find((r) => r.type === t)?.n ?? 0
@@ -477,6 +491,7 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
           open: number
           discipleship: number
           soulWinning: number
+          assistants: Array<{ id: string; name: string; n: number }>
         }
       >()
       for (const r of byLeader) {
@@ -488,6 +503,10 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
           open: 0,
           discipleship: 0,
           soulWinning: 0,
+          assistants: byAssistant
+            .filter((a) => a.leaderId === r.id)
+            .map(({ id, name, n }) => ({ id, name, n }))
+            .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)),
         }
         if (r.type === 'OPEN') l.open += r.n
         else if (r.type === 'DISCIPLESHIP') l.discipleship += r.n
@@ -500,9 +519,21 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
       )
       return {
         range,
+        // The range's first and last day, for the card's dates.
+        days: bounds
+          ? ([manilaDay(bounds[0]), addDays(manilaDay(bounds[1]), -1)] as const)
+          : null,
         kinds,
         total: Object.values(kinds).reduce((a, n) => a + n, 0),
         previous: before ? prevCell[0].n + prevSw[0].n : null,
+        // v2's Cell Groups card counts cell reports only.
+        cellGroups: {
+          open: kinds.open,
+          discipleship: kinds.discipleship,
+          soulWinning: c('SOULWINNING'),
+          total: assisted[0].total,
+          previous: before ? prevCell[0].n : null,
+        },
         withAssistant: assisted[0].withAssistant,
         byPrimary: assisted[0].total - assisted[0].withAssistant,
         men: list.filter((l) => l.gender === 'MALE'),

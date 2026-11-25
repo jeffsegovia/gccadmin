@@ -14,6 +14,7 @@ import {
   Phone,
   Power,
   Trash2,
+  Unlink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Page } from '@/components/shell/page'
@@ -32,6 +33,7 @@ import {
 import { PersonCombobox } from '@/components/person-combobox'
 import { PendingButton } from '@/components/pending-button'
 import { FormField } from '@/components/form-field'
+import { LinkAccountDialog } from '@/components/leaders/link-account-dialog'
 import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
@@ -70,6 +72,7 @@ import {
   setDiscipleActive,
   updateDisciple,
 } from '@/server/disciples/disciples.functions'
+import { unlinkLeaderAccount } from '@/server/admin/admin.functions'
 
 export const Route = createFileRoute('/_app/disciples/$discipleId')({
   loader: ({ params }) =>
@@ -93,6 +96,8 @@ function DisciplePage() {
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [demoting, setDemoting] = useState(false)
+  const [linking, setLinking] = useState(false)
+  const [unlinking, setUnlinking] = useState(false)
 
   const run = async (work: () => Promise<unknown>, done: string) => {
     try {
@@ -188,6 +193,18 @@ function DisciplePage() {
                       }
                     >
                       <ArrowUpToLine /> Make primary leader
+                    </DropdownMenuItem>
+                  ))}
+                {/* A primary leader's sign-in, kept off the Leaders list. */}
+                {data.canPromote &&
+                  d.isPrimary &&
+                  (d.userAccountId ? (
+                    <DropdownMenuItem onClick={() => setUnlinking(true)}>
+                      <Unlink /> Unlink account
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => setLinking(true)}>
+                      <Link2 /> Link account
                     </DropdownMenuItem>
                   ))}
                 <DropdownMenuSeparator />
@@ -424,6 +441,40 @@ function DisciplePage() {
       </ResponsiveDialog>
 
       <DemoteDialog open={demoting} onOpenChange={setDemoting} disciple={d} />
+
+      <LinkAccountDialog
+        leader={linking ? { id: d.id, name: d.name } : null}
+        onClose={() => setLinking(false)}
+      />
+
+      <AlertDialog open={unlinking} onOpenChange={setUnlinking}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unlink {d.name}’s account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They can’t sign in until their account is linked again. Their
+              disciples and reports stay.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <PendingButton
+              variant="destructive"
+              icon={Unlink}
+              pendingLabel="Unlinking…"
+              onClick={async () => {
+                await run(
+                  () => unlinkLeaderAccount({ data: { leaderId: d.id } }),
+                  'Account unlinked',
+                )
+                setUnlinking(false)
+              }}
+            >
+              Unlink
+            </PendingButton>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleting} onOpenChange={setDeleting}>
         <AlertDialogContent>

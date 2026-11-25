@@ -71,6 +71,9 @@ export const listReportsSchema = z.object({
   range: z.enum(REPORT_RANGES).optional(),
   mine: z.boolean().optional(),
   leader: z.string().optional(),
+  /** Reports led by this assistant (v2's link from Disciples with Cell
+   * Groups). */
+  assistant: z.string().optional(),
   type: z.enum(cellType.enumValues).optional(),
   page: z.number().int().min(1).optional(),
 })

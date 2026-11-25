@@ -101,6 +101,7 @@ export function reportsWhere(s: ReportsSearch, myId: string | null) {
         : sql`false`,
     )
   if (s.leader) parts.push(eq(cellReports.leaderId, s.leader))
+  if (s.assistant) parts.push(eq(cellReports.assistantId, s.assistant))
   if (s.type) parts.push(eq(cellReports.type, s.type))
   return and(...parts)
 }
@@ -134,6 +135,7 @@ export async function listReports(
       customLesson: sql<boolean>`${cellReports.lessonId} is null`,
       leaderId: cellReports.leaderId,
       leaderName: leader.name,
+      assistantId: cellReports.assistantId,
       assistantName: assistant.name,
       attendees: sql<number>`coalesce(${attendeeCount.n}, 0)`.mapWith(Number),
     })

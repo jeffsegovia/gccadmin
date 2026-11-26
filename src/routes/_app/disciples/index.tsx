@@ -341,7 +341,7 @@ function DisciplesPage() {
           </Group>
           {/* Wide screens: a table that scrolls inside its box. */}
           <div className="overflow-x-auto border bg-card max-md:hidden rounded-xl">
-            <table className="w-full min-w-[56rem] border-collapse text-sm">
+            <table className="w-full min-w-[56rem] border-collapse text-sm [&_th]:whitespace-nowrap">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
                   {(

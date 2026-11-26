@@ -5,6 +5,7 @@ import { Empty, Page } from '@/components/shell/page'
 import { ReportsTabs } from '@/components/reports-tabs'
 import { FilterBar } from '@/components/filter-bar'
 import { ReportFiltersDialog } from '@/components/cell-reports/filters-dialog'
+import { ReportsTable } from '@/components/cell-reports/reports-table'
 import { Pager } from '@/components/pager'
 import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { ReportRow as ReportItem } from '@/components/cell-reports/report-row'
@@ -176,18 +177,26 @@ function ReportsPage() {
           )}
         </Empty>
       ) : (
-        [...groups.entries()].map(([label, rows]) => (
-          <section key={label} className="flex min-w-0 flex-col gap-2">
-            <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
-              {label} · {rows.length}
-            </h2>
-            <Group>
-              {rows.map((r) => (
-                <ReportItem key={r.id} r={r} />
-              ))}
-            </Group>
-          </section>
-        ))
+        <>
+          {/* Phones: a list a week at a time. */}
+          {[...groups.entries()].map(([label, rows]) => (
+            <section
+              key={label}
+              className="flex min-w-0 flex-col gap-2 md:hidden"
+            >
+              <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
+                {label} · {rows.length}
+              </h2>
+              <Group>
+                {rows.map((r) => (
+                  <ReportItem key={r.id} r={r} />
+                ))}
+              </Group>
+            </section>
+          ))}
+          {/* Wide screens: one table. */}
+          <ReportsTable groups={[...groups.entries()]} />
+        </>
       )}
       <Pager page={data.page} total={data.total} pageSize={data.pageSize} />
       <PdfPreview

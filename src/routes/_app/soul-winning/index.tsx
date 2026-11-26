@@ -318,7 +318,7 @@ function SoulWinningPage() {
             </Group>
             {/* Wide screens: v2's table. */}
             <div className="overflow-x-auto rounded-xl border bg-card max-md:hidden dark:border-transparent">
-              <table className="w-full min-w-[52rem] border-collapse text-sm">
+              <table className="w-full min-w-[52rem] border-collapse text-sm [&_th]:whitespace-nowrap">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground">
                     <th
@@ -486,7 +486,7 @@ function SoulWinningPage() {
               <div className="overflow-x-auto border bg-card max-lg:hidden dark:border-transparent rounded-xl">
                 {/* Wider than the box when there are many lessons: it
                     scrolls sideways instead of squeezing the columns. */}
-                <table className="w-full min-w-max border-collapse text-sm">
+                <table className="w-full min-w-max border-collapse text-sm [&_th]:whitespace-nowrap">
                   <thead>
                     <tr className="text-left text-xs text-muted-foreground">
                       <th
@@ -506,9 +506,9 @@ function SoulWinningPage() {
                           key={l.id}
                           scope="col"
                           title={`${l.seriesTitle}: ${l.title}`}
-                          className="w-24 max-w-28 px-2 py-2.5 text-center text-xs leading-tight font-medium"
+                          className="w-28 max-w-28 px-2 py-2.5 text-center text-xs font-medium"
                         >
-                          <span className="line-clamp-2">{l.title}</span>
+                          <span className="block truncate">{l.title}</span>
                         </th>
                       ))}
                       <th

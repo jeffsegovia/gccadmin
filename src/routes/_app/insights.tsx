@@ -213,7 +213,7 @@ function InsightsPage() {
               Show as a table
             </summary>
             <div className="mt-2 overflow-x-auto">
-              <table className="w-full min-w-[30rem] border-collapse text-[13px]">
+              <table className="w-full min-w-[30rem] border-collapse text-[13px] [&_th]:whitespace-nowrap">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground">
                     <th scope="col" className="py-1.5 pr-3 font-medium">

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
-import { Ellipsis } from 'lucide-react'
+import { ChartColumn, Ellipsis } from 'lucide-react'
 import { cn } from 'cn'
 import { appConfig } from '@/config/site'
 import { Logo } from './logo'
@@ -84,6 +84,27 @@ function Sidebar({ isAdmin }: { isAdmin: boolean }) {
   )
 }
 
+/** Insights is one tap from every page: an icon in the top bar. */
+function InsightsLink({ className }: { className?: string }) {
+  const { pathname } = useLocation()
+  const on = pathname === '/insights'
+  return (
+    <Link
+      to="/insights"
+      aria-label="Insights"
+      title="Insights"
+      aria-current={on ? 'page' : undefined}
+      className={cn(
+        'grid place-items-center text-muted-foreground transition-colors hover:text-foreground [&_svg]:size-5',
+        on && 'text-primary hover:text-primary',
+        className,
+      )}
+    >
+      <ChartColumn aria-hidden="true" />
+    </Link>
+  )
+}
+
 function TopBar({ user }: { user: MenuUser }) {
   return (
     <header className="dark sticky top-0 z-40 hidden h-14 items-center gap-3 border-b border-white/12 bg-background px-5 text-foreground md:flex">
@@ -95,6 +116,7 @@ function TopBar({ user }: { user: MenuUser }) {
       </Link>
       <div className="ml-auto flex items-center gap-2">
         <SearchButton />
+        <InsightsLink className="size-9" />
         <UserMenu
           user={user}
           trigger={
@@ -126,6 +148,7 @@ function PhoneHeader({ user }: { user: MenuUser }) {
         </span>
       </Link>
       <SearchButton compact />
+      <InsightsLink className="size-10" />
       <UserMenu
         user={user}
         trigger={

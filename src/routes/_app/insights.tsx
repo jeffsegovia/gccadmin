@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowRight, BookOpen, HeartHandshake, Users } from 'lucide-react'
@@ -361,13 +362,37 @@ function TrendCard({
   labels: Array<string>
   action: ReactNode
 }) {
+  // v2's Show: both kinds together, or just one of them.
+  const [show, setShow] = useState<'both' | Kind>('both')
+  const shown = show === 'both' ? kinds : [show]
   return (
-    <InsightCard title={title} description={description} action={action}>
+    <InsightCard
+      title={title}
+      description={description}
+      action={
+        <div className="flex items-center gap-2">
+          <NativeSelect
+            size="sm"
+            value={show}
+            onChange={(e) => setShow(e.target.value as 'both' | Kind)}
+            aria-label={`Show in ${title}`}
+          >
+            <NativeSelectOption value="both">All</NativeSelectOption>
+            {kinds.map((k) => (
+              <NativeSelectOption key={k} value={k}>
+                {KIND_LABEL[k]}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+          {action}
+        </div>
+      }
+    >
       <div className="flex min-w-0 flex-col gap-3 p-4">
         <TrendChart
           ariaLabel={`${title}: reports filed per ${data.period === 'weeks' ? 'week' : 'month'}, by kind`}
           labels={labels}
-          series={kinds.map((kind) => ({
+          series={shown.map((kind) => ({
             key: kind,
             label: KIND_LABEL[kind],
             color: KIND_COLORS[kind],
@@ -385,7 +410,7 @@ function TrendCard({
                   <th scope="col" className="py-1.5 pr-3 font-medium">
                     {data.period === 'weeks' ? 'Week of' : 'Month'}
                   </th>
-                  {kinds.map((k) => (
+                  {shown.map((k) => (
                     <th
                       key={k}
                       scope="col"
@@ -405,7 +430,7 @@ function TrendCard({
                     >
                       {labels[i]}
                     </th>
-                    {kinds.map((k) => (
+                    {shown.map((k) => (
                       <td key={k} className="numeric px-2 py-1.5 text-right">
                         {p[k]}
                       </td>

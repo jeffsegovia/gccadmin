@@ -4,11 +4,63 @@ import { writeFileSync } from 'node:fs'
 import {
   portalReportEmail,
   reportReminderEmail,
-  weeklySummaryEmail,
+  digestEmail,
   welcomeLeaderEmail,
 } from '../src/lib/email/templates'
+import type { Digest } from '../src/lib/digest/types'
 
 const ctx = { site: process.env.SITE_URL ?? 'https://gccadmin.vercel.app' }
+
+function SAMPLE_DIGEST(kind: 'week' | 'month'): Digest {
+  const x = kind === 'week' ? 1 : 4
+  return {
+    kind,
+    label: kind === 'week' ? 'Nov 17–23' : 'October 2026',
+    key: '2026-10-01',
+    reports: {
+      open: 4 * x,
+      discipleship: 18 * x,
+      soulWinning: 3 * x,
+      consolidation: 2 * x,
+    },
+    newBelievers: 5 * x,
+    byLeader: [
+      { name: 'Mark Dela Cruz', open: 1 * x, discipleship: 2 * x },
+      { name: 'Anna Reyes', open: 0, discipleship: 2 * x },
+      { name: 'Joel Cruz', open: 1 * x, discipleship: 1 * x },
+    ],
+    assistants: [
+      { name: 'Ruth Garcia', n: 2 * x },
+      { name: 'Caleb Tan', n: 1 * x },
+    ],
+    sundays:
+      kind === 'week'
+        ? [{ date: 'Nov 23', title: 'Sunday service', total: 148, guests: 9 }]
+        : [
+            { date: 'Oct 5', title: 'Sunday service', total: 141, guests: 6 },
+            { date: 'Oct 12', title: 'Sunday service', total: 152, guests: 11 },
+            { date: 'Oct 19', title: 'Sunday service', total: 148, guests: 9 },
+            { date: 'Oct 26', title: 'Sunday service', total: 155, guests: 8 },
+          ],
+    leaders: 15,
+    reported: 12,
+    notReported: [
+      { name: 'Paolo Santos', last: 'Last report 16 days ago' },
+      { name: 'Grace Lim', last: 'Last report 9 days ago' },
+      { name: 'Ben Ramos', last: 'No reports yet' },
+    ],
+    members: {
+      total: 284,
+      rows: [
+        { label: 'Kids', total: 30, nacs: 11, acs: 6, regular: 13 },
+        { label: 'Youth', total: 116, nacs: 55, acs: 22, regular: 39 },
+        { label: 'Young pro', total: 37, nacs: 4, acs: 7, regular: 26 },
+        { label: 'Men', total: 46, nacs: 11, acs: 12, regular: 23 },
+        { label: 'Women', total: 55, nacs: 11, acs: 12, regular: 32 },
+      ],
+    },
+  }
+}
 
 export const SAMPLES = [
   {
@@ -37,23 +89,17 @@ export const SAMPLES = [
   },
   {
     key: 'summary',
-    name: 'Weekly summary',
-    when: 'Opt-in: an admin or pastor taps Email last week’s summary on Insights. Once per week.',
+    name: 'Weekly report',
+    when: 'Opt-in: an admin or pastor taps Email on Insights and picks Last week. Once per week.',
     to: 'Admins and pastors',
-    email: weeklySummaryEmail(ctx, {
-      week: 'Nov 17–23',
-      sentBy: 'Pastor John De Guzman',
-      reported: 12,
-      leaders: 15,
-      notReported: [
-        { name: 'Paolo Santos', last: 'Last report 16 days ago' },
-        { name: 'Grace Lim', last: 'Last report 9 days ago' },
-        { name: 'Ben Ramos', last: 'No reports yet' },
-      ],
-      reports: { open: 4, discipleship: 18, soulWinning: 3, consolidation: 2 },
-      newBelievers: 5,
-      sunday: { title: 'Sunday service', total: 148, guests: 9 },
-    }),
+    email: digestEmail(ctx, SAMPLE_DIGEST('week'), 'Pastor John De Guzman'),
+  },
+  {
+    key: 'summary-month',
+    name: 'Monthly report',
+    when: 'Opt-in: the same button, picking Last month. Once per month.',
+    to: 'Admins and pastors',
+    email: digestEmail(ctx, SAMPLE_DIGEST('month'), 'Pastor John De Guzman'),
   },
   {
     key: 'portal',

@@ -3,6 +3,8 @@
    (`pnpm email:preview` writes them to a page). Each goes out when
    something happens or when someone taps a button; nothing is scheduled. */
 
+import type { Digest } from '@/lib/digest/types'
+
 export type Email = {
   subject: string
   preview: string
@@ -148,64 +150,94 @@ export function reportReminderEmail(
   )
 }
 
-/** 2. "Email this summary" on Insights (admins and pastors): last week
- * at a glance, to the admins and pastors. Once a week. */
-export function weeklySummaryEmail(
-  ctx: Ctx,
-  p: {
-    week: string
-    sentBy: string
-    reported: number
-    leaders: number
-    notReported: Array<{ name: string; last: string }>
-    reports: {
-      open: number
-      discipleship: number
-      soulWinning: number
-      consolidation: number
-    }
-    newBelievers: number
-    sunday: { title: string; total: number; guests: number } | null
-  },
-) {
+/** 2. "Email" a report on Insights (admins and pastors): last week or
+ * last month at a glance, to the admins and pastors. Once per period. It
+ * answers six things: reports by type, by leader, who led as an assistant,
+ * Sunday attendance, who didn't report, and GCC's members so far. */
+export function digestEmail(ctx: Ctx, d: Digest, sentBy: string) {
+  const period = d.kind === 'week' ? 'last week' : 'last month'
+  const r = d.reports
   const blocks: Array<Block> = [
     {
-      p: `Here’s last week (<strong>${esc(p.week)}</strong>) at Grace City Church, sent by ${esc(p.sentBy)}.`,
+      p: `Here’s ${period} (<strong>${esc(d.label)}</strong>) at Grace City Church, sent by ${esc(sentBy)}.`,
     },
     {
       stats: [
-        ['Leaders reported', `${p.reported} of ${p.leaders}`],
-        ['New believers', p.newBelievers],
-        ...(p.sunday
-          ? ([['Sunday', p.sunday.total]] as Array<[string, number]>)
+        ['Leaders reported', `${d.reported} of ${d.leaders}`],
+        ['New believers', d.newBelievers],
+        ...(d.sundays.length
+          ? ([
+              [
+                d.sundays.length === 1 ? 'Sunday' : 'Sundays (avg)',
+                Math.round(
+                  d.sundays.reduce((a, s) => a + s.total, 0) / d.sundays.length,
+                ),
+              ],
+            ] as Array<[string, number]>)
           : []),
       ],
     },
     {
-      title: 'Reports filed',
+      title: '1. Reports filed',
       list: [
-        ['Open cell', String(p.reports.open)],
-        ['Discipleship', String(p.reports.discipleship)],
-        ['Soul winning', String(p.reports.soulWinning)],
-        ['Consolidation', String(p.reports.consolidation)],
+        ['Open cell', String(r.open)],
+        ['Discipleship', String(r.discipleship)],
+        ['Soul winning', String(r.soulWinning)],
+        ['Consolidation', String(r.consolidation)],
       ],
     },
   ]
-  if (p.sunday)
+  if (d.byLeader.length)
     blocks.push({
-      p: `${esc(p.sunday.title)}: ${p.sunday.total} came, ${p.sunday.guests} of them guests.`,
+      title: '2. Cell reports by leader',
+      list: d.byLeader.map((l) => [
+        l.name,
+        `Open ${l.open} · Discipleship ${l.discipleship}`,
+      ]),
     })
-  if (p.notReported.length)
+  if (d.assistants.length)
     blocks.push({
-      title: `Not reported · ${p.notReported.length}`,
-      list: p.notReported.map((l) => [l.name, l.last]),
+      title: '3. Assistants who led cell groups',
+      list: d.assistants.map((a) => [
+        a.name,
+        `${a.n} ${a.n === 1 ? 'cell group' : 'cell groups'}`,
+      ]),
     })
-  else blocks.push({ p: 'Every leader reported. Praise God!' })
+  else
+    blocks.push({
+      p: `3. No assistant led a cell group ${period}.`,
+    })
+  blocks.push(
+    d.sundays.length
+      ? {
+          title: '4. Sunday service attendance',
+          list: d.sundays.map((s) => [
+            `${s.title} · ${s.date}`,
+            `${s.total} came, ${s.guests} guests`,
+          ]),
+        }
+      : { p: `4. No Sunday service was recorded ${period}.` },
+  )
+  blocks.push(
+    d.notReported.length
+      ? {
+          title: `5. Not reported · ${d.notReported.length}`,
+          list: d.notReported.map((l) => [l.name, l.last]),
+        }
+      : { p: '5. Every leader reported. Praise God!' },
+  )
+  blocks.push({
+    title: `6. GCC so far · ${d.members.total} disciples`,
+    list: d.members.rows.map((m) => [
+      `${m.label} · ${m.total}`,
+      `NACS ${m.nacs} · ACS ${m.acs} · Regular ${m.regular}`,
+    ]),
+  })
   blocks.push({ button: 'Open Insights', href: `${ctx.site}/insights` })
   return layout(
     ctx,
-    `Last week at GCC: ${p.reported} of ${p.leaders} leaders reported`,
-    `${p.newBelievers} new believers, ${p.notReported.length} leaders not reported.`,
+    `${d.kind === 'week' ? 'Last week' : d.label} at GCC: ${d.reported} of ${d.leaders} leaders reported`,
+    `${d.newBelievers} new believers, ${d.notReported.length} leaders not reported.`,
     blocks,
   )
 }

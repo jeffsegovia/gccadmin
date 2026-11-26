@@ -5,6 +5,7 @@ import { Page, Section } from '@/components/shell/page'
 import { RemindButton } from '@/components/remind-button'
 import { BirthdayList } from '@/components/birthday-list'
 import { ReportRow } from '@/components/cell-reports/report-row'
+import { ReportsTable } from '@/components/cell-reports/reports-table'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
@@ -168,7 +169,7 @@ function HomePage() {
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden="true"
-                    className="grid h-12 w-11 shrink-0 place-items-center content-center bg-muted"
+                    className="grid h-12 w-11 shrink-0 place-items-center content-center rounded-lg bg-muted"
                   >
                     <span className="font-mono text-[10px] font-semibold tracking-widest text-primary uppercase">
                       {shortDay(data.upcoming.date).split(' ')[0]}
@@ -269,7 +270,7 @@ function HomePage() {
                     search={a.search}
                     className="flex min-h-14 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
                   >
-                    <span className="grid size-8 shrink-0 place-items-center bg-muted text-primary">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-primary">
                       <a.icon aria-hidden="true" className="size-4" />
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col">
@@ -291,7 +292,7 @@ function HomePage() {
             to="/insights"
             className="flex min-h-16 min-w-0 items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50 dark:border-transparent"
           >
-            <span className="grid size-9 shrink-0 place-items-center bg-muted text-primary">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-primary">
               <ChartColumn aria-hidden="true" className="size-[18px]" />
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
@@ -338,7 +339,7 @@ function HomePage() {
                       </span>
                       <span
                         className={cn(
-                          'w-full',
+                          'w-full rounded-t-md',
                           i === data.sundays.length - 1
                             ? 'bg-primary'
                             : 'bg-muted-foreground/40',
@@ -379,11 +380,18 @@ function HomePage() {
                 No reports yet this week.
               </p>
             ) : (
-              <Group>
-                {data.thisWeek.map((r) => (
-                  <ReportRow key={r.id} r={r} />
-                ))}
-              </Group>
+              <>
+                <Group className="md:hidden">
+                  {data.thisWeek.map((r) => (
+                    <ReportRow key={r.id} r={r} />
+                  ))}
+                </Group>
+                <ReportsTable
+                  groups={[['This week', data.thisWeek]]}
+                  labelGroups={false}
+                  compact
+                />
+              </>
             )}
           </Section>
         </div>

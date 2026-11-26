@@ -27,7 +27,7 @@ import { ReportsTabs } from '@/components/reports-tabs'
 import { ListSearch } from '@/components/list-search'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants, Button } from '@/components/ui/button'
-import { Group, RowChevron } from '@/components/ui/list'
+import { Group, RowChevron, RowChevronCell } from '@/components/ui/list'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
   AlertDialog,
@@ -347,7 +347,7 @@ function SoulWinningPage() {
                     >
                       {conso ? '# Consolidated' : '# Won Souls'}
                     </th>
-                    <th scope="col" className="w-10" />
+                    <th scope="col" className="w-12" aria-hidden="true" />
                   </tr>
                 </thead>
                 <tbody>
@@ -400,9 +400,7 @@ function SoulWinningPage() {
                           {s.believers} {conso ? 'consolidated' : 'won'}
                         </Pill>
                       </td>
-                      <td className="pr-3">
-                        <RowChevron />
-                      </td>
+                      <RowChevronCell />
                     </tr>
                   ))}
                 </tbody>
@@ -637,7 +635,9 @@ function LessonBar({ total, taken }: { total: number; taken: number }) {
           <span
             key={i}
             className={
-              i < taken ? 'flex-1 bg-covered' : 'flex-1 bg-foreground/12'
+              i < taken
+                ? 'flex-1 rounded-full bg-covered'
+                : 'flex-1 rounded-full bg-foreground/12'
             }
           />
         ))}

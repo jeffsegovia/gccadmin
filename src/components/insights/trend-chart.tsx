@@ -203,7 +203,7 @@ export function CountBars({
           title={`${r.label}: ${r.n}`}
         >
           <span className="truncate">{r.label}</span>
-          <span className="h-2.5 bg-muted">
+          <span className="h-2.5 overflow-hidden rounded-full bg-muted">
             <span
               className="block h-full bg-primary"
               style={{ width: `${(r.n / max) * 100}%` }}

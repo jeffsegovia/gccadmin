@@ -77,7 +77,7 @@ function GrowthPage() {
               >
                 {PROCESS_LEVEL[l]}
               </span>
-              <span className="h-2.5 min-w-0 flex-1 bg-muted">
+              <span className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
                 <span
                   className="block h-full bg-primary"
                   style={{ width: `${(n / max) * 100}%` }}

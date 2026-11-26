@@ -34,7 +34,7 @@ function Rows({ items }: { items: ReadonlyArray<NavItem> }) {
           to={item.to}
           className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2"
         >
-          <span className="grid size-8 shrink-0 place-items-center bg-muted text-primary">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-primary">
             <item.icon aria-hidden="true" className="size-4" />
           </span>
           <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
@@ -102,7 +102,7 @@ function MorePage() {
               rel="noreferrer"
               className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2"
             >
-              <span className="grid size-8 shrink-0 place-items-center bg-muted">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted">
                 <SiteIcon href={l.href} className="size-4" />
               </span>
               <span className="min-w-0 flex-1 truncate text-[15px] font-medium">

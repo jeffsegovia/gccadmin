@@ -42,7 +42,7 @@ export function SearchButton({ compact }: { compact?: boolean }) {
           'flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground',
           compact
             ? 'size-10 justify-center'
-            : 'h-9 w-72 border border-input bg-card px-3 text-sm max-lg:w-48',
+            : 'h-9 w-72 rounded-lg border border-input bg-card px-3 text-sm max-lg:w-48',
         )}
       >
         <Search aria-hidden="true" className="size-4 shrink-0" />
@@ -94,7 +94,7 @@ function SearchPanel({ onPick }: { onPick: () => void }) {
   }, [q])
 
   const row =
-    'flex min-h-11 min-w-0 items-center gap-3 px-3 py-2 hover:bg-muted'
+    'flex min-h-11 min-w-0 items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted'
   const empty =
     results &&
     !results.people.length &&

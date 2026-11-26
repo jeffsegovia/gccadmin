@@ -81,7 +81,10 @@ export function PortalSheet({
         ) : (
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex min-w-0 items-center gap-4 border bg-background p-4 rounded-xl">
-              <QrCode value={url} className="size-28 shrink-0 bg-white p-2" />
+              <QrCode
+                value={url}
+                className="size-28 shrink-0 rounded-lg bg-white p-2"
+              />
               <div className="flex min-w-0 flex-col gap-1.5">
                 <span className="font-mono text-[13px] break-all">
                   {url.replace(/^https?:\/\//, '')}

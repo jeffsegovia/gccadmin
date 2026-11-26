@@ -24,7 +24,7 @@ import type { MenuUser } from './user-menu'
    Each page's main add is a floating button on phones. */
 
 const sideRow =
-  'flex h-9 min-w-0 items-center gap-2.5 px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-[17px] [&_svg]:shrink-0'
+  'flex h-9 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-[17px] [&_svg]:shrink-0'
 const sideOn = 'bg-muted text-foreground [&_svg]:text-primary'
 
 function SideLink({ item, pathname }: { item: NavItem; pathname: string }) {

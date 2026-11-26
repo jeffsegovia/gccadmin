@@ -44,7 +44,7 @@ function DateTile({ date, accent }: { date: Date; accent?: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className="grid h-12 w-11 shrink-0 place-items-center content-center bg-muted"
+      className="grid h-12 w-11 shrink-0 place-items-center content-center rounded-lg bg-muted"
     >
       <span
         className={`font-mono text-[10px] font-semibold tracking-widest uppercase ${accent ? 'text-primary' : 'text-muted-foreground'}`}

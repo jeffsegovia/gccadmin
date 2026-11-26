@@ -42,18 +42,19 @@ export const ADMIN_NAV: ReadonlyArray<NavItem> = [
   { to: '/users', label: 'Users', icon: UserCog, adminOnly: true },
 ]
 
-/** The phone's bottom bar (then More): Reports holds cell groups and soul
- * winning; Attendance lives in More. */
+/** The phone's bottom bar (then More): Attendance is the Sunday task, so
+ * it's one tap away; Reports holds cell groups and soul winning. Insights
+ * is on Home and in More. */
 export const PHONE_TABS: ReadonlyArray<NavItem> = [
   { to: '/home', label: 'Home', icon: House },
-  { to: '/insights', label: 'Insights', icon: ChartColumn },
+  { to: '/disciples', label: 'Disciples', icon: Users },
+  { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
   {
     to: '/reports',
     label: 'Reports',
     icon: ClipboardList,
     also: ['/soul-winning'],
   },
-  { to: '/disciples', label: 'Disciples', icon: Users },
 ]
 
 export function isActive(item: NavItem, pathname: string): boolean {

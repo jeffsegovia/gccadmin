@@ -1,16 +1,12 @@
 import { useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  FileDown,
-  Plus,
-} from 'lucide-react'
+import { ClipboardList, FileDown, Plus } from 'lucide-react'
 import { Empty, Page } from '@/components/shell/page'
 import { ReportsTabs } from '@/components/reports-tabs'
 import { FilterBar } from '@/components/filter-bar'
 import { ReportFiltersDialog } from '@/components/cell-reports/filters-dialog'
+import { ReportsTable } from '@/components/cell-reports/reports-table'
+import { Pager } from '@/components/pager'
 import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { ReportRow as ReportItem } from '@/components/cell-reports/report-row'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -52,7 +48,6 @@ function ReportsPage() {
       search: (prev) => ({ ...prev, ...next, page: undefined }),
       replace: true,
     })
-  const pages = Math.max(1, Math.ceil(data.total / data.pageSize))
 
   // Grouped by week (Monday first), newest first.
   const groups = new Map<string, Array<ReportRow>>()
@@ -74,7 +69,8 @@ function ReportsPage() {
             disabled={data.total === 0}
             onClick={() => setPdf(true)}
           >
-            <FileDown aria-hidden="true" /> View PDF
+            <FileDown aria-hidden="true" />
+            <span className="max-md:sr-only">View PDF</span>
           </Button>
           <Link
             to="/reports/new"
@@ -97,7 +93,6 @@ function ReportsPage() {
           { value: 'ALL', label: 'All' },
           { value: 'OPEN', label: 'Open Cell' },
           { value: 'DISCIPLESHIP', label: 'Discipleship' },
-          { value: 'SOULWINNING', label: 'Soul Winning' },
         ]}
       />
       <FilterBar
@@ -160,62 +155,50 @@ function ReportsPage() {
 
       {data.rows.length === 0 ? (
         <Empty icon={ClipboardList} title="No reports in this range.">
-          <Link to="/reports/new" className={buttonVariants()}>
-            <Plus aria-hidden="true" /> New report
-          </Link>
+          {range !== 'all' || search.mine || search.leader || search.type ? (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                set({
+                  range: 'all',
+                  mine: undefined,
+                  leader: undefined,
+                  assistant: undefined,
+                  type: undefined,
+                })
+              }
+            >
+              Show all reports
+            </Button>
+          ) : (
+            <Link to="/reports/new" className={buttonVariants()}>
+              <Plus aria-hidden="true" /> New report
+            </Link>
+          )}
         </Empty>
       ) : (
-        [...groups.entries()].map(([label, rows]) => (
-          <section key={label} className="flex min-w-0 flex-col gap-2">
-            <h2 className="px-0.5 font-mono text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-              {label} · {rows.length}
-            </h2>
-            <Group>
-              {rows.map((r) => (
-                <ReportItem key={r.id} r={r} />
-              ))}
-            </Group>
-          </section>
-        ))
-      )}
-      {pages > 1 && (
-        <div className="flex items-center justify-between text-[13px] text-muted-foreground">
-          <span>
-            Page {data.page} of {pages}
-          </span>
-          <div className="flex gap-1.5">
-            <Link
-              to="."
-              search={(p) => ({
-                ...p,
-                page: data.page > 2 ? data.page - 1 : undefined,
-              })}
-              aria-label="Previous page"
-              className={buttonVariants({
-                variant: 'secondary',
-                size: 'icon-lg',
-                className:
-                  data.page <= 1 ? 'pointer-events-none opacity-40' : '',
-              })}
+        <>
+          {/* Phones: a list a week at a time. */}
+          {[...groups.entries()].map(([label, rows]) => (
+            <section
+              key={label}
+              className="flex min-w-0 flex-col gap-2 md:hidden"
             >
-              <ChevronLeft aria-hidden="true" />
-            </Link>
-            <Link
-              to="."
-              search={(p) => ({ ...p, page: data.page + 1 })}
-              aria-label="Next page"
-              className={buttonVariants({
-                variant: 'secondary',
-                size: 'icon-lg',
-                className:
-                  data.page >= pages ? 'pointer-events-none opacity-40' : '',
-              })}
-            >
-              <ChevronRight aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
+              <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
+                {label} · {rows.length}
+              </h2>
+              <Group>
+                {rows.map((r) => (
+                  <ReportItem key={r.id} r={r} />
+                ))}
+              </Group>
+            </section>
+          ))}
+          {/* Wide screens: one table. */}
+          <ReportsTable groups={[...groups.entries()]} />
+        </>
       )}
+      <Pager page={data.page} total={data.total} pageSize={data.pageSize} />
       <PdfPreview
         open={pdf}
         onOpenChange={setPdf}

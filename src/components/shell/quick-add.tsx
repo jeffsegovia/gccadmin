@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 type Action = {
+  /** The page this add belongs to, so that page's + goes straight to it. */
+  module?: string
   label: string
   icon: LucideIcon
   to: string
@@ -27,17 +29,34 @@ type Action = {
 
 /** Everything a leader adds from anywhere, most used first. */
 export const QUICK_ADD: ReadonlyArray<Action> = [
-  { label: 'Cell report', icon: ClipboardList, to: '/reports/new' },
-  { label: 'Disciple', icon: UserPlus, to: '/disciples/new' },
-  { label: 'Soul winning', icon: Sprout, to: '/soul-winning/new' },
   {
+    module: '/reports',
+    label: 'Cell report',
+    icon: ClipboardList,
+    to: '/reports/new',
+  },
+  {
+    module: '/disciples',
+    label: 'Disciple',
+    icon: UserPlus,
+    to: '/disciples/new',
+  },
+  {
+    module: '/soul-winning',
+    label: 'Soul winning',
+    icon: Sprout,
+    to: '/soul-winning/new',
+  },
+  {
+    module: '/soul-winning',
     label: 'Consolidation',
     icon: HeartHandshake,
     to: '/soul-winning/new',
     search: { type: 'CONSOLIDATION' },
   },
   {
-    label: 'Attendance',
+    module: '/attendance',
+    label: 'Service or event',
     icon: CalendarCheck,
     to: '/attendance',
     search: { new: '1' },
@@ -58,6 +77,27 @@ export function QuickAddFab() {
   }, [open])
   // Forms are where you add; the + would only cover their buttons.
   if (/\/new$/.test(pathname)) return null
+  // On a module's own pages its one add is one tap; the menu is for the
+  // rest (and for Soul winning, which has two).
+  const here = QUICK_ADD.filter(
+    (a) =>
+      a.module &&
+      (pathname === a.module || pathname.startsWith(`${a.module}/`)),
+  )
+  if (here.length === 1) {
+    const a = here[0]
+    return (
+      <Link
+        to={a.to}
+        search={a.search}
+        aria-label={`New ${a.label.toLowerCase()}`}
+        title={`New ${a.label.toLowerCase()}`}
+        className="fixed right-4 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom)+1rem)] z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/0.35)] transition-transform active:scale-95 md:hidden"
+      >
+        <Plus aria-hidden="true" strokeWidth={2.25} className="size-6" />
+      </Link>
+    )
+  }
   return (
     <div className="md:hidden">
       <div

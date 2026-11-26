@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
-  ChevronLeft,
+  ArrowDown,
   ChevronRight,
   Download,
   Ellipsis,
   Link2,
+  PhoneCall,
   Plus,
   Upload,
   Users,
@@ -17,8 +18,6 @@ import { ListSearch } from '@/components/list-search'
 import {
   CellStatusPill,
   ChurchStatusPill,
-  MemberTypePill,
-  Pill,
   ProcessLevelPill,
 } from '@/components/status-pill'
 import {
@@ -45,7 +44,8 @@ import {
 import { FilterBar } from '@/components/filter-bar'
 import type { ActiveFilter } from '@/components/filter-bar'
 import { UnderlineTabs } from '@/components/ui/underline-tabs'
-import { manilaDay } from '@/lib/dates'
+import { manilaDay, shortDate } from '@/lib/dates'
+import { Pager } from '@/components/pager'
 import { messageOf } from '@/lib/errors'
 import {
   exportDisciples,
@@ -76,11 +76,17 @@ function sub(d: DiscipleRow) {
     .join(' · ')
 }
 
+function lastSeen(d: DiscipleRow) {
+  return d.lastSunday
+    ? `Last Sunday: ${shortDate(d.lastSunday)}`
+    : 'Not at a Sunday yet'
+}
+
 function Role({ d }: { d: DiscipleRow }) {
   if (d.isPrimary)
-    return <span className="text-[11px] text-primary">Primary leader</span>
+    return <span className="text-xs text-primary">Primary leader</span>
   if (d.isMyPrimary)
-    return <span className="text-[11px] text-primary">Assistant leader</span>
+    return <span className="text-xs text-primary">Assistant leader</span>
   return null
 }
 
@@ -125,6 +131,15 @@ function DisciplesPage() {
           },
         ]
       : []),
+    ...(search.away
+      ? [
+          {
+            key: 'away',
+            label: 'Missed the last 4 Sundays',
+            clear: () => setSearch({ away: undefined, sort: undefined }),
+          },
+        ]
+      : []),
     ...(search.leader
       ? [
           {
@@ -148,9 +163,6 @@ function DisciplesPage() {
     ...multi('cellStatus', search.cellStatus, CELL_STATUS),
     ...multi('processLevel', search.processLevel, PROCESS_LEVEL),
   ]
-  const pages = Math.max(1, Math.ceil(data.total / data.pageSize))
-  const from = data.total ? (data.page - 1) * data.pageSize + 1 : 0
-  const to = Math.min(data.total, data.page * data.pageSize)
 
   async function exportAll() {
     try {
@@ -223,6 +235,7 @@ function DisciplesPage() {
             status: undefined,
             leader: undefined,
             handledBy: undefined,
+            away: undefined,
             memberType: undefined,
             churchStatus: undefined,
             cellStatus: undefined,
@@ -237,6 +250,29 @@ function DisciplesPage() {
         />
       </FilterBar>
 
+      <div className="-mt-2 flex">
+        <button
+          type="button"
+          aria-pressed={!!search.away}
+          onClick={() =>
+            setSearch(
+              search.away
+                ? { away: undefined, sort: undefined }
+                : { away: true, sort: 'lastSeen' },
+            )
+          }
+          className={cn(
+            'inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
+            search.away
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <PhoneCall aria-hidden="true" className="size-3.5" />
+          Missed the last 4 Sundays
+        </button>
+      </div>
+
       {data.rows.length === 0 ? (
         <Empty
           icon={Users}
@@ -244,9 +280,30 @@ function DisciplesPage() {
             search.q || filters ? 'No disciples match.' : 'No disciples yet.'
           }
         >
-          <Link to="/disciples/new" className={buttonVariants()}>
-            <Plus aria-hidden="true" /> Add disciple
-          </Link>
+          {search.q || filters ? (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setSearch({
+                  q: undefined,
+                  status: undefined,
+                  leader: undefined,
+                  handledBy: undefined,
+                  away: undefined,
+                  memberType: undefined,
+                  churchStatus: undefined,
+                  cellStatus: undefined,
+                  processLevel: undefined,
+                })
+              }
+            >
+              Clear search and filters
+            </Button>
+          ) : (
+            <Link to="/disciples/new" className={buttonVariants()}>
+              <Plus aria-hidden="true" /> Add disciple
+            </Link>
+          )}
         </Empty>
       ) : (
         <>
@@ -266,10 +323,12 @@ function DisciplesPage() {
                   <span className="truncate text-xs text-muted-foreground">
                     {sub(d)}
                   </span>
-                  <span className="mt-1 flex flex-wrap gap-1">
+                  <span className="mt-1 flex flex-wrap items-center gap-1">
                     <ChurchStatusPill status={d.churchStatus} named />
                     <CellStatusPill status={d.cellStatus} named />
-                    <ProcessLevelPill level={d.processLevel} />
+                  </span>
+                  <span className="mt-1 truncate text-xs text-muted-foreground">
+                    {lastSeen(d)}
                   </span>
                   <Role d={d} />
                 </span>
@@ -282,24 +341,52 @@ function DisciplesPage() {
           </Group>
           {/* Wide screens: a table that scrolls inside its box. */}
           <div className="overflow-x-auto border bg-card max-md:hidden rounded-xl">
-            <table className="w-full min-w-[56rem] border-collapse text-sm">
+            <table className="w-full min-w-[56rem] border-collapse text-sm [&_th]:whitespace-nowrap">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
-                  {[
-                    'Name',
-                    'Leader',
-                    'Member Type',
-                    'Process Level',
-                    'Church Status',
-                    'Cell Status',
-                    'Portal',
-                  ].map((h) => (
+                  {(
+                    [
+                      ['Name', 'name'],
+                      ['Leader'],
+                      ['Process Level', 'process'],
+                      ['Church Status'],
+                      ['Cell Status'],
+                      ['Last Sunday', 'lastSeen'],
+                      ['Portal'],
+                    ] as const
+                  ).map(([h, sortKey]) => (
                     <th
                       key={h}
                       scope="col"
+                      aria-sort={
+                        sortKey && (search.sort ?? 'name') === sortKey
+                          ? 'ascending'
+                          : undefined
+                      }
                       className="px-3 py-2.5 font-medium first:pl-4"
                     >
-                      {h}
+                      {sortKey ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSearch({
+                              sort: sortKey === 'name' ? undefined : sortKey,
+                            })
+                          }
+                          className={cn(
+                            'inline-flex items-center gap-1 hover:text-foreground',
+                            (search.sort ?? 'name') === sortKey &&
+                              'text-foreground',
+                          )}
+                        >
+                          {h}
+                          {(search.sort ?? 'name') === sortKey && (
+                            <ArrowDown aria-hidden="true" className="size-3" />
+                          )}
+                        </button>
+                      ) : (
+                        h
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -308,7 +395,16 @@ function DisciplesPage() {
                 {data.rows.map((d) => {
                   const portal = portalText(d)
                   return (
-                    <tr key={d.id} className="border-t hover:bg-muted/40">
+                    <tr
+                      key={d.id}
+                      onClick={() =>
+                        void navigate({
+                          to: '/disciples/$discipleId',
+                          params: { discipleId: d.id },
+                        })
+                      }
+                      className="cursor-pointer border-t hover:bg-muted/40"
+                    >
                       <td className="max-w-64 py-2 pr-3 pl-4">
                         <Link
                           to="/disciples/$discipleId"
@@ -319,15 +415,17 @@ function DisciplesPage() {
                             <span className="truncate font-medium">
                               {d.name}
                             </span>
-                            <Role d={d} />
+                            <span className="flex gap-1.5">
+                              <Role d={d} />
+                              <span className="text-xs text-muted-foreground">
+                                {MEMBER_TYPE[d.memberType]}
+                              </span>
+                            </span>
                           </span>
                         </Link>
                       </td>
                       <td className="max-w-48 truncate px-3 py-2 text-foreground/85">
                         {d.handledByName ?? d.leaderName ?? '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <MemberTypePill type={d.memberType} />
                       </td>
                       <td className="px-3 py-2">
                         <ProcessLevelPill level={d.processLevel} />
@@ -337,6 +435,9 @@ function DisciplesPage() {
                       </td>
                       <td className="px-3 py-2">
                         <CellStatusPill status={d.cellStatus} />
+                      </td>
+                      <td className="px-3 py-2 text-xs whitespace-nowrap text-muted-foreground">
+                        {d.lastSunday ? shortDate(d.lastSunday) : '—'}
                       </td>
                       <td
                         className={cn(
@@ -358,51 +459,8 @@ function DisciplesPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground">
-            <span>
-              {from}–{to} of {data.total.toLocaleString('en-US')}
-            </span>
-            <div className="flex gap-1.5">
-              <Link
-                to="."
-                search={(prev) => ({
-                  ...prev,
-                  page: data.page - 1 > 1 ? data.page - 1 : undefined,
-                })}
-                disabled={data.page <= 1}
-                aria-label="Previous page"
-                className={buttonVariants({
-                  variant: 'secondary',
-                  size: 'icon-lg',
-                  className:
-                    data.page <= 1 ? 'pointer-events-none opacity-40' : '',
-                })}
-              >
-                <ChevronLeft aria-hidden="true" />
-              </Link>
-              <Link
-                to="."
-                search={(prev) => ({ ...prev, page: data.page + 1 })}
-                disabled={data.page >= pages}
-                aria-label="Next page"
-                className={buttonVariants({
-                  variant: 'secondary',
-                  size: 'icon-lg',
-                  className:
-                    data.page >= pages ? 'pointer-events-none opacity-40' : '',
-                })}
-              >
-                <ChevronRight aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
+          <Pager page={data.page} total={data.total} pageSize={data.pageSize} />
         </>
-      )}
-      {!data.everyone && data.rows.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          <Pill tone="neutral">Tip</Pill> Open a disciple to share their portal
-          link.
-        </p>
       )}
       <FiltersDialog
         open={filtering}

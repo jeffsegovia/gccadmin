@@ -1,5 +1,16 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, count, desc, eq, gte, isNotNull, lt, or, sql } from 'drizzle-orm'
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import type { SQL } from 'drizzle-orm'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
@@ -70,11 +81,16 @@ export const getInsights = createServerFn({ method: 'GET' })
       : me
         ? or(eq(disciples.leaderId, me), eq(disciples.handledById, me))
         : none
-    const cellScope = everyone
-      ? undefined
-      : me
-        ? or(eq(cellReports.leaderId, me), eq(cellReports.assistantId, me))
-        : none
+    // Soul winning comes from the Soul winning module only: v2's old
+    // "Soul Winning" cell report type is left out of every count here.
+    const cellScope = and(
+      ne(cellReports.type, 'SOULWINNING'),
+      everyone
+        ? undefined
+        : me
+          ? or(eq(cellReports.leaderId, me), eq(cellReports.assistantId, me))
+          : none,
+    )
     const swScope = everyone
       ? undefined
       : me
@@ -252,8 +268,7 @@ export const getInsights = createServerFn({ method: 'GET' })
             {
               open: c('OPEN'),
               discipleship: c('DISCIPLESHIP'),
-              // A cell group held as soul winning counts with soul-winning sessions.
-              soulWinning: w('SOUL_WINNING') + c('SOULWINNING'),
+              soulWinning: w('SOUL_WINNING'),
               consolidation: w('CONSOLIDATION'),
             } satisfies Record<Kind, number>,
           ]
@@ -272,7 +287,6 @@ export const getInsights = createServerFn({ method: 'GET' })
           if (r.bucket !== start) continue
           if (r.type === 'OPEN') point.open += r.n
           else if (r.type === 'DISCIPLESHIP') point.discipleship += r.n
-          else point.soulWinning += r.n
         }
         for (const r of swTrend) {
           if (r.bucket !== start) continue
@@ -379,11 +393,14 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
     return cached(key, 120_000, async () => {
       const bounds = rangeBounds(range)
       const before = previousBounds(range)
-      const cellScope = everyone
-        ? undefined
-        : me
-          ? or(eq(cellReports.leaderId, me), eq(cellReports.assistantId, me))
-          : sql`false`
+      const cellScope = and(
+        ne(cellReports.type, 'SOULWINNING'),
+        everyone
+          ? undefined
+          : me
+            ? or(eq(cellReports.leaderId, me), eq(cellReports.assistantId, me))
+            : sql`false`,
+      )
       const swScope = everyone
         ? undefined
         : me
@@ -448,7 +465,11 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
             .from(leader)
             .leftJoin(
               cellReports,
-              and(eq(cellReports.leaderId, leader.id), cellIn(bounds)),
+              and(
+                eq(cellReports.leaderId, leader.id),
+                ne(cellReports.type, 'SOULWINNING'),
+                cellIn(bounds),
+              ),
             )
             .where(
               and(
@@ -478,7 +499,7 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
       const kinds = {
         open: c('OPEN'),
         discipleship: c('DISCIPLESHIP'),
-        soulWinning: w('SOUL_WINNING') + c('SOULWINNING'),
+        soulWinning: w('SOUL_WINNING'),
         consolidation: w('CONSOLIDATION'),
       } satisfies Record<Kind, number>
       const leaders = new Map<
@@ -490,7 +511,6 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
           total: number
           open: number
           discipleship: number
-          soulWinning: number
           assistants: Array<{ id: string; name: string; n: number }>
         }
       >()
@@ -502,7 +522,6 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
           total: 0,
           open: 0,
           discipleship: 0,
-          soulWinning: 0,
           assistants: byAssistant
             .filter((a) => a.leaderId === r.id)
             .map(({ id, name, n }) => ({ id, name, n }))
@@ -510,8 +529,7 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
         }
         if (r.type === 'OPEN') l.open += r.n
         else if (r.type === 'DISCIPLESHIP') l.discipleship += r.n
-        else if (r.type === 'SOULWINNING') l.soulWinning += r.n
-        l.total += r.type ? r.n : 0
+        l.total += r.type === 'OPEN' || r.type === 'DISCIPLESHIP' ? r.n : 0
         leaders.set(r.id, l)
       }
       const list = [...leaders.values()].sort(
@@ -530,7 +548,6 @@ export const getReportsFiled = createServerFn({ method: 'GET' })
         cellGroups: {
           open: kinds.open,
           discipleship: kinds.discipleship,
-          soulWinning: c('SOULWINNING'),
           total: assisted[0].total,
           previous: before ? prevCell[0].n : null,
         },

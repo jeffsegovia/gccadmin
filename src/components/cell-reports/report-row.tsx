@@ -42,14 +42,16 @@ export function ReportRow({
             </span>
           ) : null}
         </span>
-        <span className="truncate text-xs text-muted-foreground">
-          {r.lessonTitle ?? 'No lesson'}
-        </span>
-        <span className="flex flex-wrap items-center gap-1.5">
-          <KindPill kind={r.type} />
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-xs text-foreground/85">
+            {r.lessonTitle ?? 'No lesson'}
+          </span>
           {r.customLesson !== undefined && r.lessonTitle && (
             <LessonTag custom={r.customLesson} />
           )}
+        </span>
+        <span className="flex flex-wrap items-center gap-1.5">
+          <KindPill kind={r.type} />
           <span className="text-xs text-muted-foreground">
             {attendeesText(r.attendees)}
           </span>

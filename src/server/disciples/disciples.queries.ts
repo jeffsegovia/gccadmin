@@ -2,7 +2,12 @@ import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { disciplePortalLinks, disciples } from '@/db/schema'
+import {
+  attendanceDisciples,
+  attendances,
+  disciplePortalLinks,
+  disciples,
+} from '@/db/schema'
 import type { Access } from '@/server/auth/access.server'
 import { seesEveryone } from '@/server/auth/access.server'
 import { PAGE_SIZE } from '@/lib/disciples/schema'
@@ -15,6 +20,16 @@ const handler = alias(disciples, 'handler')
 export function likeTerm(q: string) {
   return `%${q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`
 }
+
+/** The last four Sunday services, newest first. */
+const lastFourSundays = sql`select ${attendances.id} from ${attendances} where ${attendances.type} = 'SUNDAY_SERVICE' and ${attendances.date} < now() order by ${attendances.date} desc limit 4`
+
+/** Missing from each of the last four Sunday services (and there have been
+ * four), so who a leader should call. Shared by Home's count and the list. */
+export const awayFromSunday = sql`(select count(*) from (${lastFourSundays}) f) = 4 and not exists (select 1 from ${attendanceDisciples} ad where ad."B" = ${disciples.id} and ad."A" in (${lastFourSundays}))`
+
+/** The day this disciple was last marked present at a Sunday service. */
+export const lastSundayAt = sql<Date | null>`(select max(a.date) from ${attendanceDisciples} ad join ${attendances} a on a.id = ad."A" where ad."B" = ${disciples.id} and a.type = 'SUNDAY_SERVICE')`
 
 export function disciplesWhere(access: Access, s: DisciplesSearch) {
   const all = seesEveryone(access)
@@ -37,6 +52,7 @@ export function disciplesWhere(access: Access, s: DisciplesSearch) {
     parts.push(
       or(eq(disciples.isPrimary, true), eq(disciples.isMyPrimary, true)),
     )
+  if (s.away) parts.push(eq(disciples.isPrimary, false), awayFromSunday)
   if (s.q?.trim()) parts.push(ilike(disciples.name, likeTerm(s.q)))
   if (s.memberType?.length)
     parts.push(inArray(disciples.memberType, s.memberType))
@@ -70,6 +86,7 @@ export const discipleRowSelect = {
   handledByName: handler.name,
   portalEnabled: disciplePortalLinks.isEnabled,
   portalOpenedAt: disciplePortalLinks.lastOpenedAt,
+  lastSunday: lastSundayAt.as('lastSunday'),
 }
 
 export async function listDisciples(
@@ -79,11 +96,13 @@ export async function listDisciples(
 ) {
   const where = disciplesWhere(access, s)
   const order =
-    s.sort === 'newest'
-      ? [desc(disciples.createdAt)]
-      : s.sort === 'process'
-        ? [desc(disciples.processLevel), asc(disciples.name)]
-        : [desc(disciples.isPrimary), asc(disciples.name)]
+    s.sort === 'lastSeen'
+      ? [sql`${lastSundayAt} asc nulls first`, asc(disciples.name)]
+      : s.sort === 'newest'
+        ? [desc(disciples.createdAt)]
+        : s.sort === 'process'
+          ? [desc(disciples.processLevel), asc(disciples.name)]
+          : [desc(disciples.isPrimary), asc(disciples.name)]
   const page = s.page ?? 1
   const base = db
     .select(discipleRowSelect)

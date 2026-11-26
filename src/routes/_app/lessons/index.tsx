@@ -56,7 +56,7 @@ function LessonsPage() {
               params={{ seriesId: s.id }}
               className="flex min-h-15 min-w-0 items-center gap-3 px-3.5 py-2.5 hover:bg-muted/50"
             >
-              <span className="grid size-9 shrink-0 place-items-center bg-muted text-primary">
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-primary">
                 <BookOpen aria-hidden="true" className="size-4" />
               </span>
               <span className="flex min-w-0 flex-1 flex-col">

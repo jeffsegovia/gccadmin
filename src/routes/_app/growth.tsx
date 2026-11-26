@@ -53,9 +53,17 @@ function GrowthPage() {
               key={l}
               type="button"
               aria-pressed={on}
-              onClick={() =>
+              onClick={() => {
                 void navigate({ search: { level: l }, replace: true })
-              }
+                // On a phone the people are below the steps: bring them up.
+                setTimeout(
+                  () =>
+                    document
+                      .getElementById('growth-people')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+                  150,
+                )
+              }}
               className={cn(
                 'flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2 text-left hover:bg-muted/50',
                 on && 'bg-muted',
@@ -69,7 +77,7 @@ function GrowthPage() {
               >
                 {PROCESS_LEVEL[l]}
               </span>
-              <span className="h-2.5 min-w-0 flex-1 bg-muted">
+              <span className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
                 <span
                   className="block h-full bg-primary"
                   style={{ width: `${(n / max) * 100}%` }}
@@ -78,7 +86,7 @@ function GrowthPage() {
               <span className="numeric w-10 shrink-0 text-right text-sm font-semibold">
                 {n}
               </span>
-              <span className="w-20 shrink-0 truncate text-right text-xs text-muted-foreground max-sm:hidden">
+              <span className="w-20 shrink-0 truncate text-right text-xs text-muted-foreground">
                 {ongoing(l) ? `${ongoing(l)} ongoing` : ''}
               </span>
               <RowChevron />
@@ -86,7 +94,10 @@ function GrowthPage() {
           )
         })}
       </div>
-      <section className="flex min-w-0 flex-col gap-2">
+      <section
+        id="growth-people"
+        className="flex min-w-0 scroll-mt-16 flex-col gap-2"
+      >
         <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
           {PROCESS_LEVEL[data.level]} · {data.people.length}
         </h2>

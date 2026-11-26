@@ -5,7 +5,22 @@ import {
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
-import { Check, ListChecks, Plus, Sprout, Trash2, X } from 'lucide-react'
+import {
+  Check,
+  HeartHandshake,
+  ListChecks,
+  Plus,
+  Sprout,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { cn } from 'cn'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { Empty, Page } from '@/components/shell/page'
 import { ReportsTabs } from '@/components/reports-tabs'
@@ -28,7 +43,6 @@ import { BelieverSheet } from '@/components/soul-winning/believer-sheet'
 import { SoulWinningFiltersDialog } from '@/components/soul-winning/filters-dialog'
 import { FilterBar } from '@/components/filter-bar'
 import type { ActiveFilter } from '@/components/filter-bar'
-import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
 import { SOUL_PAGE, listSoulWinningSchema } from '@/lib/soul-winning/schema'
@@ -135,73 +149,80 @@ function SoulWinningPage() {
       title="Soul winning"
       description={`${RANGE_LABEL[range]}${search.mine || !data.everyone ? ' · your network' : ''}`}
       action={
-        <>
-          <Link
-            to="/soul-winning/new"
-            search={{ type: 'CONSOLIDATION' }}
-            className={buttonVariants({
-              variant: 'secondary',
-              size: 'lg',
-              className: 'max-md:hidden',
-            })}
-          >
-            Consolidation
-          </Link>
-          <Link
-            to="/soul-winning/new"
-            className={buttonVariants({
-              size: 'lg',
-              className: 'max-md:hidden',
-            })}
-          >
-            <Plus aria-hidden="true" /> New session
-          </Link>
-        </>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button size="lg" className="max-md:hidden">
+                <Plus aria-hidden="true" /> New
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem render={<Link to="/soul-winning/new" />}>
+              <Sprout /> Soul winning session
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={
+                <Link
+                  to="/soul-winning/new"
+                  search={{ type: 'CONSOLIDATION' }}
+                />
+              }
+            >
+              <HeartHandshake /> Consolidation session
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       }
     >
       <ReportsTabs on="soul" />
-      <div className="grid grid-cols-3 border bg-card [&>*+*]:border-l rounded-xl overflow-hidden">
-        {[
-          ['SW sessions', data.stats.sw, ''],
-          ['Consolidation', data.stats.conso, ''],
-          ['New souls', data.stats.souls, 'text-covered'],
-        ].map(([label, value, tone]) => (
-          <div
-            key={label as string}
-            className="flex min-w-0 flex-col gap-0.5 px-3 py-2.5 md:px-4"
+      {/* The three figures are the three pages (v2's): tap one to see it. */}
+      <div
+        role="tablist"
+        aria-label="Show"
+        className="grid grid-cols-3 overflow-hidden rounded-xl border bg-card [&>*+*]:border-l"
+      >
+        {(
+          [
+            ['SOUL_WINNING', 'Soul winning', data.stats.sw, ''],
+            ['CONSOLIDATION', 'Consolidation', data.stats.conso, ''],
+            ['souls', 'New believers', data.stats.souls, 'text-covered'],
+          ] as const
+        ).map(([value, label, n, tone]) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={tab === value}
+            onClick={() =>
+              set(
+                value === 'souls'
+                  ? { view: 'souls', type: undefined }
+                  : {
+                      view: undefined,
+                      session: undefined,
+                      type: value === 'CONSOLIDATION' ? value : undefined,
+                    },
+              )
+            }
+            className={cn(
+              'flex min-h-16 min-w-0 flex-col gap-0.5 border-b-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-4',
+              tab === value
+                ? 'border-primary bg-muted/60'
+                : 'border-transparent',
+            )}
           >
             <span className="truncate text-xs text-muted-foreground">
               {label}
             </span>
             <span
-              className={`numeric text-xl font-semibold md:text-2xl ${tone}`}
+              className={cn('numeric text-xl font-semibold md:text-2xl', tone)}
             >
-              {value}
+              {n}
             </span>
-          </div>
+          </button>
         ))}
       </div>
-      {/* v2's three pages, as plain tabs. */}
-      <UnderlineTabs
-        label="Show"
-        value={tab}
-        onChange={(v) =>
-          set(
-            v === 'souls'
-              ? { view: 'souls', type: undefined }
-              : {
-                  view: undefined,
-                  session: undefined,
-                  type: v === 'CONSOLIDATION' ? 'CONSOLIDATION' : undefined,
-                },
-          )
-        }
-        options={[
-          { value: 'SOUL_WINNING', label: 'Soul Winning' },
-          { value: 'CONSOLIDATION', label: 'Consolidation' },
-          { value: 'souls', label: 'New Believers' },
-        ]}
-      />
       <FilterBar
         active={active}
         onOpen={() => setFiltering(true)}
@@ -297,7 +318,7 @@ function SoulWinningPage() {
             </Group>
             {/* Wide screens: v2's table. */}
             <div className="overflow-x-auto rounded-xl border bg-card max-md:hidden dark:border-transparent">
-              <table className="w-full min-w-[52rem] border-collapse text-sm">
+              <table className="w-full min-w-[52rem] border-collapse text-sm [&_th]:whitespace-nowrap">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground">
                     <th
@@ -326,7 +347,6 @@ function SoulWinningPage() {
                     >
                       {conso ? '# Consolidated' : '# Won Souls'}
                     </th>
-                    <th scope="col" className="w-10" />
                   </tr>
                 </thead>
                 <tbody>
@@ -378,9 +398,6 @@ function SoulWinningPage() {
                         <Pill tone="covered">
                           {s.believers} {conso ? 'consolidated' : 'won'}
                         </Pill>
-                      </td>
-                      <td className="pr-3">
-                        <RowChevron />
                       </td>
                     </tr>
                   ))}
@@ -465,7 +482,7 @@ function SoulWinningPage() {
               <div className="overflow-x-auto border bg-card max-lg:hidden dark:border-transparent rounded-xl">
                 {/* Wider than the box when there are many lessons: it
                     scrolls sideways instead of squeezing the columns. */}
-                <table className="w-full min-w-max border-collapse text-sm">
+                <table className="w-full min-w-max border-collapse text-sm [&_th]:whitespace-nowrap">
                   <thead>
                     <tr className="text-left text-xs text-muted-foreground">
                       <th
@@ -485,9 +502,9 @@ function SoulWinningPage() {
                           key={l.id}
                           scope="col"
                           title={`${l.seriesTitle}: ${l.title}`}
-                          className="w-24 max-w-28 px-2 py-2.5 text-center text-[11px] leading-tight font-medium"
+                          className="w-28 max-w-28 px-2 py-2.5 text-center text-xs font-medium"
                         >
-                          <span className="line-clamp-2">{l.title}</span>
+                          <span className="block truncate">{l.title}</span>
                         </th>
                       ))}
                       <th
@@ -616,7 +633,9 @@ function LessonBar({ total, taken }: { total: number; taken: number }) {
           <span
             key={i}
             className={
-              i < taken ? 'flex-1 bg-covered' : 'flex-1 bg-foreground/12'
+              i < taken
+                ? 'flex-1 rounded-full bg-covered'
+                : 'flex-1 rounded-full bg-foreground/12'
             }
           />
         ))}

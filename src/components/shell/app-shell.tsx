@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
-import { Ellipsis } from 'lucide-react'
+import { ChartColumn, Ellipsis } from 'lucide-react'
 import { cn } from 'cn'
 import { appConfig } from '@/config/site'
 import { Logo } from './logo'
@@ -24,7 +24,7 @@ import type { MenuUser } from './user-menu'
    Each page's main add is a floating button on phones. */
 
 const sideRow =
-  'flex h-9 min-w-0 items-center gap-2.5 px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-[17px] [&_svg]:shrink-0'
+  'flex h-9 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-[17px] [&_svg]:shrink-0'
 const sideOn = 'bg-muted text-foreground [&_svg]:text-primary'
 
 function SideLink({ item, pathname }: { item: NavItem; pathname: string }) {
@@ -84,6 +84,27 @@ function Sidebar({ isAdmin }: { isAdmin: boolean }) {
   )
 }
 
+/** Insights is one tap from every page: an icon in the top bar. */
+function InsightsLink({ className }: { className?: string }) {
+  const { pathname } = useLocation()
+  const on = pathname === '/insights'
+  return (
+    <Link
+      to="/insights"
+      aria-label="Insights"
+      title="Insights"
+      aria-current={on ? 'page' : undefined}
+      className={cn(
+        'grid place-items-center text-muted-foreground transition-colors hover:text-foreground [&_svg]:size-5',
+        on && 'text-primary hover:text-primary',
+        className,
+      )}
+    >
+      <ChartColumn aria-hidden="true" />
+    </Link>
+  )
+}
+
 function TopBar({ user }: { user: MenuUser }) {
   return (
     <header className="dark sticky top-0 z-40 hidden h-14 items-center gap-3 border-b border-white/12 bg-background px-5 text-foreground md:flex">
@@ -95,6 +116,7 @@ function TopBar({ user }: { user: MenuUser }) {
       </Link>
       <div className="ml-auto flex items-center gap-2">
         <SearchButton />
+        <InsightsLink className="size-9" />
         <UserMenu
           user={user}
           trigger={
@@ -126,6 +148,7 @@ function PhoneHeader({ user }: { user: MenuUser }) {
         </span>
       </Link>
       <SearchButton compact />
+      <InsightsLink className="size-10" />
       <UserMenu
         user={user}
         trigger={
@@ -166,7 +189,7 @@ function PhoneTabs() {
             aria-current={on ? 'page' : undefined}
           >
             <item.icon aria-hidden="true" />
-            <span className="max-w-full truncate text-[11px] font-medium">
+            <span className="max-w-full truncate text-xs font-medium">
               {item.label}
             </span>
           </Link>
@@ -178,7 +201,7 @@ function PhoneTabs() {
         aria-current={moreOn ? 'page' : undefined}
       >
         <Ellipsis aria-hidden="true" />
-        <span className="text-[11px] font-medium">More</span>
+        <span className="text-xs font-medium">More</span>
       </Link>
     </nav>
   )

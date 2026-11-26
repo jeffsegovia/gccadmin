@@ -27,11 +27,14 @@ export function GrowthBar({
         {PROCESS_STEPS.map((step, i) => (
           <span
             key={step}
-            className={cn('h-1.5', i <= index ? 'bg-primary' : 'bg-muted')}
+            className={cn(
+              'h-1.5 rounded-full',
+              i <= index ? 'bg-primary' : 'bg-muted',
+            )}
           />
         ))}
       </div>
-      <div className="grid grid-cols-5 gap-1 text-[10px] text-muted-foreground">
+      <div className="grid grid-cols-5 gap-1 text-xs text-muted-foreground">
         {['Pre-enc.', 'Encounter', 'L1', 'L2', 'L3'].map((s, i) => (
           <span
             key={s}
@@ -64,7 +67,7 @@ export function Weeks({
         {weeks.map((on, i) => (
           <span
             key={i}
-            className={cn('h-3.5', on ? 'bg-covered' : 'bg-muted')}
+            className={cn('h-3.5 rounded-sm', on ? 'bg-covered' : 'bg-muted')}
           />
         ))}
       </span>

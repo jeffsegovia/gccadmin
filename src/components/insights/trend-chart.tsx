@@ -99,7 +99,7 @@ export function TrendChart({
                 x={PAD.left - 8}
                 y={y(t) + 4}
                 textAnchor="end"
-                className="fill-muted-foreground text-[11px]"
+                className="fill-muted-foreground text-xs"
               >
                 {t}
               </text>
@@ -130,7 +130,7 @@ export function TrendChart({
                     x={cx(i)}
                     y={H - 6}
                     textAnchor="middle"
-                    className="fill-muted-foreground text-[11px]"
+                    className="fill-muted-foreground text-xs"
                   >
                     {l}
                   </text>
@@ -203,7 +203,7 @@ export function CountBars({
           title={`${r.label}: ${r.n}`}
         >
           <span className="truncate">{r.label}</span>
-          <span className="h-2.5 bg-muted">
+          <span className="h-2.5 overflow-hidden rounded-full bg-muted">
             <span
               className="block h-full bg-primary"
               style={{ width: `${(r.n / max) * 100}%` }}

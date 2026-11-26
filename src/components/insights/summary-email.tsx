@@ -125,8 +125,8 @@ function ReportDialog({
                 `Report sent to ${r.sent} ${r.sent === 1 ? 'person' : 'people'}`,
               )
               await router.invalidate()
-            } catch (e) {
-              toast.error(messageOf(e))
+            } catch (err) {
+              toast.error(messageOf(err))
             } finally {
               setPending(false)
             }

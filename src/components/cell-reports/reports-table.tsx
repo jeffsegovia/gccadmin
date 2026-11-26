@@ -88,7 +88,7 @@ export function ReportsTable({
                   </Link>
                 </td>
                 <td className="max-w-64 px-3 py-2.5">
-                  <span className="flex min-w-0 items-center gap-2">
+                  <span className="flex min-w-0 flex-col">
                     <span className="truncate">
                       {r.lessonTitle ?? 'No lesson'}
                     </span>

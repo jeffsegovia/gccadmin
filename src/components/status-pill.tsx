@@ -144,12 +144,13 @@ export function PersonAvatar({
   )
 }
 
-/** A lesson's source, as v2 tagged it: GCC Lesson or Custom. */
+/** A lesson's source, as v2 tagged it: GCC Lesson or Custom. Small muted
+ * text under the lesson's name, not a badge. */
 export function LessonTag({ custom }: { custom: boolean }) {
   return (
-    <Pill tone={custom ? 'neutral' : 'primary'}>
+    <span className="text-xs text-muted-foreground">
       {custom ? 'Custom' : 'GCC Lesson'}
-    </Pill>
+    </span>
   )
 }
 

@@ -35,6 +35,9 @@ type Block =
   | { button: string; href: string }
   | { list: Array<[string, string]>; title?: string }
   | { stats: Array<[string, string | number]> }
+  | {
+      table: { title: string; head: Array<string>; rows: Array<Array<string>> }
+    }
   | { small: string }
 
 function blockHtml(b: Block): string {
@@ -51,6 +54,11 @@ function blockHtml(b: Block): string {
           `<td style="padding:12px 14px;${i ? `border-left:1px solid ${LINE};` : ''}vertical-align:top"><div style="font-size:12px;color:${MUTED}">${esc(label)}</div><div style="font-size:22px;font-weight:700;color:${INK};margin-top:2px">${esc(String(n))}</div></td>`,
       )
       .join('')}</tr></table>`
+  if ('table' in b) {
+    const cell = (v: string, i: number, tag: 'th' | 'td') =>
+      `<${tag} style="padding:6px 0;border-bottom:1px solid ${LINE};font-size:13px;${i ? 'text-align:right;' : 'text-align:left;'}${tag === 'th' ? `font-weight:600;color:${MUTED}` : `color:${INK}`}">${esc(v)}</${tag}>`
+    return `<p style="margin:0 0 6px;font-size:13px;font-weight:600;color:${MUTED}">${esc(b.table.title)}</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-top:1px solid ${LINE};border-collapse:collapse"><tr>${b.table.head.map((h, i) => cell(h, i, 'th')).join('')}</tr>${b.table.rows.map((r) => `<tr>${r.map((v, i) => cell(v, i, 'td')).join('')}</tr>`).join('')}</table>`
+  }
   if ('list' in b)
     return `${b.title ? `<p style="margin:0 0 6px;font-size:13px;font-weight:600;color:${MUTED}">${esc(b.title)}</p>` : ''}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-top:1px solid ${LINE};border-collapse:collapse">${b.list
       .map(
@@ -67,6 +75,12 @@ function blockText(b: Block): string {
   if ('verse' in b) return `"${b.verse}"\n— ${b.ref}`
   if ('button' in b) return `${b.button}: ${b.href}`
   if ('stats' in b) return b.stats.map(([l, n]) => `${l}: ${n}`).join('\n')
+  if ('table' in b)
+    return [
+      b.table.title,
+      b.table.head.join(' | '),
+      ...b.table.rows.map((r) => r.join(' | ')),
+    ].join('\n')
   if ('list' in b)
     return [
       ...(b.title ? [b.title] : []),
@@ -177,13 +191,13 @@ export function digestEmail(ctx: Ctx, d: Digest, sentBy: string) {
           : []),
       ],
     },
+    { small: '<strong>1. Reports filed</strong>' },
     {
-      title: '1. Reports filed',
-      list: [
-        ['Open cell', String(r.open)],
-        ['Discipleship', String(r.discipleship)],
-        ['Soul winning', String(r.soulWinning)],
-        ['Consolidation', String(r.consolidation)],
+      stats: [
+        ['Open', r.open],
+        ['Discipleship', r.discipleship],
+        ['Soul winning', r.soulWinning],
+        ['Consolidation', r.consolidation],
       ],
     },
   ]
@@ -226,12 +240,29 @@ export function digestEmail(ctx: Ctx, d: Digest, sentBy: string) {
         }
       : { p: '5. Every leader reported. Praise God!' },
   )
+  const sum = (k: 'nacs' | 'acs' | 'regular') =>
+    d.members.rows.reduce((a, m) => a + m[k], 0)
   blocks.push({
-    title: `6. GCC so far · ${d.members.total} disciples`,
-    list: d.members.rows.map((m) => [
-      `${m.label} · ${m.total}`,
-      `NACS ${m.nacs} · ACS ${m.acs} · Regular ${m.regular}`,
-    ]),
+    table: {
+      title: `6. GCC so far · ${d.members.total} disciples`,
+      head: ['', 'Total', 'NACS', 'ACS', 'Regular'],
+      rows: [
+        ...d.members.rows.map((m) => [
+          m.label,
+          String(m.total),
+          String(m.nacs),
+          String(m.acs),
+          String(m.regular),
+        ]),
+        [
+          'All',
+          String(d.members.total),
+          String(sum('nacs')),
+          String(sum('acs')),
+          String(sum('regular')),
+        ],
+      ],
+    },
   })
   blocks.push({ button: 'Open Insights', href: `${ctx.site}/insights` })
   return layout(

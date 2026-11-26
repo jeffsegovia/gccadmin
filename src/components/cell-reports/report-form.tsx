@@ -13,6 +13,7 @@ import { cn } from 'cn'
 import { CheckMark } from '@/components/check-mark'
 import { FormField } from '@/components/form-field'
 import { PersonCombobox } from '@/components/person-combobox'
+import { StepBar } from '@/components/step-bar'
 import { SubmitButton } from '@/components/submit-button'
 import { DialogActions } from '@/components/responsive-dialog'
 import { RadioCards } from '@/components/radio-cards'
@@ -43,6 +44,8 @@ export type ReportFormOptions = {
     cellStatus: CellStatus
     isMyPrimary: boolean
     isPrimary: boolean
+    /** The assistant leader who handles them, if any. */
+    handledById: string | null
   }>
   leaders: ReadonlyArray<{ id: string; name: string }>
   chooseLeader: boolean
@@ -76,54 +79,6 @@ function errorsOf(values: CellReportInput) {
   if (!parsed.success)
     for (const i of parsed.error.issues) found[String(i.path[0])] ??= i.message
   return { parsed, found }
-}
-
-function StepBar({
-  step,
-  reached,
-  onPick,
-}: {
-  step: number
-  reached: number
-  onPick: (step: number) => void
-}) {
-  return (
-    <ol aria-label="Steps" className="grid grid-cols-3 gap-1.5">
-      {STEPS.map((label, i) => {
-        const can = i <= reached && i !== step
-        return (
-          <li key={label} className="min-w-0">
-            <button
-              type="button"
-              disabled={!can}
-              aria-current={i === step ? 'step' : undefined}
-              onClick={() => onPick(i)}
-              className="flex w-full min-w-0 flex-col gap-1.5 text-left disabled:cursor-default"
-            >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'h-1 w-full',
-                  i <= step ? 'bg-primary' : 'bg-foreground/12',
-                )}
-              />
-              <span
-                className={cn(
-                  'truncate text-xs',
-                  i === step
-                    ? 'font-semibold text-foreground'
-                    : 'text-muted-foreground',
-                  can && 'hover:text-foreground',
-                )}
-              >
-                {i + 1}. {label}
-              </span>
-            </button>
-          </li>
-        )
-      })}
-    </ol>
-  )
 }
 
 function loadDraft(key: string): Partial<CellReportInput> | null {
@@ -161,6 +116,27 @@ function CheckRow({
 }
 
 type LessonMode = 'gcc' | 'custom'
+
+/** The attendees after an assistant is picked (or changed): the one who
+ * was assistant before and the people only they handled are let go, and
+ * the new assistant and everyone they handle are ticked. Anyone can still
+ * be unticked afterwards, except the assistant themself (the list keeps
+ * them ticked). */
+function withAssistantPicked(
+  attendees: ReadonlyArray<string>,
+  people: ReadonlyArray<{ id: string; handledById: string | null }>,
+  before: string | undefined,
+  now: string,
+) {
+  const next = new Set(attendees)
+  if (before) {
+    next.delete(before)
+    for (const p of people) if (p.handledById === before) next.delete(p.id)
+  }
+  next.add(now)
+  for (const p of people) if (p.handledById === now) next.add(p.id)
+  return [...next]
+}
 
 /** A cell group report, laid out as v2's form in three steps. A new one
  * keeps a draft on the device until it's saved, so a dropped signal or a
@@ -304,6 +280,7 @@ export function ReportForm({
           cellStatus: 'REGULAR' as const,
           isMyPrimary: false,
           isPrimary: false,
+          handledById: null,
         })),
     ]
   }, [opts.people, initial])
@@ -314,6 +291,8 @@ export function ReportForm({
     .filter((p) => (p.isMyPrimary || p.isPrimary) && p.id !== leaderId)
     .map((p) => ({ id: p.id, name: p.name }))
   const ticked = new Set(v.attendees)
+  // The assistant led it with them, so they can't be unticked.
+  const locked = withAssistant ? v.assistantId : undefined
   const allTicked = people.length > 0 && people.every((p) => ticked.has(p.id))
   const shown = people.filter(
     (p) =>
@@ -369,7 +348,7 @@ export function ReportForm({
       }}
     >
       <div ref={top} className="scroll-mt-4">
-        <StepBar step={step} reached={reached} onPick={go} />
+        <StepBar steps={STEPS} step={step} reached={reached} onPick={go} />
       </div>
       {restored && (
         <p className="border border-caution/30 bg-caution/10 px-3 py-2 text-[13px] rounded-lg">
@@ -502,16 +481,19 @@ export function ReportForm({
                     value={v.assistantId}
                     disabled={assistants.length === 0}
                     onChange={(assistantId) =>
-                      // The assistant was there, so they're ticked as come.
+                      // The assistant was there, and so were most of those
+                      // they handle: tick them all, to untick whoever
+                      // didn't come. The previous assistant's own
+                      // disciples are unticked first.
                       setV({
                         ...v,
                         assistantId,
-                        attendees: [
-                          ...v.attendees.filter((a) => a !== v.assistantId),
-                          ...(v.attendees.includes(assistantId)
-                            ? []
-                            : [assistantId]),
-                        ],
+                        attendees: withAssistantPicked(
+                          v.attendees,
+                          people,
+                          v.assistantId,
+                          assistantId,
+                        ),
                       })
                     }
                     placeholder={
@@ -683,7 +665,11 @@ export function ReportForm({
                 onClick={() =>
                   setV({
                     ...v,
-                    attendees: allTicked ? [] : people.map((p) => p.id),
+                    attendees: allTicked
+                      ? locked
+                        ? [locked]
+                        : []
+                      : people.map((p) => p.id),
                   })
                 }
               >
@@ -722,13 +708,16 @@ export function ReportForm({
             <div className="flex max-h-[26rem] min-w-0 flex-col overflow-y-auto border [&>*+*]:border-t rounded-lg">
               {shown.map((p) => {
                 const on = ticked.has(p.id)
+                const fixed = p.id === locked
                 return (
                   <button
                     key={p.id}
                     type="button"
                     role="checkbox"
                     aria-checked={on}
+                    aria-disabled={fixed || undefined}
                     onClick={() => {
+                      if (fixed) return
                       const next = new Set(ticked)
                       if (on) next.delete(p.id)
                       else next.add(p.id)
@@ -742,6 +731,11 @@ export function ReportForm({
                     <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
                       {p.name}
                     </span>
+                    {fixed && (
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        Assistant
+                      </span>
+                    )}
                     {p.cellStatus !== 'REGULAR' && (
                       <span className="shrink-0 text-xs text-caution">
                         {CELL_STATUS[p.cellStatus]}

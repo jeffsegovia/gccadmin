@@ -7,6 +7,7 @@ import {
   processLevel,
   processLevelStatus,
 } from '@/db/schema'
+import { groupRules } from '@/lib/disciples/rules'
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Pick a date' })
 
@@ -15,8 +16,9 @@ const optionalId = z
   .optional()
   .transform((v) => (v ? v : undefined))
 
-/** A disciple's details, shared by the form and the server. */
-export const discipleSchema = z.object({
+/** A disciple's fields, before the rules that tie them together (a
+ * refined schema can't be picked or extended). */
+export const discipleFields = z.object({
   name: z.string().trim().min(1, { message: 'Enter their name' }).max(120),
   address: z
     .string()
@@ -38,20 +40,26 @@ export const discipleSchema = z.object({
   /** Admins pick the network; a leader's disciples join their own. */
   leaderId: optionalId,
 })
+
+/** A disciple's details, shared by the form and the server: in a group,
+ * and Men are male, Women female. */
+export const discipleSchema = discipleFields.superRefine(groupRules)
 export type DiscipleInput = z.input<typeof discipleSchema>
 
 /** A disciple added from someone's own page (the portal): their leader's
  * network, handled by them; the Growth Process starts at None. */
-export const portalDiscipleSchema = discipleSchema.pick({
-  name: true,
-  address: true,
-  birthdate: true,
-  gender: true,
-  contactNo: true,
-  memberType: true,
-  cellStatus: true,
-  churchStatus: true,
-})
+export const portalDiscipleSchema = discipleFields
+  .pick({
+    name: true,
+    address: true,
+    birthdate: true,
+    gender: true,
+    contactNo: true,
+    memberType: true,
+    cellStatus: true,
+    churchStatus: true,
+  })
+  .superRefine(groupRules)
 export type PortalDiscipleInput = z.input<typeof portalDiscipleSchema>
 
 export const discipleIdSchema = z.object({ id: z.string().min(1) })
@@ -76,6 +84,9 @@ export type DisciplesSearch = z.infer<typeof listDisciplesSchema>
 export const PAGE_SIZE = 25
 
 /** One row of the import template (public/disciple-template.xlsx). */
-export const importRowSchema = discipleSchema.omit({ leaderId: true }).extend({
-  isMyPrimary: z.boolean().default(false),
-})
+export const importRowSchema = discipleFields
+  .omit({ leaderId: true })
+  .extend({
+    isMyPrimary: z.boolean().default(false),
+  })
+  .superRefine(groupRules)

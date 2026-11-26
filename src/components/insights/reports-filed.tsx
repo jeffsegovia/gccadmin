@@ -36,8 +36,10 @@ export function InsightCard({
         className,
       )}
     >
-      <header className="flex min-w-0 items-start justify-between gap-3 border-b px-4 py-3.5">
-        <div className="flex min-w-0 flex-col gap-1">
+      {/* The action drops under the title when they don't fit side by
+          side, so a phone never squeezes the title down to a letter. */}
+      <header className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-2.5 border-b px-4 py-3.5">
+        <div className="flex min-w-0 flex-1 basis-44 flex-col gap-1">
           <h2 className="truncate text-[15px] font-semibold">{title}</h2>
           {description && (
             <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -46,7 +48,7 @@ export function InsightCard({
             </p>
           )}
         </div>
-        {action && <div className="shrink-0">{action}</div>}
+        {action && <div className="max-w-full shrink-0">{action}</div>}
       </header>
       {children}
       {footer && (

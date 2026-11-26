@@ -322,7 +322,7 @@ export const emailWeeklySummary = createServerFn({ method: 'POST' }).handler(
         reports: {
           open: c('OPEN'),
           discipleship: c('DISCIPLESHIP'),
-          soulWinning: w('SOUL_WINNING') + c('SOULWINNING'),
+          soulWinning: w('SOUL_WINNING'),
           consolidation: w('CONSOLIDATION'),
         },
         newBelievers: souls.n,

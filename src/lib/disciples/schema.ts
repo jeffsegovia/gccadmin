@@ -66,7 +66,9 @@ export const listDisciplesSchema = z.object({
   processLevel: z.array(z.enum(processLevel.enumValues)).optional(),
   leader: z.string().optional(),
   handledBy: z.string().optional(),
-  sort: z.enum(['name', 'newest', 'process']).optional(),
+  /** Missing from each of the last four Sundays. */
+  away: z.boolean().optional(),
+  sort: z.enum(['name', 'newest', 'process', 'lastSeen']).optional(),
   page: z.number().int().min(1).optional(),
 })
 export type DisciplesSearch = z.infer<typeof listDisciplesSchema>

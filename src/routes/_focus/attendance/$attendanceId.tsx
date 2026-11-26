@@ -48,7 +48,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { load } from '@/lib/attendance/outbox'
 import type { GuestInput } from '@/lib/attendance/schema'
-import { dateToDay, longDay, shortDay } from '@/lib/dates'
+import { dateToDay, shortDay } from '@/lib/dates'
 import { isNetworkError, messageOf } from '@/lib/errors'
 import { MEMBER_TYPE } from '@/lib/labels'
 import {
@@ -231,8 +231,8 @@ function SheetPage() {
     const q = query.trim().toLowerCase()
     const keep = (m: Sheet['members'][number]) => {
       if (q && !m.name.toLowerCase().includes(q)) return false
-      if (tab === 'male' && m.gender !== 'MALE') return false
-      if (tab === 'female' && m.gender !== 'FEMALE') return false
+      if (!q && tab === 'male' && m.gender !== 'MALE') return false
+      if (!q && tab === 'female' && m.gender !== 'FEMALE') return false
       if (unmarkedOnly) return !sync.present('member', m.id)
       return true
     }
@@ -253,8 +253,16 @@ function SheetPage() {
     }
     // Leaders: the primary leaders, men then women (v2's Leaders view).
     // Male and Female: everyone else by network, with each subtotal.
-    const all =
-      tab === 'leaders'
+    // A search looks at everyone, whatever the tab, so a name is found
+    // without knowing whether they're a leader, a man or a woman.
+    const all = q
+      ? [
+          { key: 'leaders', name: 'Leaders', people: leaders },
+          ...[...byLeader.entries()]
+            .map(([key, v]) => ({ key, ...v }))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        ]
+      : tab === 'leaders'
         ? [
             {
               key: 'men',
@@ -434,12 +442,12 @@ function SheetPage() {
     </section>
   )
 
-  // v2's New Comers: today's first-timers, and adding one.
+  // v2's New Comers (first-timers): today's first-timers, and adding one.
   const newToday = guestsHere.filter((g) => g.visit === 1)
   // v2's Returnees: guests back today, and earlier guests to tick.
   const backToday = guestsHere.filter((g) => g.visit > 1)
   const newcomersPanel = (
-    <section aria-label="New Comers" className="flex min-w-0 flex-col gap-4">
+    <section aria-label="First-timers" className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex items-baseline justify-between gap-3 px-0.5">
           <h3 className="text-[13px] font-medium text-muted-foreground">
@@ -605,7 +613,10 @@ function SheetPage() {
             {service.title}
           </h1>
           <span className="truncate text-xs text-muted-foreground">
-            {longDay(service.date)} · {locked ? 'Closed' : 'Open'}
+            {shortDay(service.date)} · {locked ? 'Closed' : 'Open'} ·{' '}
+            <span className="numeric font-medium text-foreground">
+              {presentMembers.length + guestsHere.length} present
+            </span>
             {offline && ' · offline copy'}
           </span>
         </div>
@@ -681,7 +692,7 @@ function SheetPage() {
             ['Present', presentMembers.length + guestsHere.length, ''],
             ['Male', men, ''],
             ['Female', women, ''],
-            ['New Comers', firstTimers, 'max-md:hidden'],
+            ['First-timers', firstTimers, 'max-md:hidden'],
             ['Returnees', guestsHere.length - firstTimers, 'max-md:hidden'],
           ].map(([name, value, tone]) => (
             <div
@@ -729,7 +740,7 @@ function SheetPage() {
               { value: 'male', label: 'Male' },
               { value: 'female', label: 'Female' },
               { value: 'returnees', label: 'Returnees' },
-              { value: 'newcomers', label: 'New Comers' },
+              { value: 'newcomers', label: 'First-timers' },
             ]}
           />
           <div className="relative min-w-0 flex-1 md:max-w-sm">
@@ -741,7 +752,7 @@ function SheetPage() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a name"
+              placeholder="Find a name in any list"
               aria-label="Find a name"
               className="h-11 w-full min-w-0 border border-input bg-card pr-3 pl-9 text-base outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:h-10 md:text-sm rounded-xl"
             />
@@ -749,9 +760,9 @@ function SheetPage() {
         </div>
 
         <div className="min-w-0">
-          {tab === 'returnees'
+          {tab === 'returnees' && !query.trim()
             ? returneesPanel
-            : tab === 'newcomers'
+            : tab === 'newcomers' && !query.trim()
               ? newcomersPanel
               : membersPanel}
         </div>

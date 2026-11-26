@@ -31,7 +31,7 @@ export function GrowthBar({
           />
         ))}
       </div>
-      <div className="grid grid-cols-5 gap-1 text-[10px] text-muted-foreground">
+      <div className="grid grid-cols-5 gap-1 text-xs text-muted-foreground">
         {['Pre-enc.', 'Encounter', 'L1', 'L2', 'L3'].map((s, i) => (
           <span
             key={s}

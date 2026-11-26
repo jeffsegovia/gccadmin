@@ -72,6 +72,7 @@ export type FilterValues = Pick<
   | 'status'
   | 'leader'
   | 'handledBy'
+  | 'away'
 >
 
 export function countFilters(f: FilterValues): number {
@@ -82,7 +83,8 @@ export function countFilters(f: FilterValues): number {
     (f.processLevel?.length ?? 0) +
     (f.status && f.status !== 'active' ? 1 : 0) +
     (f.leader ? 1 : 0) +
-    (f.handledBy ? 1 : 0)
+    (f.handledBy ? 1 : 0) +
+    (f.away ? 1 : 0)
   )
 }
 

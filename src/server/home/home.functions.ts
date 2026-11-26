@@ -9,6 +9,7 @@ import {
   cellReports,
   disciples,
   newBelievers,
+  newComers,
   soulWinningNewBelievers,
   soulWinningReports,
 } from '@/db/schema'
@@ -18,6 +19,7 @@ import {
   rangeBounds,
 } from '@/server/cell-reports/cell-reports.server'
 import { addDays, dayToDate, manilaDay } from '@/lib/dates'
+import { awayFromSunday } from '@/server/disciples/disciples.queries'
 import { weekBirthdays } from '@/server/home/birthdays.server'
 
 const leader = alias(disciples, 'leader')
@@ -156,6 +158,27 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
 
   const birthdays = await weekBirthdays(today, { everyone, me })
 
+  // Who needs a call: guests who never became disciples, and disciples
+  // missing from each of the last four Sunday services.
+  const [[guests], [away]] = await Promise.all([
+    db
+      .select({ n: count() })
+      .from(newComers)
+      .where(sql`${newComers.discipleProfileId} is null`),
+    db
+      .select({ n: count() })
+      .from(disciples)
+      .where(
+        and(
+          eq(disciples.isDeleted, false),
+          eq(disciples.isActive, true),
+          eq(disciples.isPrimary, false),
+          networkOnly(disciples.leaderId),
+          awayFromSunday,
+        ),
+      ),
+  ])
+
   const reported = new Set(reportedLeaders.map((r) => r.id))
   const notReported = lastReports
     .filter((l) => !reported.has(l.id) && (everyone || l.id === me))
@@ -189,6 +212,8 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
     thisWeek: thisWeek.rows.slice(0, 6),
     myReportedThisWeek: me ? reported.has(me) : false,
     birthdays,
+    guestsToFollowUp: guests.n,
+    awayFromSunday: away.n,
     today,
   }
 })

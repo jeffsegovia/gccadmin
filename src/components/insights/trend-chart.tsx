@@ -99,7 +99,7 @@ export function TrendChart({
                 x={PAD.left - 8}
                 y={y(t) + 4}
                 textAnchor="end"
-                className="fill-muted-foreground text-[11px]"
+                className="fill-muted-foreground text-xs"
               >
                 {t}
               </text>
@@ -130,7 +130,7 @@ export function TrendChart({
                     x={cx(i)}
                     y={H - 6}
                     textAnchor="middle"
-                    className="fill-muted-foreground text-[11px]"
+                    className="fill-muted-foreground text-xs"
                   >
                     {l}
                   </text>

@@ -43,7 +43,7 @@ export function Pill({
     <span
       className={cn(
         // Tiny, as in Osamu: a word, not a button.
-        'inline-flex h-5 max-w-full shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] leading-none font-medium whitespace-nowrap',
+        'inline-flex h-5 max-w-full shrink-0 items-center gap-1 rounded-md px-1.5 text-xs leading-none font-medium whitespace-nowrap',
         TONES[tone],
         className,
       )}
@@ -177,7 +177,7 @@ export function KindPill({ kind }: { kind: CellType | SoulWinningReportType }) {
   const color = KIND_COLOR[kind]
   return (
     <span
-      className="inline-flex h-5 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] leading-none font-medium whitespace-nowrap"
+      className="inline-flex h-5 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs leading-none font-medium whitespace-nowrap"
       style={{
         color,
         background: `color-mix(in oklab, ${color} 16%, transparent)`,

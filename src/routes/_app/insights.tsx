@@ -1,12 +1,6 @@
 import { useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-  ArrowRight,
-  BookOpen,
-  Flame,
-  HeartHandshake,
-  Users,
-} from 'lucide-react'
+import { ArrowRight, BookOpen, HeartHandshake, Users } from 'lucide-react'
 import { z } from 'zod'
 import { Page } from '@/components/shell/page'
 import { TrendChart } from '@/components/insights/trend-chart'
@@ -64,7 +58,7 @@ export const Route = createFileRoute('/_app/insights')({
 const KIND_LABEL: Record<Kind, string> = {
   open: 'Open Cell',
   discipleship: 'Discipleship',
-  soulWinning: 'Soul Winning',
+  soulWinning: 'Soul winning',
   consolidation: 'Consolidation',
 }
 // v2's Cell Report Trend colors.
@@ -76,13 +70,18 @@ const KIND_COLORS: Record<Kind, string> = {
 }
 const KINDS = Object.keys(KIND_LABEL) as Array<Kind>
 
-/** v2's trend views: All is cell groups (Discipleship and Open Cell);
- * soul winning and consolidation each have their own. */
+/** All four kinds: cell groups (Discipleship and Open Cell) and the Soul
+ * winning module's sessions (soul winning and consolidation). A view each
+ * for cell groups alone and for every kind. */
 const SHOW = {
-  all: { label: 'All', kinds: ['discipleship', 'open'] },
+  all: {
+    label: 'All',
+    kinds: ['discipleship', 'open', 'soulWinning', 'consolidation'],
+  },
+  cells: { label: 'Cell groups', kinds: ['discipleship', 'open'] },
   discipleship: { label: 'Discipleship', kinds: ['discipleship'] },
   open: { label: 'Open Cell', kinds: ['open'] },
-  soulWinning: { label: 'Soul Winning', kinds: ['soulWinning'] },
+  soulWinning: { label: 'Soul winning', kinds: ['soulWinning'] },
   consolidation: { label: 'Consolidation', kinds: ['consolidation'] },
 } satisfies Record<string, { label: string; kinds: Array<Kind> }>
 type Show = keyof typeof SHOW
@@ -133,69 +132,7 @@ function InsightsPage() {
       }
     >
       <InsightCard
-        title="Soul Winning Activity"
-        description={`Year to date (${data.yearToDate.year})`}
-        action={
-          <Link
-            to="/soul-winning"
-            className="flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
-          >
-            View Reports <ArrowRight aria-hidden="true" className="size-3.5" />
-          </Link>
-        }
-        footer={
-          <p className="flex items-start gap-2 text-xs text-muted-foreground">
-            <Flame aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-            Based on reports submitted through the Soul Winning module. Sessions
-            and new believers are tracked separately from cell group reports.
-          </p>
-        }
-      >
-        <CardColumns>
-          <BigStat
-            label="SW Sessions"
-            n={data.yearToDate.soulWinning}
-            icon={
-              <BookOpen
-                aria-hidden="true"
-                className="size-4"
-                style={{ color: 'var(--chart-4)' }}
-              />
-            }
-          >
-            soul winning sessions
-          </BigStat>
-          <BigStat
-            label="Conso Sessions"
-            n={data.yearToDate.consolidation}
-            icon={
-              <HeartHandshake
-                aria-hidden="true"
-                className="size-4"
-                style={{ color: 'var(--chart-3)' }}
-              />
-            }
-          >
-            consolidation sessions
-          </BigStat>
-          <BigStat
-            label="New Believers"
-            n={data.yearToDate.believers}
-            icon={
-              <Users
-                aria-hidden="true"
-                className="size-4"
-                style={{ color: 'var(--chart-1)' }}
-              />
-            }
-          >
-            believers recorded
-          </BigStat>
-        </CardColumns>
-      </InsightCard>
-
-      <InsightCard
-        title="Cell Groups"
+        title="Cell groups"
         description={rangeText(data.filed.days)}
         action={
           <NativeSelect
@@ -224,9 +161,11 @@ function InsightsPage() {
       </InsightCard>
 
       <InsightCard
-        title="Cell Report Trend"
+        title="Reports over time"
         description={
-          data.period === 'weeks' ? 'The last 12 weeks' : 'The last 6 months'
+          data.period === 'weeks'
+            ? 'Cell groups and soul winning, last 12 weeks'
+            : 'Cell groups and soul winning, last 6 months'
         }
         action={
           <div className="flex items-center gap-2">
@@ -314,15 +253,73 @@ function InsightsPage() {
         </div>
       </InsightCard>
 
+      <InsightCard
+        title="Soul winning"
+        description={`From the Soul winning module · year to date (${data.yearToDate.year})`}
+        action={
+          <Link
+            to="/soul-winning"
+            className="flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
+          >
+            See sessions <ArrowRight aria-hidden="true" className="size-3.5" />
+          </Link>
+        }
+      >
+        <CardColumns>
+          <BigStat
+            label="Soul winning"
+            n={data.yearToDate.soulWinning}
+            icon={
+              <BookOpen
+                aria-hidden="true"
+                className="size-4"
+                style={{ color: 'var(--chart-3)' }}
+              />
+            }
+          >
+            soul winning sessions
+          </BigStat>
+          <BigStat
+            label="Consolidation"
+            n={data.yearToDate.consolidation}
+            icon={
+              <HeartHandshake
+                aria-hidden="true"
+                className="size-4"
+                style={{ color: 'var(--chart-4)' }}
+              />
+            }
+          >
+            consolidation sessions
+          </BigStat>
+          <BigStat
+            label="New believers"
+            n={data.yearToDate.believers}
+            icon={
+              <Users
+                aria-hidden="true"
+                className="size-4"
+                style={{ color: 'var(--chart-1)' }}
+              />
+            }
+          >
+            believers recorded
+          </BigStat>
+        </CardColumns>
+      </InsightCard>
+
       <div className="grid min-w-0 gap-4 lg:grid-cols-3">
         <InsightCard
           className="lg:col-span-2"
-          title="Church Attendance By Member Type"
+          title="Church attendance by member type"
           description="As of today"
         >
           <ChurchAttendanceByType rows={d.attendanceByType} />
         </InsightCard>
-        <InsightCard title="Disciples with Cell Groups" description="This week">
+        <InsightCard
+          title="Disciples leading cell groups"
+          description="This week"
+        >
           {data.cellGroupsThisWeek.assistants.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">
               No disciple has led a cell group this week yet.
@@ -356,19 +353,14 @@ function InsightsPage() {
         </InsightCard>
       </div>
 
-      <InsightCard title="Member Statistics" description="As of today">
+      <InsightCard title="Members" description="As of today">
         <CardColumns>
           {(
             [
-              ['Members by Type', 'memberType', d.memberType, MEMBER_TYPE],
+              ['By member type', 'memberType', d.memberType, MEMBER_TYPE],
+              ['By cell status', 'cellStatus', d.cellStatus, CELL_STATUS],
               [
-                'Members by Cell Status',
-                'cellStatus',
-                d.cellStatus,
-                CELL_STATUS,
-              ],
-              [
-                'Members by Church Status',
+                'By church status',
                 'churchStatus',
                 d.churchStatus,
                 CHURCH_STATUS,
@@ -441,14 +433,15 @@ function InsightsSkeleton() {
 }
 
 const ATTENDED = [
-  // v2's colors for these.
-  ['nacs', 'Not yet attended (NACS)', 'var(--chart-2)', 1],
-  ['acs', 'Attended (ACS)', 'var(--chart-3)', 1],
-  ['regular', 'Regular', 'var(--chart-4)', 1],
+  // Not the report-kind colors above: these mean something else.
+  ['nacs', 'Not yet attended (NACS)', 'var(--caution)', 1],
+  ['acs', 'Attended (ACS)', 'var(--chart-5)', 1],
+  ['regular', 'Regular', 'var(--covered)', 1],
 ] as const
 
-/** v2's Church Attendance By Member Type: a donut per member type
- * (NACS, ACS and Regular), its total and the type in the middle. */
+/** v2's Church Attendance By Member Type, as one stacked bar per member
+ * type (NACS, ACS and Regular) so the types compare at a glance, each with
+ * its total and the three counts labeled. */
 function ChurchAttendanceByType({
   rows,
 }: {
@@ -460,89 +453,59 @@ function ChurchAttendanceByType({
   }>
 }) {
   const shown = rows.filter((r) => r.nacs + r.acs + r.regular > 0)
-  const r = 40
-  const c = 2 * Math.PI * r
+  const most = Math.max(1, ...shown.map((r) => r.nacs + r.acs + r.regular))
   return (
     <div className="flex min-w-0 flex-col gap-4 p-4">
       {shown.length === 0 ? (
         <p className="text-sm text-muted-foreground">No disciples yet.</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+        <ul className="flex flex-col gap-3">
           {shown.map((row) => {
             const total = row.nacs + row.acs + row.regular
-            let at = 0
             return (
-              <li
-                key={row.type}
-                className="flex min-w-0 flex-col items-center gap-2 text-center"
-                title={`${MEMBER_TYPE[row.type]}: NACS ${row.nacs}, ACS ${row.acs}, Regular ${row.regular}`}
-              >
-                <svg
-                  viewBox="0 0 100 100"
-                  className="size-28 max-w-full"
-                  role="img"
-                  aria-label={`${MEMBER_TYPE[row.type]}: ${total} in all, ${row.nacs} not yet attended, ${row.acs} attended, ${row.regular} regular`}
-                >
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r={r}
-                    fill="none"
-                    strokeWidth="12"
-                    className="stroke-muted"
-                  />
-                  {ATTENDED.map(([k, , color, opacity]) => {
-                    const len = (row[k] / total) * c
-                    const offset = at
-                    at += len
-                    return row[k] ? (
-                      <circle
-                        key={k}
-                        cx="50"
-                        cy="50"
-                        r={r}
-                        fill="none"
-                        strokeWidth="12"
-                        stroke={color}
-                        strokeOpacity={opacity}
-                        strokeDasharray={`${Math.max(0, len - 1)} ${c}`}
-                        strokeDashoffset={-offset}
-                        transform="rotate(-90 50 50)"
-                      />
-                    ) : null
-                  })}
-                  <text
-                    x="50"
-                    y="47"
-                    textAnchor="middle"
-                    className="numeric fill-foreground text-[18px] font-semibold"
-                  >
-                    {total}
-                  </text>
-                  <text
-                    x="50"
-                    y="62"
-                    textAnchor="middle"
-                    className="fill-muted-foreground text-[9px]"
-                  >
+              <li key={row.type} className="flex min-w-0 flex-col gap-1.5">
+                <span className="flex min-w-0 items-baseline justify-between gap-3 text-[13px]">
+                  <span className="truncate font-medium">
                     {MEMBER_TYPE[row.type]}
-                  </text>
-                </svg>
-                <span className="numeric text-xs text-muted-foreground">
-                  {row.nacs} · {row.acs} · {row.regular}
+                  </span>
+                  <span className="numeric shrink-0 text-xs text-muted-foreground">
+                    {total} in all
+                  </span>
+                </span>
+                <span
+                  role="img"
+                  aria-label={`${MEMBER_TYPE[row.type]}: ${row.nacs} not yet attended, ${row.acs} attended, ${row.regular} regular`}
+                  className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-muted"
+                  style={{ width: `${Math.max(8, (total / most) * 100)}%` }}
+                >
+                  {ATTENDED.map(([k, , color]) =>
+                    row[k] ? (
+                      <span
+                        key={k}
+                        style={{ flexGrow: row[k], background: color }}
+                      />
+                    ) : null,
+                  )}
+                </span>
+                <span className="numeric flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+                  {ATTENDED.map(([k, label]) => (
+                    <span key={k}>
+                      {label.replace(/ \(.*\)/, '')} {row[k]}
+                    </span>
+                  ))}
                 </span>
               </li>
             )
           })}
         </ul>
       )}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
-        {ATTENDED.map(([k, label, color, opacity]) => (
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        {ATTENDED.map(([k, label, color]) => (
           <span key={k} className="flex items-center gap-1.5">
             <span
               aria-hidden="true"
               className="size-2.5 rounded-sm"
-              style={{ background: color, opacity }}
+              style={{ background: color }}
             />
             {label}
           </span>

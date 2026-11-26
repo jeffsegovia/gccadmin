@@ -57,7 +57,7 @@ function UsersPage() {
         <Empty icon={UserCog} title="No accounts found." />
       ) : (
         <Group>
-          {accounts.map((a) => (
+          {[...waiting, ...accounts.filter((a) => a.role)].map((a) => (
             <button
               key={a.id}
               type="button"

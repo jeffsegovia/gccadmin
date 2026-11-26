@@ -42,7 +42,7 @@ export function FilterBar({
               type="button"
               onClick={f.clear}
               aria-label={`Remove filter: ${f.label}`}
-              className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-secondary pr-1.5 pl-2.5 text-xs font-medium hover:bg-muted"
+              className="inline-flex h-9 max-w-full min-w-0 items-center gap-1 rounded-full bg-secondary pr-1.5 pl-2.5 text-xs font-medium hover:bg-muted"
             >
               <span className="truncate">{f.label}</span>
               <X aria-hidden="true" className="size-3.5 shrink-0" />

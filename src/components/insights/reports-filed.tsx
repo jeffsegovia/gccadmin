@@ -139,7 +139,6 @@ const BEFORE: Partial<Record<ReportRange, string>> = {
 const CELL_KINDS = [
   ['discipleship', 'Discipleship', 'var(--chart-1)'],
   ['open', 'Open Cell', 'var(--chart-2)'],
-  ['soulWinning', 'Soul Winning', 'var(--chart-3)'],
 ] as const
 
 const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0)
@@ -150,7 +149,7 @@ const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0)
 export function CellGroupsBody({ data }: { data: Filed }) {
   const cg = data.cellGroups
   const label = RANGE_LABEL[data.range]
-  const kinds = CELL_KINDS.filter(([k]) => k !== 'soulWinning' || cg[k] > 0)
+  const kinds = CELL_KINDS
   const change =
     cg.previous === null || cg.previous === 0
       ? null

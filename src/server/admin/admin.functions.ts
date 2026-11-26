@@ -1,11 +1,21 @@
 import { createServerFn } from '@tanstack/react-start'
 import { clerkClient } from '@clerk/tanstack-react-start/server'
-import { and, asc, count, eq, ilike, inArray, isNotNull } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  sql,
+} from 'drizzle-orm'
 import { welcomeLeaderEmail } from '@/lib/email/templates'
 import { sendEmail, site } from '@/server/email/send.server'
 import { z } from 'zod'
 import { db } from '@/db'
-import { disciples, users } from '@/db/schema'
+import { cellReports, disciples, users } from '@/db/schema'
+import { rangeBounds } from '@/server/cell-reports/cell-reports.server'
 import { AccessError, devAuth, requireAdmin } from '@/server/auth/access.server'
 import { likeTerm } from '@/server/disciples/disciples.queries'
 
@@ -23,11 +33,13 @@ export const getLeaders = createServerFn({ method: 'GET' })
   .validator(z.object({ q: z.string().optional() }))
   .handler(async ({ data }) => {
     await requireAdmin()
+    const week = rangeBounds('this_week')!
     return db
       .select({
         id: disciples.id,
         name: disciples.name,
         gender: disciples.gender,
+        reportedThisWeek: sql<boolean>`exists (select 1 from ${cellReports} where ${cellReports.leaderId} = ${disciples.id} and ${cellReports.date} >= ${week[0].toISOString()} and ${cellReports.date} < ${week[1].toISOString()})`,
         isActive: disciples.isActive,
         userAccountId: disciples.userAccountId,
         email: users.email,

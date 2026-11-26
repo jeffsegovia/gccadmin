@@ -166,7 +166,7 @@ function PhoneTabs() {
             aria-current={on ? 'page' : undefined}
           >
             <item.icon aria-hidden="true" />
-            <span className="max-w-full truncate text-[11px] font-medium">
+            <span className="max-w-full truncate text-xs font-medium">
               {item.label}
             </span>
           </Link>
@@ -178,7 +178,7 @@ function PhoneTabs() {
         aria-current={moreOn ? 'page' : undefined}
       >
         <Ellipsis aria-hidden="true" />
-        <span className="text-[11px] font-medium">More</span>
+        <span className="text-xs font-medium">More</span>
       </Link>
     </nav>
   )

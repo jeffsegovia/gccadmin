@@ -132,7 +132,7 @@ function AttendancePage() {
   return (
     <Page
       title="Attendance"
-      description="Sunday services and events. Marks save on this device first, so it works with no signal."
+      description="Sunday services and events. Works offline."
       action={
         <>
           <Link

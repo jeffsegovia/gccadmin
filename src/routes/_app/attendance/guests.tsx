@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Empty, Page } from '@/components/shell/page'
 import { ListSearch } from '@/components/list-search'
 import { Pill } from '@/components/status-pill'
+import { buttonVariants } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
 import { getGuests } from '@/server/attendance/attendance.functions'
 import { shortDay } from '@/lib/dates'
@@ -72,7 +73,11 @@ function GuestsPage() {
                   <Link
                     to="/disciples/new"
                     search={{ fromGuest: g.id }}
-                    className="shrink-0 px-1 text-[13px] font-medium text-primary"
+                    className={buttonVariants({
+                      variant: 'secondary',
+                      size: 'lg',
+                      className: 'shrink-0',
+                    })}
                   >
                     Make disciple
                   </Link>

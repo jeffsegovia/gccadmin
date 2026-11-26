@@ -24,8 +24,8 @@ function LeadersPage() {
 
   return (
     <Page
-      title="Primary leaders"
-      description={`${leaders.length} leaders · ${withAccount.length} can sign in`}
+      title="Leaders"
+      description={`Primary leaders · ${leaders.length} in all · ${withAccount.length} can sign in`}
       action={
         withAccount.length > 0 ? (
           <RemindButton leaderIds={withAccount} />
@@ -58,7 +58,13 @@ function LeadersPage() {
                   {l.disciples ?? 0} disciples · {l.email ?? 'no sign-in yet'}
                 </span>
               </span>
-              {!l.isActive && <Pill tone="short">Inactive</Pill>}
+              {!l.isActive ? (
+                <Pill tone="short">Inactive</Pill>
+              ) : l.reportedThisWeek ? (
+                <Pill tone="covered">Reported</Pill>
+              ) : (
+                <Pill tone="caution">Not yet</Pill>
+              )}
               <RowChevron />
             </Link>
           ))}

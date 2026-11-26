@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useClerkSafe } from '@/lib/auth/clerk-safe'
 import {
-  CalendarCheck,
+  ChartColumn,
   ChevronRight,
   ExternalLink,
   LogOut,
@@ -74,7 +74,7 @@ function MorePage() {
       <Section title="Ministry">
         <Rows
           items={[
-            { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
+            { to: '/insights', label: 'Insights', icon: ChartColumn },
             { to: '/soul-winning', label: 'Soul winning', icon: Sprout },
             {
               to: '/attendance/guests',

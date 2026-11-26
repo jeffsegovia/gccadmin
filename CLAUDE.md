@@ -28,7 +28,8 @@ README.md for how it's built and deployed.
   `migrations/` (`pnpm db:migrate`).
 - Osamu's soft, petite look: corners from `--radius` (8px, capped at
   12px; cards `rounded-xl`), tiny badges (`Pill`, 20px), a chevron at the
-  end of every row that opens something (`RowChevron`), no gender color
+  end of every list row that opens something (`RowChevron`; table rows are
+  clickable without one), no gender color
   coding. Dark by default with a dark top bar in light mode; tokens in
   `src/styles.css`, components use tokens only. Controls in a row share
   one height (40px; `Segmented` matches the selects).

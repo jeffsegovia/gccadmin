@@ -1,6 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { KindPill, LessonTag } from '@/components/status-pill'
-import { RowChevronCell } from '@/components/ui/list'
 import { cn } from 'cn'
 import { dateTime, shortDate } from '@/lib/dates'
 import type { CellType } from '@/db/schema'
@@ -59,7 +58,6 @@ export function ReportsTable({
             >
               Attendees
             </th>
-            <th scope="col" className="w-12" aria-hidden="true" />
           </tr>
         </thead>
         {groups.map(([label, rows]) => (
@@ -67,7 +65,7 @@ export function ReportsTable({
             {labelGroups && (
               <tr className="border-t bg-muted/30">
                 <th
-                  colSpan={6}
+                  colSpan={5}
                   scope="colgroup"
                   className="px-4 py-1.5 text-left text-xs font-medium text-muted-foreground"
                 >
@@ -120,7 +118,6 @@ export function ReportsTable({
                 <td className="numeric px-3 py-2.5 text-center">
                   {r.attendees}
                 </td>
-                <RowChevronCell />
               </tr>
             ))}
           </tbody>

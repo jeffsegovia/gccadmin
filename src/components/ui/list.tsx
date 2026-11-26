@@ -27,17 +27,6 @@ export function RowChevron({ className }: { className?: string }) {
   )
 }
 
-/** The last cell of a clickable table row: the chevron centered in the row
- * (a block, so no baseline gap lifts it) and the same distance from the
- * edge in every table. */
-export function RowChevronCell() {
-  return (
-    <td className="w-12 py-0 pr-4 pl-0 align-middle">
-      <RowChevron className="ml-auto block" />
-    </td>
-  )
-}
-
 /** A list row: an optional leading tile, the main text, and what goes at
  * the end (an amount, a status, a chevron). Links and buttons that are
  * rows use `rowClass`. */

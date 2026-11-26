@@ -27,7 +27,7 @@ import { ReportsTabs } from '@/components/reports-tabs'
 import { ListSearch } from '@/components/list-search'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants, Button } from '@/components/ui/button'
-import { Group, RowChevron, RowChevronCell } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
   AlertDialog,
@@ -347,7 +347,6 @@ function SoulWinningPage() {
                     >
                       {conso ? '# Consolidated' : '# Won Souls'}
                     </th>
-                    <th scope="col" className="w-12" aria-hidden="true" />
                   </tr>
                 </thead>
                 <tbody>
@@ -400,7 +399,6 @@ function SoulWinningPage() {
                           {s.believers} {conso ? 'consolidated' : 'won'}
                         </Pill>
                       </td>
-                      <RowChevronCell />
                     </tr>
                   ))}
                 </tbody>

@@ -26,7 +26,7 @@ import {
 } from '@/components/disciples/filters-dialog'
 import { ImportDialog } from '@/components/disciples/import-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Group, RowChevronCell } from '@/components/ui/list'
+import { Group } from '@/components/ui/list'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -389,7 +389,6 @@ function DisciplesPage() {
                       )}
                     </th>
                   ))}
-                  <th scope="col" className="w-12" aria-hidden="true" />
                 </tr>
               </thead>
               <tbody>
@@ -454,7 +453,6 @@ function DisciplesPage() {
                           portal.text
                         )}
                       </td>
-                      <RowChevronCell />
                     </tr>
                   )
                 })}

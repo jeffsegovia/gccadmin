@@ -155,12 +155,13 @@ export function LessonTag({ custom }: { custom: boolean }) {
 }
 
 /* One color per report kind, everywhere (badges, charts, PDF): the
-   Insights series colors, checked for color-blind separation. */
+   Insights series colors, checked for color-blind separation.
+   Discipleship is green, as in v2. */
 export const KIND_COLOR = {
   OPEN: 'var(--series-1)',
-  DISCIPLESHIP: 'var(--series-2)',
-  SOULWINNING: 'var(--series-3)',
-  SOUL_WINNING: 'var(--series-3)',
+  DISCIPLESHIP: 'var(--series-3)',
+  SOULWINNING: 'var(--series-2)',
+  SOUL_WINNING: 'var(--series-2)',
   CONSOLIDATION: 'var(--series-4)',
 } as const
 

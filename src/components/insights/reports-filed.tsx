@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Calendar, TrendingDown, TrendingUp } from 'lucide-react'
 import { cn } from 'cn'
+import { KIND_COLOR } from '@/components/status-pill'
 import { Switch } from '@/components/ui/switch'
 import { RANGE_LABEL } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
@@ -135,10 +136,10 @@ const BEFORE: Partial<Record<ReportRange, string>> = {
   last_year: 'the year before',
 }
 
-// v2's chart colors: Discipleship blue, Open rose.
+// The same colors as the badges: Discipleship green, Open Cell blue.
 const CELL_KINDS = [
-  ['discipleship', 'Discipleship', 'var(--chart-1)'],
-  ['open', 'Open Cell', 'var(--chart-2)'],
+  ['discipleship', 'Discipleship', KIND_COLOR.DISCIPLESHIP],
+  ['open', 'Open Cell', KIND_COLOR.OPEN],
 ] as const
 
 const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0)

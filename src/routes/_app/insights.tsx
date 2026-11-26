@@ -19,7 +19,7 @@ import {
   InsightCard,
   rangeText,
 } from '@/components/insights/reports-filed'
-import { Pill } from '@/components/status-pill'
+import { KIND_COLOR, Pill } from '@/components/status-pill'
 import { RowChevron } from '@/components/ui/list'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
@@ -61,12 +61,12 @@ const KIND_LABEL: Record<Kind, string> = {
   soulWinning: 'Soul winning',
   consolidation: 'Consolidation',
 }
-// v2's Cell Report Trend colors.
+// The same color per kind as the badges (KIND_COLOR): discipleship green.
 const KIND_COLORS: Record<Kind, string> = {
-  discipleship: 'var(--chart-1)',
-  open: 'var(--chart-2)',
-  soulWinning: 'var(--chart-3)',
-  consolidation: 'var(--chart-4)',
+  discipleship: KIND_COLOR.DISCIPLESHIP,
+  open: KIND_COLOR.OPEN,
+  soulWinning: KIND_COLOR.SOUL_WINNING,
+  consolidation: KIND_COLOR.CONSOLIDATION,
 }
 const KINDS = Object.keys(KIND_LABEL) as Array<Kind>
 
@@ -273,7 +273,7 @@ function InsightsPage() {
               <BookOpen
                 aria-hidden="true"
                 className="size-4"
-                style={{ color: 'var(--chart-3)' }}
+                style={{ color: KIND_COLORS.soulWinning }}
               />
             }
           >
@@ -286,7 +286,7 @@ function InsightsPage() {
               <HeartHandshake
                 aria-hidden="true"
                 className="size-4"
-                style={{ color: 'var(--chart-4)' }}
+                style={{ color: KIND_COLORS.consolidation }}
               />
             }
           >

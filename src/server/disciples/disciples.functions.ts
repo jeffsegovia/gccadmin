@@ -19,11 +19,12 @@ import {
 } from '@/server/auth/access.server'
 import {
   discipleIdSchema,
-  discipleSchema,
+  discipleFields,
   importRowSchema,
   listDisciplesSchema,
 } from '@/lib/disciples/schema'
-import type { DiscipleInput } from '@/lib/disciples/schema'
+import type { DiscipleInput, discipleSchema } from '@/lib/disciples/schema'
+import { groupRules } from '@/lib/disciples/rules'
 import { dayToDate } from '@/lib/dates'
 import {
   listAssistants,
@@ -154,10 +155,12 @@ function valuesOf(input: Omit<z.output<typeof discipleSchema>, 'leaderId'>) {
 
 export const createDisciple = createServerFn({ method: 'POST' })
   .validator(
-    discipleSchema.extend({
-      fromNewComerId: z.string().optional(),
-      fromNewBelieverId: z.string().optional(),
-    }),
+    discipleFields
+      .extend({
+        fromNewComerId: z.string().optional(),
+        fromNewBelieverId: z.string().optional(),
+      })
+      .superRefine(groupRules),
   )
   .handler(async ({ data }) => {
     const access = await requireAccess()
@@ -192,7 +195,7 @@ export const createDisciple = createServerFn({ method: 'POST' })
   })
 
 export const updateDisciple = createServerFn({ method: 'POST' })
-  .validator(discipleSchema.extend({ id: z.string() }))
+  .validator(discipleFields.extend({ id: z.string() }).superRefine(groupRules))
   .handler(async ({ data }) => {
     const access = await requireAccess()
     await requireCanEditDisciple(access, data.id)

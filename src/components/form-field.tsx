@@ -46,11 +46,14 @@ export function ChipChoice<T extends string>({
   onChange,
   options,
   label,
+  disabledValues,
 }: {
   value: T | null
   onChange: (v: T) => void
   options: ReadonlyArray<{ value: T; label: string }>
   label: string
+  /** Choices that can't be picked now (dimmed, not tappable). */
+  disabledValues?: ReadonlyArray<T>
 }) {
   return (
     <div
@@ -60,18 +63,20 @@ export function ChipChoice<T extends string>({
     >
       {options.map((o) => {
         const on = o.value === value
+        const off = disabledValues?.includes(o.value)
         return (
           <button
             key={o.value}
             type="button"
             role="radio"
             aria-checked={on}
+            disabled={off}
             onClick={() => onChange(o.value)}
             className={cn(
-              'h-9 max-w-full truncate border px-3 text-[13px] font-medium transition-colors rounded-lg',
+              'h-9 max-w-full truncate border px-3 text-[13px] font-medium transition-colors rounded-lg disabled:cursor-not-allowed disabled:opacity-40',
               on
                 ? 'border-primary/50 bg-primary/15 text-primary'
-                : 'border-border text-foreground hover:bg-muted',
+                : 'border-border text-foreground enabled:hover:bg-muted',
             )}
           >
             {o.label}

@@ -120,7 +120,7 @@ when someone taps a button; nothing is scheduled. The copies are in
 | Email                                                       | Sent when                                                           | To                             |
 | ----------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------ |
 | Cell report reminder (catch-up wording after 14 quiet days) | An admin taps Email reminder (Home, Leaders); once a day per leader | Leaders not reported this week |
-| Weekly summary                                              | An admin or pastor taps it on Insights; once a week                 | Admins and pastors             |
+| Weekly or monthly report (also a downloadable image)        | An admin or pastor taps Send a report on Insights; once a period    | Admins and pastors             |
 | Report from a disciple's page                               | The disciple saves the report                                       | Their network leader           |
 | Leader account linked                                       | An admin links a sign-in on Leaders                                 | That leader                    |
 

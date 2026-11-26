@@ -238,6 +238,8 @@ export async function attendeeChoices(opts: {
       cellStatus: disciples.cellStatus,
       isMyPrimary: disciples.isMyPrimary,
       isPrimary: disciples.isPrimary,
+      // Who handles them: picking an assistant ticks their disciples.
+      handledById: disciples.handledById,
     })
     .from(disciples)
     .where(

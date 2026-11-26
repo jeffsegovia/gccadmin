@@ -9,6 +9,7 @@ import {
   PROCESS_STATUS,
 } from '@/lib/labels'
 import { dateToDay } from '@/lib/dates'
+import { genderFor } from '@/lib/disciples/rules'
 
 /* The import template (public/disciple-template.xlsx, from v2) and the
    export share columns. Cells may hold either the stored value (MALE,
@@ -67,27 +68,34 @@ export async function readDisciplesFile(
   })
   return rows
     .filter((r) => String(pick(r, 'name') ?? '').trim())
-    .map((r) => ({
-      name: String(pick(r, 'name')).trim(),
-      address: String(pick(r, 'address') ?? '').trim(),
-      birthdate: cellDay(pick(r, 'birthdate', 'birthday', 'dateofbirth')),
-      gender: readGender(pick(r, 'gender', 'sex'), 'MALE'),
-      contactNo: String(
-        pick(r, 'contactno', 'contact', 'phone', 'mobile') ?? '',
-      ).trim(),
-      memberType: readType(
+    .map((r) => {
+      const memberType = readType(
         pick(r, 'membertype', 'group', 'type'),
         'UNCATEGORIZED',
-      ),
-      churchStatus: readChurch(pick(r, 'churchstatus'), 'NACS'),
-      cellStatus: readCell(pick(r, 'cellstatus'), 'FIRST_TIMER'),
-      processLevel: readLevel(pick(r, 'processlevel', 'growthstep'), 'NONE'),
-      processLevelStatus: readLevelStatus(
-        pick(r, 'processlevelstatus', 'processstatus', 'stepstatus'),
-        'NOT_STARTED',
-      ),
-      isMyPrimary: false,
-    }))
+      )
+      return {
+        name: String(pick(r, 'name')).trim(),
+        address: String(pick(r, 'address') ?? '').trim(),
+        birthdate: cellDay(pick(r, 'birthdate', 'birthday', 'dateofbirth')),
+        // Men and Women fix the gender, so a sheet can't contradict itself.
+        gender: genderFor(
+          memberType,
+          readGender(pick(r, 'gender', 'sex'), 'MALE'),
+        ),
+        contactNo: String(
+          pick(r, 'contactno', 'contact', 'phone', 'mobile') ?? '',
+        ).trim(),
+        memberType,
+        churchStatus: readChurch(pick(r, 'churchstatus'), 'NACS'),
+        cellStatus: readCell(pick(r, 'cellstatus'), 'FIRST_TIMER'),
+        processLevel: readLevel(pick(r, 'processlevel', 'growthstep'), 'NONE'),
+        processLevelStatus: readLevelStatus(
+          pick(r, 'processlevelstatus', 'processstatus', 'stepstatus'),
+          'NOT_STARTED',
+        ),
+        isMyPrimary: false,
+      }
+    })
 }
 
 export function writeDisciplesFile(

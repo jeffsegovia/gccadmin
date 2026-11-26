@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowRight, BookOpen, HeartHandshake, Users } from 'lucide-react'
 import { z } from 'zod'
@@ -13,7 +14,6 @@ import {
   getReportsFiled,
 } from '@/server/insights/insights.functions'
 import {
-  BigStat,
   CardColumns,
   CellGroupsBody,
   InsightCard,
@@ -68,24 +68,6 @@ const KIND_COLORS: Record<Kind, string> = {
   soulWinning: KIND_COLOR.SOUL_WINNING,
   consolidation: KIND_COLOR.CONSOLIDATION,
 }
-const KINDS = Object.keys(KIND_LABEL) as Array<Kind>
-
-/** All four kinds: cell groups (Discipleship and Open Cell) and the Soul
- * winning module's sessions (soul winning and consolidation). A view each
- * for cell groups alone and for every kind. */
-const SHOW = {
-  all: {
-    label: 'All',
-    kinds: ['discipleship', 'open', 'soulWinning', 'consolidation'],
-  },
-  cells: { label: 'Cell groups', kinds: ['discipleship', 'open'] },
-  discipleship: { label: 'Discipleship', kinds: ['discipleship'] },
-  open: { label: 'Open Cell', kinds: ['open'] },
-  soulWinning: { label: 'Soul winning', kinds: ['soulWinning'] },
-  consolidation: { label: 'Consolidation', kinds: ['consolidation'] },
-} satisfies Record<string, { label: string; kinds: Array<Kind> }>
-type Show = keyof typeof SHOW
-
 function monthName(day: string) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -105,7 +87,22 @@ function InsightsPage() {
   const d = data.disciples
 
   const filedRange = search.filed ?? 'this_week'
-  const [show, setShow] = useState<Show>('all')
+  // One toggle in the URL for both charts, shown on each.
+  const periodToggle = (
+    <Segmented
+      label="Trend by"
+      size="sm"
+      className="w-40"
+      value={data.period}
+      onChange={(period) =>
+        set({ period: period === 'weeks' ? undefined : period })
+      }
+      options={[
+        { value: 'weeks', label: 'Weekly' },
+        { value: 'months', label: 'Monthly' },
+      ]}
+    />
+  )
 
   return (
     <Page
@@ -160,99 +157,20 @@ function InsightsPage() {
         <CellGroupsBody data={data.filed} />
       </InsightCard>
 
-      <InsightCard
-        title="Reports over time"
+      <TrendCard
+        title="Cell groups over time"
         description={
           data.period === 'weeks'
-            ? 'Cell groups and soul winning, last 12 weeks'
-            : 'Cell groups and soul winning, last 6 months'
+            ? 'Discipleship and Open Cell reports, last 12 weeks'
+            : 'Discipleship and Open Cell reports, last 6 months'
         }
-        action={
-          <div className="flex items-center gap-2">
-            <NativeSelect
-              size="sm"
-              value={show}
-              onChange={(e) => setShow(e.target.value as Show)}
-              aria-label="Show"
-            >
-              {(Object.keys(SHOW) as Array<Show>).map((v) => (
-                <NativeSelectOption key={v} value={v}>
-                  {SHOW[v].label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-            <Segmented
-              label="Trend by"
-              size="sm"
-              className="w-40"
-              value={data.period}
-              onChange={(period) =>
-                set({ period: period === 'weeks' ? undefined : period })
-              }
-              options={[
-                { value: 'weeks', label: 'Weekly' },
-                { value: 'months', label: 'Monthly' },
-              ]}
-            />
-          </div>
-        }
-      >
-        <div className="flex min-w-0 flex-col gap-3 p-4">
-          <TrendChart
-            ariaLabel={`Reports filed per ${data.period === 'weeks' ? 'week' : 'month'}, by kind`}
-            labels={labels}
-            series={SHOW[show].kinds.map((kind) => ({
-              key: kind,
-              label: KIND_LABEL[kind],
-              color: KIND_COLORS[kind],
-              values: data.trend.map((p) => p[kind]),
-            }))}
-          />
-          <details className="text-sm">
-            <summary className="cursor-pointer text-[13px] font-medium text-primary">
-              Show as a table
-            </summary>
-            <div className="mt-2 overflow-x-auto">
-              <table className="w-full min-w-[30rem] border-collapse text-[13px] [&_th]:whitespace-nowrap">
-                <thead>
-                  <tr className="text-left text-xs text-muted-foreground">
-                    <th scope="col" className="py-1.5 pr-3 font-medium">
-                      {data.period === 'weeks' ? 'Week of' : 'Month'}
-                    </th>
-                    {KINDS.map((k) => (
-                      <th
-                        key={k}
-                        scope="col"
-                        className="px-2 py-1.5 text-right font-medium"
-                      >
-                        {KIND_LABEL[k]}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.trend.map((p, i) => (
-                    <tr key={p.start} className="border-t">
-                      <th
-                        scope="row"
-                        className="py-1.5 pr-3 text-left font-normal"
-                      >
-                        {labels[i]}
-                      </th>
-                      {KINDS.map((k) => (
-                        <td key={k} className="numeric px-2 py-1.5 text-right">
-                          {p[k]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </div>
-      </InsightCard>
+        kinds={['discipleship', 'open']}
+        data={data}
+        labels={labels}
+        action={periodToggle}
+      />
 
+      {/* The Soul winning module's numbers, small: year to date. */}
       <InsightCard
         title="Soul winning"
         description={`From the Soul winning module · year to date (${data.yearToDate.year})`}
@@ -265,93 +183,112 @@ function InsightsPage() {
           </Link>
         }
       >
-        <CardColumns>
-          <BigStat
-            label="Soul winning"
-            n={data.yearToDate.soulWinning}
-            icon={
-              <BookOpen
-                aria-hidden="true"
-                className="size-4"
-                style={{ color: KIND_COLORS.soulWinning }}
-              />
-            }
-          >
-            soul winning sessions
-          </BigStat>
-          <BigStat
-            label="Consolidation"
-            n={data.yearToDate.consolidation}
-            icon={
-              <HeartHandshake
-                aria-hidden="true"
-                className="size-4"
-                style={{ color: KIND_COLORS.consolidation }}
-              />
-            }
-          >
-            consolidation sessions
-          </BigStat>
-          <BigStat
-            label="New believers"
-            n={data.yearToDate.believers}
-            icon={
-              <Users
-                aria-hidden="true"
-                className="size-4"
-                style={{ color: 'var(--chart-1)' }}
-              />
-            }
-          >
-            believers recorded
-          </BigStat>
-        </CardColumns>
+        <div className="grid grid-cols-3 [&>*+*]:border-l">
+          {(
+            [
+              [
+                'Soul winning',
+                data.yearToDate.soulWinning,
+                'sessions',
+                BookOpen,
+                KIND_COLORS.soulWinning,
+              ],
+              [
+                'Consolidation',
+                data.yearToDate.consolidation,
+                'sessions',
+                HeartHandshake,
+                KIND_COLORS.consolidation,
+              ],
+              [
+                'New believers',
+                data.yearToDate.believers,
+                'recorded',
+                Users,
+                'var(--chart-1)',
+              ],
+            ] as const
+          ).map(([label, n, hint, Icon, color]) => (
+            <div
+              key={label}
+              className="flex min-w-0 flex-col gap-0.5 px-3 py-3 md:px-4"
+            >
+              <span className="flex min-w-0 items-center justify-between gap-1.5">
+                <span className="truncate text-xs text-muted-foreground md:text-[13px]">
+                  {label}
+                </span>
+                <Icon
+                  aria-hidden="true"
+                  className="size-3.5 shrink-0"
+                  style={{ color }}
+                />
+              </span>
+              <span className="numeric text-xl font-semibold tracking-tight md:text-[28px]">
+                {n}
+              </span>
+              <span className="text-xs leading-tight text-muted-foreground">
+                {hint}
+              </span>
+            </div>
+          ))}
+        </div>
       </InsightCard>
 
-      <div className="grid min-w-0 gap-4 lg:grid-cols-3">
-        <InsightCard
-          className="lg:col-span-2"
-          title="Church attendance by member type"
-          description="As of today"
-        >
-          <ChurchAttendanceByType rows={d.attendanceByType} />
-        </InsightCard>
-        <InsightCard
-          title="Disciples leading cell groups"
-          description="This week"
-        >
-          {data.cellGroupsThisWeek.assistants.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">
-              No disciple has led a cell group this week yet.
-            </p>
-          ) : (
-            <ul className="flex min-w-0 flex-col py-1 [&>*+*]:border-t">
-              {data.cellGroupsThisWeek.assistants.map((a) => (
-                <li key={a.id}>
-                  <Link
-                    to="/reports"
-                    search={{ assistant: a.id, range: 'this_week' }}
-                    className="flex min-h-14 min-w-0 items-center gap-3 px-4 py-2 hover:bg-muted/50"
-                  >
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm font-medium">
-                        {a.name}
-                      </span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        Assistant Leader
-                      </span>
+      <TrendCard
+        title="Soul winning over time"
+        description={
+          data.period === 'weeks'
+            ? 'Soul winning and consolidation sessions, last 12 weeks'
+            : 'Soul winning and consolidation sessions, last 6 months'
+        }
+        kinds={['soulWinning', 'consolidation']}
+        data={data}
+        labels={labels}
+        action={periodToggle}
+      />
+
+      <InsightCard
+        title="Disciples leading cell groups"
+        description="This week"
+      >
+        {data.cellGroupsThisWeek.assistants.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">
+            No disciple has led a cell group this week yet.
+          </p>
+        ) : (
+          <ul className="flex min-w-0 flex-col py-1 [&>*+*]:border-t">
+            {data.cellGroupsThisWeek.assistants.map((a) => (
+              <li key={a.id}>
+                <Link
+                  to="/reports"
+                  search={{ assistant: a.id, range: 'this_week' }}
+                  className="flex min-h-14 min-w-0 items-center gap-3 px-4 py-2 hover:bg-muted/50"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-medium">
+                      {a.name}
                     </span>
-                    <Pill>
-                      {a.n} {a.n === 1 ? 'cell group' : 'cell groups'}
-                    </Pill>
-                    <RowChevron />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </InsightCard>
-      </div>
+                    <span className="truncate text-xs text-muted-foreground">
+                      Assistant Leader
+                    </span>
+                  </span>
+                  <Pill>
+                    {a.n} {a.n === 1 ? 'cell group' : 'cell groups'}
+                  </Pill>
+                  <RowChevron />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </InsightCard>
+
+      <InsightCard
+        title="Church attendance by member type"
+        description="As of today"
+      >
+        <ChurchAttendanceByType rows={d.attendanceByType} />
+      </InsightCard>
 
       <InsightCard title="Members" description="As of today">
         <CardColumns>
@@ -408,6 +345,107 @@ function InsightsPage() {
   )
 }
 
+/** Reports filed per week or month, for the kinds that belong together
+ * (cell groups; soul winning and consolidation), with a table behind it. */
+function TrendCard({
+  title,
+  description,
+  kinds,
+  data,
+  labels,
+  action,
+}: {
+  title: string
+  description: string
+  kinds: Array<Kind>
+  data: Awaited<ReturnType<typeof getInsights>>
+  labels: Array<string>
+  action: ReactNode
+}) {
+  // v2's Show: both kinds together, or just one of them.
+  const [show, setShow] = useState<'both' | Kind>('both')
+  const shown = show === 'both' ? kinds : [show]
+  return (
+    <InsightCard
+      title={title}
+      description={description}
+      action={
+        <div className="flex items-center gap-2">
+          <NativeSelect
+            size="sm"
+            value={show}
+            onChange={(e) => setShow(e.target.value as 'both' | Kind)}
+            aria-label={`Show in ${title}`}
+          >
+            <NativeSelectOption value="both">All</NativeSelectOption>
+            {kinds.map((k) => (
+              <NativeSelectOption key={k} value={k}>
+                {KIND_LABEL[k]}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+          {action}
+        </div>
+      }
+    >
+      <div className="flex min-w-0 flex-col gap-3 p-4">
+        <TrendChart
+          ariaLabel={`${title}: reports filed per ${data.period === 'weeks' ? 'week' : 'month'}, by kind`}
+          labels={labels}
+          series={shown.map((kind) => ({
+            key: kind,
+            label: KIND_LABEL[kind],
+            color: KIND_COLORS[kind],
+            values: data.trend.map((p) => p[kind]),
+          }))}
+        />
+        <details className="text-sm">
+          <summary className="cursor-pointer text-[13px] font-medium text-primary">
+            Show as a table
+          </summary>
+          <div className="mt-2 overflow-x-auto">
+            <table className="w-full min-w-[20rem] border-collapse text-[13px] [&_th]:whitespace-nowrap">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th scope="col" className="py-1.5 pr-3 font-medium">
+                    {data.period === 'weeks' ? 'Week of' : 'Month'}
+                  </th>
+                  {shown.map((k) => (
+                    <th
+                      key={k}
+                      scope="col"
+                      className="px-2 py-1.5 text-right font-medium"
+                    >
+                      {KIND_LABEL[k]}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.trend.map((p, i) => (
+                  <tr key={p.start} className="border-t">
+                    <th
+                      scope="row"
+                      className="py-1.5 pr-3 text-left font-normal"
+                    >
+                      {labels[i]}
+                    </th>
+                    {shown.map((k) => (
+                      <td key={k} className="numeric px-2 py-1.5 text-right">
+                        {p[k]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    </InsightCard>
+  )
+}
+
 function InsightsSkeleton() {
   return (
     <Page wide title="Insights" description="Counting reports and disciples…">
@@ -433,10 +471,22 @@ function InsightsSkeleton() {
 }
 
 const ATTENDED = [
-  // Not the report-kind colors above: these mean something else.
-  ['nacs', 'Not yet attended (NACS)', 'var(--caution)', 1],
-  ['acs', 'Attended (ACS)', 'var(--chart-5)', 1],
-  ['regular', 'Regular', 'var(--covered)', 1],
+  // One gold ramp that deepens as someone settles in: faint (not yet
+  // attended), half (attended), full (regular). Not the report-kind
+  // colors above: these mean something else.
+  [
+    'nacs',
+    'Not yet attended (NACS)',
+    'color-mix(in oklab, var(--foreground) 24%, transparent)',
+    1,
+  ],
+  [
+    'acs',
+    'Attended (ACS)',
+    'color-mix(in oklab, var(--primary) 50%, transparent)',
+    1,
+  ],
+  ['regular', 'Regular', 'var(--primary)', 1],
 ] as const
 
 /** v2's Church Attendance By Member Type, as one stacked bar per member
@@ -453,13 +503,12 @@ function ChurchAttendanceByType({
   }>
 }) {
   const shown = rows.filter((r) => r.nacs + r.acs + r.regular > 0)
-  const most = Math.max(1, ...shown.map((r) => r.nacs + r.acs + r.regular))
   return (
     <div className="flex min-w-0 flex-col gap-4 p-4">
       {shown.length === 0 ? (
         <p className="text-sm text-muted-foreground">No disciples yet.</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
           {shown.map((row) => {
             const total = row.nacs + row.acs + row.regular
             return (
@@ -475,8 +524,7 @@ function ChurchAttendanceByType({
                 <span
                   role="img"
                   aria-label={`${MEMBER_TYPE[row.type]}: ${row.nacs} not yet attended, ${row.acs} attended, ${row.regular} regular`}
-                  className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-muted"
-                  style={{ width: `${Math.max(8, (total / most) * 100)}%` }}
+                  className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-muted"
                 >
                   {ATTENDED.map(([k, , color]) =>
                     row[k] ? (

@@ -13,6 +13,7 @@ import {
   MEMBER_TYPE,
   options,
 } from '@/lib/labels'
+import { GROUP_GENDER, genderFor } from '@/lib/disciples/rules'
 import { messageOf } from '@/lib/errors'
 
 const blank: PortalDiscipleInput = {
@@ -76,6 +77,14 @@ export function PortalDiscipleForm({
         value={v.gender}
         onChange={(gender) => setV({ ...v, gender })}
         options={options(GENDER)}
+        // Men and Women fix the gender; change the group to change it.
+        disabledValues={
+          GROUP_GENDER[v.memberType]
+            ? (['MALE', 'FEMALE'] as const).filter(
+                (g) => g !== GROUP_GENDER[v.memberType],
+              )
+            : undefined
+        }
       />
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <FormField
@@ -112,7 +121,9 @@ export function PortalDiscipleForm({
       <ChipChoice
         label="Member Type"
         value={v.memberType}
-        onChange={(memberType) => setV({ ...v, memberType })}
+        onChange={(memberType) =>
+          setV({ ...v, memberType, gender: genderFor(memberType, v.gender) })
+        }
         options={options(MEMBER_TYPE).filter(
           (o) => o.value !== 'UNCATEGORIZED',
         )}

@@ -128,10 +128,11 @@ function HomePage() {
       title={`${greeting()}, ${first}`}
       description={`Week of ${shortDay(monday)} – ${shortDay(addDays(monday, 6))}`}
     >
-      {/* One grid so phones can put what to do first and the numbers
-          after, while wide screens keep two columns. */}
+      {/* One grid so phones read the numbers first (the KPIs, then Sunday's
+          attendance), then what to do, while wide screens keep two
+          columns. */}
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="order-2 grid grid-cols-3 overflow-hidden rounded-xl border bg-card md:grid-cols-4 lg:order-none lg:col-span-2 lg:row-start-1 [&>*+*]:border-l">
+        <div className="order-1 grid grid-cols-3 overflow-hidden rounded-xl border bg-card md:grid-cols-4 lg:order-none lg:col-span-2 lg:row-start-1 [&>*+*]:border-l">
           {stats.map((s) => (
             <Link
               key={s.label}
@@ -159,7 +160,7 @@ function HomePage() {
           ))}
         </div>
 
-        <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-none lg:col-start-2 lg:row-start-2">
+        <div className="order-3 flex min-w-0 flex-col gap-6 lg:order-none lg:col-start-2 lg:row-start-2">
           <section
             aria-label="Next service"
             className="flex min-w-0 flex-col gap-3 rounded-xl border border-primary/40 bg-card p-4"
@@ -307,96 +308,100 @@ function HomePage() {
           </Link>
         </div>
 
-        <div className="order-3 flex min-w-0 flex-col gap-6 lg:order-none lg:col-start-1 lg:row-span-2 lg:row-start-2">
+        <div className="contents lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
           {data.sundays.length > 0 && (
+            <div className="order-2 min-w-0 lg:order-none">
+              <Section
+                title={`Sunday attendance · last ${data.sundays.length} weeks`}
+                action={
+                  <Link
+                    to="/attendance"
+                    className="py-1 text-[13px] font-medium text-primary"
+                  >
+                    All services
+                  </Link>
+                }
+              >
+                <div className="flex flex-col gap-2 rounded-xl border bg-card p-4 dark:border-transparent">
+                  <div className="flex h-36 items-end gap-1.5 md:gap-2.5">
+                    {data.sundays.map((s, i) => (
+                      <div
+                        key={s.date}
+                        className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+                      >
+                        <span
+                          className={cn(
+                            'numeric text-xs',
+                            i === data.sundays.length - 1
+                              ? 'font-semibold text-foreground'
+                              : 'text-muted-foreground max-sm:hidden',
+                          )}
+                        >
+                          {s.total}
+                        </span>
+                        <span
+                          className={cn(
+                            'w-full rounded-t-md',
+                            i === data.sundays.length - 1
+                              ? 'bg-primary'
+                              : 'bg-muted-foreground/40',
+                          )}
+                          style={{
+                            height: `${Math.max(2, (s.total / maxSunday) * 100)}%`,
+                          }}
+                          title={`${shortDay(s.date)}: ${s.total}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{shortDay(data.sundays[0].date)}</span>
+                    <span className="font-medium text-foreground">
+                      Last Sunday · {last?.total}
+                      {change !== null &&
+                        ` (${change > 0 ? '+' : ''}${change} vs the week before)`}
+                    </span>
+                  </div>
+                </div>
+              </Section>
+            </div>
+          )}
+
+          <div className="order-4 min-w-0 lg:order-none">
             <Section
-              title={`Sunday attendance · last ${data.sundays.length} weeks`}
+              title={`Cell groups this week · ${data.thisWeek.length}`}
               action={
                 <Link
-                  to="/attendance"
+                  to="/reports"
                   className="py-1 text-[13px] font-medium text-primary"
                 >
-                  All services
+                  All reports
                 </Link>
               }
             >
-              <div className="flex flex-col gap-2 rounded-xl border bg-card p-4 dark:border-transparent">
-                <div className="flex h-36 items-end gap-1.5 md:gap-2.5">
-                  {data.sundays.map((s, i) => (
-                    <div
-                      key={s.date}
-                      className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
-                    >
-                      <span
-                        className={cn(
-                          'numeric text-xs',
-                          i === data.sundays.length - 1
-                            ? 'font-semibold text-foreground'
-                            : 'text-muted-foreground max-sm:hidden',
-                        )}
-                      >
-                        {s.total}
-                      </span>
-                      <span
-                        className={cn(
-                          'w-full rounded-t-md',
-                          i === data.sundays.length - 1
-                            ? 'bg-primary'
-                            : 'bg-muted-foreground/40',
-                        )}
-                        style={{
-                          height: `${Math.max(2, (s.total / maxSunday) * 100)}%`,
-                        }}
-                        title={`${shortDay(s.date)}: ${s.total}`}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{shortDay(data.sundays[0].date)}</span>
-                  <span className="font-medium text-foreground">
-                    Last Sunday · {last?.total}
-                    {change !== null &&
-                      ` (${change > 0 ? '+' : ''}${change} vs the week before)`}
-                  </span>
-                </div>
-              </div>
+              {data.thisWeek.length === 0 ? (
+                <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                  No reports yet this week.
+                </p>
+              ) : (
+                <>
+                  <Group className="md:hidden">
+                    {data.thisWeek.map((r) => (
+                      <ReportRow key={r.id} r={r} />
+                    ))}
+                  </Group>
+                  <ReportsTable
+                    groups={[['This week', data.thisWeek]]}
+                    labelGroups={false}
+                    compact
+                  />
+                </>
+              )}
             </Section>
-          )}
-
-          <Section
-            title={`Cell groups this week · ${data.thisWeek.length}`}
-            action={
-              <Link
-                to="/reports"
-                className="py-1 text-[13px] font-medium text-primary"
-              >
-                All reports
-              </Link>
-            }
-          >
-            {data.thisWeek.length === 0 ? (
-              <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-                No reports yet this week.
-              </p>
-            ) : (
-              <>
-                <Group className="md:hidden">
-                  {data.thisWeek.map((r) => (
-                    <ReportRow key={r.id} r={r} />
-                  ))}
-                </Group>
-                <ReportsTable
-                  groups={[['This week', data.thisWeek]]}
-                  labelGroups={false}
-                  compact
-                />
-              </>
-            )}
-          </Section>
+          </div>
         </div>
 
-        <div className="order-4 min-w-0 lg:order-none lg:col-start-2 lg:row-start-3">
+        <div className="order-5 min-w-0 lg:order-none lg:col-start-2 lg:row-start-3">
           <Section title={`Birthdays this week · ${data.birthdays.length}`}>
             <BirthdayList birthdays={data.birthdays} today={data.today} />
           </Section>

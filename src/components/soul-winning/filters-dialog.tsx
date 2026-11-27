@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from 'cn'
-import { FormField } from '@/components/form-field'
+import { ChipChoice, FormField } from '@/components/form-field'
 import { PersonCombobox } from '@/components/person-combobox'
 import {
   DialogActions,
@@ -10,7 +10,6 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/responsive-dialog'
 import { Button } from '@/components/ui/button'
-import { Segmented } from '@/components/ui/segmented'
 import { MEMBER_TYPE, options } from '@/lib/labels'
 import type { SoulWinningSearch } from '@/lib/soul-winning/schema'
 
@@ -58,7 +57,7 @@ export function SoulWinningFiltersDialog({
         <div className="flex min-w-0 flex-col gap-5">
           {canChooseWhose && (
             <FormField label="Whose">
-              <Segmented
+              <ChipChoice
                 label="Whose"
                 value={draft.mine ? 'mine' : 'all'}
                 onChange={(v) =>
@@ -140,7 +139,7 @@ export function SoulWinningFiltersDialog({
           )}
           {believers && (
             <FormField label="Lessons to track">
-              <Segmented
+              <ChipChoice
                 label="Lessons to track"
                 value={draft.lessons ?? 'all'}
                 onChange={(v) =>

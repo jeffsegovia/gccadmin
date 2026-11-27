@@ -36,9 +36,9 @@ function NewDisciplePage() {
       title="New disciple"
       description={from}
       back={{ to: '/disciples', label: 'Disciples' }}
-      className="max-w-3xl"
+      className="max-w-3xl pb-0 md:pb-12"
     >
-      <div className="border bg-card p-4 md:p-6 dark:border-transparent rounded-xl">
+      <div className="md:rounded-xl md:border md:bg-card md:p-6 md:dark:border-transparent">
         <DiscipleForm
           initial={{
             ...EMPTY_DISCIPLE,

@@ -34,7 +34,7 @@ export function StepBar({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'h-1 w-full',
+                  'h-1 w-full rounded-full',
                   i <= step ? 'bg-primary' : 'bg-foreground/12',
                 )}
               />

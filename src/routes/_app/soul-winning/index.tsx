@@ -152,7 +152,7 @@ function SoulWinningPage() {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button size="lg" className="max-md:hidden">
+              <Button size="lg">
                 <Plus aria-hidden="true" /> New
               </Button>
             }

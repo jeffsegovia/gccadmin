@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
-import { ChartColumn, Ellipsis } from 'lucide-react'
+import { ChartColumn, Plus } from 'lucide-react'
 import { cn } from 'cn'
 import { appConfig } from '@/config/site'
 import { Logo } from './logo'
@@ -13,15 +14,15 @@ import {
 } from './nav-items'
 import type { NavItem } from './nav-items'
 import { SearchButton } from './global-search'
-import { QuickAddFab, QuickAddMenu } from './quick-add'
+import { QuickAddMenu, QuickAddSheet } from './quick-add'
 import { UserAvatar, UserMenu } from './user-menu'
 import type { MenuUser } from './user-menu'
 
-/* The signed-in frame (the redesign's navigation note): on wide screens a
-   top bar (logo, search, account) and a left menu grouped Ministry,
-   Resources and Admin, as in Osamu; on phones a small header and a bottom
-   bar with Home, Disciples, Reports, Attendance and More, as in Worsheep.
-   Each page's main add is a floating button on phones. */
+/* The signed-in frame (the redesign signed off 27 November 2026): on wide
+   screens a top bar (logo, search, account) and a left menu grouped
+   Ministry, Resources and Admin; on phones a small header and a bottom bar
+   with Home, Disciples, + Add, Attendance and Reports, as in Osamu. More
+   opens from the avatar, so nothing floats over a list's rows. */
 
 const sideRow =
   'flex h-9 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-[17px] [&_svg]:shrink-0'
@@ -135,74 +136,91 @@ function TopBar({ user }: { user: MenuUser }) {
 }
 
 function PhoneHeader({ user }: { user: MenuUser }) {
+  const { pathname } = useLocation()
+  const moreOn = pathname === '/more'
   return (
-    <header className="dark sticky top-0 z-30 mb-2 flex items-center gap-2 border-b border-white/12 bg-background px-4 py-2 text-foreground md:hidden">
+    <header className="dark sticky top-0 z-30 mb-2 flex h-13 items-center gap-1 border-b border-white/12 bg-background/90 pr-2 pl-4 text-foreground backdrop-blur supports-[backdrop-filter]:bg-background/75 md:hidden">
       <Link
         to="/home"
         aria-label="Home"
         className="flex min-w-0 flex-1 items-center gap-2"
       >
         <Logo className="size-6" />
-        <span className="truncate font-mono text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-          {appConfig.church}
+        <span className="truncate text-[15px] font-semibold tracking-tight">
+          {appConfig.title}
         </span>
       </Link>
       <SearchButton compact />
       <InsightsLink className="size-10" />
-      <UserMenu
-        user={user}
-        trigger={
-          <button
-            type="button"
-            aria-label="Your account"
-            className="flex size-10 items-center justify-center rounded-full"
-          >
-            <UserAvatar user={user} />
-          </button>
-        }
-      />
+      {/* More (profile, resources, admin, appearance, sign out) is the
+          avatar's page on phones, as Osamu's Settings is. */}
+      <Link
+        to="/more"
+        aria-label={`More, signed in as ${user.name}`}
+        aria-current={moreOn ? 'page' : undefined}
+        className="flex size-10 items-center justify-center rounded-full"
+      >
+        <UserAvatar
+          user={user}
+          className={cn(
+            moreOn &&
+              'ring-2 ring-primary ring-offset-2 ring-offset-background',
+          )}
+        />
+      </Link>
     </header>
   )
 }
 
 const tabClass =
   'relative flex h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-muted-foreground transition-colors [&_svg]:size-[22px] [&_svg]:shrink-0'
-const tabOn =
-  'text-primary before:absolute before:top-0 before:left-1/4 before:h-[3px] before:w-1/2 before:bg-primary'
+// The tab you're on is its color, not a bar above it (as in Osamu).
+const tabOn = 'text-foreground [&_svg]:text-primary'
 
-function PhoneTabs() {
+function Tab({ item, pathname }: { item: NavItem; pathname: string }) {
+  const on = isActive(item, pathname)
+  return (
+    <Link
+      to={item.to}
+      className={cn(tabClass, on && tabOn)}
+      aria-current={on ? 'page' : undefined}
+    >
+      <item.icon aria-hidden="true" />
+      <span className="max-w-full truncate text-[11px] font-medium">
+        {item.label}
+      </span>
+    </Link>
+  )
+}
+
+/** Form pages fill the screen on phones (as Osamu's focus mode): no
+ * bottom bar, their Back and Next pinned to the foot instead. */
+export const isFormPage = (pathname: string) => /\/new$/.test(pathname)
+
+function PhoneTabs({ onAdd }: { onAdd: () => void }) {
   const { pathname } = useLocation()
-  const moreOn =
-    !PHONE_TABS.some((t) => isActive(t, pathname)) && pathname !== '/'
+  if (isFormPage(pathname)) return null
+  const [first, second, ...rest] = PHONE_TABS
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-background/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-background/85 md:hidden"
     >
-      {PHONE_TABS.map((item) => {
-        const on = isActive(item, pathname)
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={cn(tabClass, on && tabOn)}
-            aria-current={on ? 'page' : undefined}
-          >
-            <item.icon aria-hidden="true" />
-            <span className="max-w-full truncate text-xs font-medium">
-              {item.label}
-            </span>
-          </Link>
-        )
-      })}
-      <Link
-        to="/more"
-        className={cn(tabClass, moreOn && tabOn)}
-        aria-current={moreOn ? 'page' : undefined}
-      >
-        <Ellipsis aria-hidden="true" />
-        <span className="text-xs font-medium">More</span>
-      </Link>
+      <Tab item={first} pathname={pathname} />
+      <Tab item={second} pathname={pathname} />
+      <div className="flex items-center justify-center">
+        <button
+          type="button"
+          aria-label="Add"
+          onClick={onAdd}
+          className="relative flex size-10 items-center justify-center rounded-[10px] bg-primary text-primary-foreground transition-transform after:absolute after:-inset-1 active:scale-95"
+        >
+          <Plus aria-hidden="true" className="size-5" strokeWidth={2.25} />
+        </button>
+      </div>
+      {rest.map((item) => (
+        <Tab key={item.to} item={item} pathname={pathname} />
+      ))}
     </nav>
   )
 }
@@ -216,18 +234,26 @@ export function AppShell({
   isAdmin: boolean
   children: ReactNode
 }) {
+  const [adding, setAdding] = useState(false)
+  const { pathname } = useLocation()
+  const form = isFormPage(pathname)
   return (
     <div data-app-shell className="min-h-dvh">
       <TopBar user={user} />
       <PhoneHeader user={user} />
       <div className="md:flex">
         <Sidebar isAdmin={isAdmin} />
-        <div className="min-w-0 flex-1 pb-[calc(3.5rem+1px+env(safe-area-inset-bottom))] md:pb-0">
+        <div
+          className={cn(
+            'min-w-0 flex-1 md:pb-0',
+            !form && 'pb-[calc(3.5rem+1px+env(safe-area-inset-bottom))]',
+          )}
+        >
           {children}
         </div>
       </div>
-      <QuickAddFab />
-      <PhoneTabs />
+      <PhoneTabs onAdd={() => setAdding(true)} />
+      <QuickAddSheet open={adding} onOpenChange={setAdding} />
     </div>
   )
 }

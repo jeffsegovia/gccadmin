@@ -1,6 +1,7 @@
 import type { ComponentProps, ComponentType, ReactNode } from 'react'
 import { cn } from 'cn'
 import { ChevronRight } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 
 /** A tinted group of rows divided by hairlines: the redesign's one
  * container. Rows go straight inside; never a bordered card in a card. */
@@ -78,18 +79,22 @@ export function Tile({ className, ...props }: ComponentProps<'span'>) {
  * the label always says what it means. */
 export type StatTone = 'covered' | 'caution' | 'short'
 
+export type StatItem = {
+  label: ReactNode
+  value: ReactNode
+  icon?: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
+  tone?: StatTone
+  /** Makes the cell a button that opens its detail. */
+  onClick?: () => void
+  /** Makes the cell a link to its page. */
+  to?: string
+}
+
 export function StatStrip({
   items,
   className,
 }: {
-  items: ReadonlyArray<{
-    label: ReactNode
-    value: ReactNode
-    icon?: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
-    tone?: StatTone
-    /** Makes the cell a button that opens its detail. */
-    onClick?: () => void
-  }>
+  items: ReadonlyArray<StatItem>
   className?: string
 }) {
   return (
@@ -102,16 +107,19 @@ export function StatStrip({
     >
       {items.map((item, i) => {
         const Icon = item.icon
-        const Cell = item.onClick ? 'button' : 'div'
+        const opens = !!(item.onClick || item.to)
+        const Cell = item.to ? Link : item.onClick ? 'button' : 'div'
         return (
           <Cell
             key={i}
-            {...(item.onClick
-              ? { type: 'button' as const, onClick: item.onClick }
-              : {})}
+            {...(item.to
+              ? { to: item.to }
+              : item.onClick
+                ? { type: 'button' as const, onClick: item.onClick }
+                : {})}
             className={cn(
               'flex min-w-0 flex-col gap-1 px-3.5 py-3.5 text-left',
-              item.onClick &&
+              opens &&
                 'transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
             )}
           >
@@ -128,8 +136,11 @@ export function StatStrip({
             )}
             <div className="flex items-center gap-0.5 text-xs leading-snug text-muted-foreground">
               {item.label}
-              {item.onClick && (
-                <ChevronRight aria-hidden="true" className="size-3 shrink-0" />
+              {opens && (
+                <ChevronRight
+                  aria-hidden="true"
+                  className="size-3 shrink-0 max-sm:hidden"
+                />
               )}
             </div>
             <div

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ArrowDown,
-  ChevronRight,
   Download,
   Ellipsis,
   Link2,
@@ -18,6 +17,7 @@ import { ListSearch } from '@/components/list-search'
 import {
   CellStatusPill,
   ChurchStatusPill,
+  Pill,
   ProcessLevelPill,
 } from '@/components/status-pill'
 import {
@@ -26,7 +26,8 @@ import {
 } from '@/components/disciples/filters-dialog'
 import { ImportDialog } from '@/components/disciples/import-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron, rowClass } from '@/components/ui/list'
+import { Segmented } from '@/components/ui/segmented'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,10 +41,10 @@ import {
   CHURCH_STATUS,
   MEMBER_TYPE,
   PROCESS_LEVEL,
+  initials,
 } from '@/lib/labels'
 import { FilterBar } from '@/components/filter-bar'
 import type { ActiveFilter } from '@/components/filter-bar'
-import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { manilaDay, shortDate } from '@/lib/dates'
 import { Pager } from '@/components/pager'
 import { messageOf } from '@/lib/errors'
@@ -88,6 +89,17 @@ function Role({ d }: { d: DiscipleRow }) {
   if (d.isMyPrimary)
     return <span className="text-xs text-primary">Assistant leader</span>
   return null
+}
+
+/** A row's second line on phones: the role first when there is one,
+ * then the group and who handles them. */
+function phoneSub(d: DiscipleRow) {
+  const role = d.isPrimary
+    ? 'Primary leader'
+    : d.isMyPrimary
+      ? 'Assistant leader'
+      : null
+  return [role, sub(d)].filter(Boolean).join(' · ')
 }
 
 function DisciplesPage() {
@@ -191,7 +203,7 @@ function DisciplesPage() {
                   aria-label="Import or export"
                 >
                   <Ellipsis aria-hidden="true" />
-                  <span className="max-md:hidden">Import / export</span>
+                  <span className="max-md:sr-only">Import / export</span>
                 </Button>
               }
             />
@@ -204,27 +216,23 @@ function DisciplesPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Link
-            to="/disciples/new"
-            className={buttonVariants({
-              size: 'lg',
-              className: 'max-md:hidden',
-            })}
-          >
-            <Plus aria-hidden="true" /> Add disciple
+          <Link to="/disciples/new" className={buttonVariants({ size: 'lg' })}>
+            <Plus aria-hidden="true" /> Add
+            <span className="max-md:hidden">disciple</span>
           </Link>
         </>
       }
     >
       {data.everyone && data.myId && (
-        <UnderlineTabs
-          label="Whose"
+        <Segmented
+          label="Whose disciples"
           value={data.scope}
           onChange={(scope) => setSearch({ scope })}
           options={[
             { value: 'mine', label: 'Mine' },
             { value: 'all', label: 'Everyone' },
           ]}
+          className="md:max-w-sm"
         />
       )}
       <FilterBar
@@ -262,7 +270,7 @@ function DisciplesPage() {
             )
           }
           className={cn(
-            'inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
+            'inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium transition-colors',
             search.away
               ? 'border-primary bg-primary/10 text-primary'
               : 'text-muted-foreground hover:text-foreground',
@@ -307,35 +315,52 @@ function DisciplesPage() {
         </Empty>
       ) : (
         <>
-          {/* Phones: rows. */}
+          {/* Phones: two-line rows (as in Osamu). Badges only for what
+              isn't the norm: Regular says nothing; the table on wide
+              screens shows every status. */}
           <Group className="md:hidden">
             {data.rows.map((d) => (
               <Link
                 key={d.id}
                 to="/disciples/$discipleId"
                 params={{ discipleId: d.id }}
-                className="flex min-h-15 min-w-0 items-center gap-3 px-3.5 py-2"
+                className={rowClass}
               >
+                <span
+                  aria-hidden="true"
+                  className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-foreground/80"
+                >
+                  {initials(
+                    d.name.replace(/^(ptr|ptra|pastor|bro|sis)\.?\s+/i, ''),
+                  )}
+                </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[15px] font-medium">
-                    {d.name}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-[15px] font-medium">
+                      {d.name}
+                    </span>
+                    {d.churchStatus !== 'REGULAR' && (
+                      <ChurchStatusPill status={d.churchStatus} />
+                    )}
+                    {d.cellStatus !== 'REGULAR' && (
+                      <CellStatusPill status={d.cellStatus} />
+                    )}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {sub(d)}
+                    {phoneSub(d)}
                   </span>
-                  <span className="mt-1 flex flex-wrap items-center gap-1">
-                    <ChurchStatusPill status={d.churchStatus} named />
-                    <CellStatusPill status={d.cellStatus} named />
-                  </span>
-                  <span className="mt-1 truncate text-xs text-muted-foreground">
-                    {lastSeen(d)}
-                  </span>
-                  <Role d={d} />
                 </span>
-                <ChevronRight
-                  aria-hidden="true"
-                  className="size-4 shrink-0 text-muted-foreground"
-                />
+                {d.lastSunday ? (
+                  <span
+                    className="shrink-0 text-xs text-muted-foreground numeric"
+                    title={lastSeen(d)}
+                  >
+                    {shortDate(d.lastSunday)}
+                  </span>
+                ) : (
+                  <Pill tone="caution">No Sunday yet</Pill>
+                )}
+                <RowChevron />
               </Link>
             ))}
           </Group>

@@ -283,7 +283,10 @@ function DialogActions({ className, ...props }: ComponentProps<'div'>) {
         inDialog &&
           !sheet &&
           'sticky -bottom-6 z-10 -mx-6 mt-2 -mb-6 border-t border-border bg-popover px-6 pt-3 pb-6 shadow-[0_-12px_16px_-12px_var(--background)]',
-        !inDialog && 'mt-2',
+        // On a page (a form of its own), phones pin the buttons to the
+        // foot, as a sheet's are; the bottom bar is hidden on form pages.
+        !inDialog &&
+          'mt-2 max-md:sticky max-md:bottom-0 max-md:z-20 max-md:-mx-4 max-md:border-t max-md:bg-background/95 max-md:px-4 max-md:pt-3 max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:backdrop-blur',
         className,
       )}
       {...props}

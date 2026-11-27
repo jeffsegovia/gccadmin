@@ -1,7 +1,14 @@
+import { StatStrip, RowChevron } from '@/components/ui/list'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowRight, BookOpen, HeartHandshake, Users } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  ClipboardList,
+  HeartHandshake,
+  Users,
+} from 'lucide-react'
 import { z } from 'zod'
 import { Page } from '@/components/shell/page'
 import { TrendChart } from '@/components/insights/trend-chart'
@@ -20,7 +27,6 @@ import {
   rangeText,
 } from '@/components/insights/reports-filed'
 import { KIND_COLOR, Pill } from '@/components/status-pill'
-import { RowChevron } from '@/components/ui/list'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { RANGE_LABEL, REPORT_RANGES } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
@@ -113,21 +119,43 @@ function InsightsPage() {
           ? 'Quick insights on cell groups and members.'
           : 'Quick insights on your network’s cell groups and members.'
       }
-      action={
-        data.canChooseScope && (
-          <Segmented
-            label="Whose"
-            className="w-56"
-            value={search.mine ? 'mine' : 'all'}
-            onChange={(v) => set({ mine: v === 'mine' ? true : undefined })}
-            options={[
-              { value: 'all', label: 'Whole church' },
-              { value: 'mine', label: 'My network' },
-            ]}
-          />
-        )
-      }
     >
+      {data.canChooseScope && (
+        <Segmented
+          label="Whose"
+          className="md:w-72"
+          value={search.mine ? 'mine' : 'all'}
+          onChange={(v) => set({ mine: v === 'mine' ? true : undefined })}
+          options={[
+            { value: 'all', label: 'Whole church' },
+            { value: 'mine', label: 'My network' },
+          ]}
+        />
+      )}
+
+      {/* The headline numbers first (as Osamu's summaries); each card
+          below has the detail. */}
+      <StatStrip
+        items={[
+          {
+            icon: ClipboardList,
+            label: `Cell groups · ${RANGE_LABEL[filedRange].toLowerCase()}`,
+            value: data.filed.cellGroups.total,
+          },
+          {
+            icon: BookOpen,
+            label: `Soul winning · ${data.yearToDate.year}`,
+            value: data.yearToDate.soulWinning,
+          },
+          {
+            icon: Users,
+            label: `New believers · ${data.yearToDate.year}`,
+            value: data.yearToDate.believers,
+            tone: 'covered',
+          },
+        ]}
+      />
+
       <InsightCard
         title="Cell groups"
         description={rangeText(data.filed.days)}

@@ -1,6 +1,9 @@
+import { CheckMark } from '@/components/check-mark'
+import { DateTile } from '@/components/date-tile'
+import { RowChevron, rowClass } from '@/components/ui/list'
 import { useEffect, useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
-import { Check, Pencil, Trash2, UserPlus } from 'lucide-react'
+import { Pencil, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from 'cn'
 import {
@@ -160,25 +163,13 @@ export function BelieverSheet({
                     <span className="text-xs text-muted-foreground">
                       {g.title}
                     </span>
-                    <ul className="flex flex-col border [&>*+*]:border-t rounded-lg overflow-hidden">
+                    <ul className="flex flex-col overflow-hidden rounded-xl bg-muted/40 [&>*+*]:border-t">
                       {g.lessons.map((l) => (
                         <li
                           key={l.id}
-                          className="flex min-h-11 min-w-0 items-center gap-3 px-3 py-2 text-sm"
+                          className="flex min-h-11 min-w-0 items-center gap-3 px-3.5 py-2 text-sm"
                         >
-                          <span
-                            aria-hidden="true"
-                            className={cn(
-                              'grid size-4 shrink-0 place-items-center rounded-[4px] border-[1.5px]',
-                              l.takenOn
-                                ? 'border-covered bg-covered text-background'
-                                : 'border-foreground/25',
-                            )}
-                          >
-                            {l.takenOn && (
-                              <Check className="size-3" strokeWidth={3.5} />
-                            )}
-                          </span>
+                          <CheckMark on={!!l.takenOn} />
                           <span className="min-w-0 flex-1 break-words">
                             {l.title}
                           </span>
@@ -203,15 +194,13 @@ export function BelieverSheet({
             {b.sessions.length > 0 && (
               <section aria-label="Sessions" className="flex flex-col gap-1.5">
                 <h3 className="text-[13px] font-medium">Sessions</h3>
-                <ul className="flex flex-col border [&>*+*]:border-t rounded-lg overflow-hidden">
+                <ul className="flex flex-col overflow-hidden rounded-xl bg-muted/40 [&>*+*]:border-t">
                   {b.sessions.map((s) => (
                     <li
                       key={s.id}
-                      className="flex min-w-0 items-center gap-3 px-3 py-2 text-sm"
+                      className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2 text-sm"
                     >
-                      <span className="w-14 shrink-0 font-mono text-xs text-muted-foreground uppercase">
-                        {shortDate(s.date)}
-                      </span>
+                      <DateTile date={s.date} instant />
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate">{s.venue}</span>
                         {s.lessonTitle && (
@@ -232,7 +221,7 @@ export function BelieverSheet({
             )}
 
             {(b.contactNo || b.email || b.address) && (
-              <dl className="grid grid-cols-[5rem_minmax(0,1fr)] gap-y-2 text-sm">
+              <dl className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-3 gap-y-0 overflow-hidden rounded-xl bg-muted/40 px-3.5 text-sm [&>dd]:py-2.5 [&>dt]:py-2.5">
                 {b.contactNo && (
                   <>
                     <dt className="text-muted-foreground">Phone</dt>
@@ -278,22 +267,30 @@ export function BelieverSheet({
               </p>
             )}
 
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                size="lg"
+            {/* The rest as rows (as in Osamu), not a pair of buttons. */}
+            <div className="flex flex-col overflow-hidden rounded-xl bg-muted/40 [&>*+*]:border-t">
+              <button
+                type="button"
+                className={rowClass}
                 onClick={() => setMode('edit')}
               >
-                <Pencil aria-hidden="true" /> Edit
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                className="text-destructive"
+                <Pencil
+                  aria-hidden="true"
+                  className="size-4 text-muted-foreground"
+                />
+                <span className="flex-1 text-sm font-medium">Edit details</span>
+                <RowChevron />
+              </button>
+              <button
+                type="button"
+                className={rowClass}
                 onClick={() => setMode('delete')}
               >
-                <Trash2 aria-hidden="true" /> Delete
-              </Button>
+                <Trash2 aria-hidden="true" className="size-4 text-short" />
+                <span className="flex-1 text-sm font-medium text-short">
+                  Delete
+                </span>
+              </button>
             </div>
           </div>
         )}

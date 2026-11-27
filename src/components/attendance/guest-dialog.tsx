@@ -38,11 +38,14 @@ export function GuestDialog({
   known,
   onSave,
   onMarkReturning,
+  initialName,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** Editing this guest; else adding a new one. */
   guest?: GuestInput
+  /** A new guest's name so far (typed into the sheet's search). */
+  initialName?: string
   serviceLabel?: string
   inviters: ReadonlyArray<{ id: string; name: string }>
   /** Guests who came before, to catch the same person added twice. */
@@ -66,6 +69,7 @@ export function GuestDialog({
         {open && (
           <GuestForm
             guest={guest}
+            initialName={initialName}
             inviters={inviters}
             known={known}
             onCancel={() => onOpenChange(false)}
@@ -89,6 +93,7 @@ export function GuestDialog({
 
 function GuestForm({
   guest,
+  initialName,
   inviters,
   known,
   onCancel,
@@ -96,13 +101,14 @@ function GuestForm({
   onMarkReturning,
 }: {
   guest?: GuestInput
+  initialName?: string
   inviters: ReadonlyArray<{ id: string; name: string }>
   known: ReadonlyArray<KnownGuest>
   onCancel: () => void
   onSave: (guest: GuestInput) => Promise<void>
   onMarkReturning?: (guestId: string) => void
 }) {
-  const [name, setName] = useState(guest?.name ?? '')
+  const [name, setName] = useState(guest?.name ?? initialName ?? '')
   const [gender, setGender] = useState<Gender | null>(guest?.gender ?? null)
   const [memberType, setMemberType] = useState<MemberType | null>(
     guest?.memberType && guest.memberType !== 'UNCATEGORIZED'

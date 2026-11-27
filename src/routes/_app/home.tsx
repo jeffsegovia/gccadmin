@@ -1,5 +1,13 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { CalendarCheck, ChartColumn, PhoneCall, UserRoundX } from 'lucide-react'
+import {
+  CalendarCheck,
+  CalendarDays,
+  ClipboardList,
+  PhoneCall,
+  Sprout,
+  UserRoundX,
+  Users,
+} from 'lucide-react'
 import { cn } from 'cn'
 import { Page, Section } from '@/components/shell/page'
 import { RemindButton } from '@/components/remind-button'
@@ -8,10 +16,12 @@ import { ReportRow } from '@/components/cell-reports/report-row'
 import { ReportsTable } from '@/components/cell-reports/reports-table'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants } from '@/components/ui/button'
-import { Group, RowChevron } from '@/components/ui/list'
+import { Group, RowChevron, StatStrip } from '@/components/ui/list'
+import type { StatItem } from '@/components/ui/list'
 import {
-  longDay,
+  daysBetween,
   manilaDay,
+  weekdayDay,
   shortDate,
   shortDay,
   weekStart,
@@ -52,49 +62,62 @@ function HomePage() {
   const before = data.sundays.at(-2)
   const change = last && before ? last.total - before.total : null
 
-  // Each figure says what it counts in a line under it.
-  const stats = [
+  // A strip of three: icon, label, figure (as in Osamu); what each counts
+  // is in its label, not a third line.
+  const stats: StatItem[] = [
     {
+      icon: Users,
       label: data.everyone ? 'Disciples' : 'Your disciples',
       value: data.discipleTotal.toLocaleString('en-US'),
-      hint: 'active',
-      tone: '',
       to: '/disciples',
     },
-    ...(data.everyone
-      ? [
-          {
-            label: 'Cell groups',
-            value: String(data.leadersReported),
-            hint: `of ${data.leaderTotal} leaders reported`,
-            tone: '',
-            to: '/reports',
-          },
-        ]
-      : [
-          {
-            label: 'Reported',
-            value: data.myReportedThisWeek ? 'Yes' : 'Not yet',
-            hint: 'this week',
-            tone: data.myReportedThisWeek ? 'text-covered' : 'text-caution',
-            to: '/reports',
-          },
-        ]),
+    data.everyone
+      ? {
+          icon: ClipboardList,
+          label: 'Cells reported',
+          value: (
+            <>
+              {data.leadersReported}
+              <span className="text-sm font-medium text-muted-foreground">
+                {' '}
+                of {data.leaderTotal}
+              </span>
+            </>
+          ),
+          tone:
+            data.leadersReported < data.leaderTotal
+              ? ('caution' as const)
+              : ('covered' as const),
+          to: '/reports',
+        }
+      : {
+          icon: ClipboardList,
+          label: 'Reported',
+          value: data.myReportedThisWeek ? 'Yes' : 'Not yet',
+          tone: data.myReportedThisWeek
+            ? ('covered' as const)
+            : ('caution' as const),
+          to: '/reports',
+        },
     {
-      label: 'New believers',
+      icon: Sprout,
+      label: 'New this month',
       value: String(data.newSouls),
-      hint: 'this month',
-      tone: 'text-covered',
+      tone: 'covered',
       to: '/soul-winning',
     },
-    {
-      label: 'Last Sunday',
-      value: last ? String(last.total) : '—',
-      hint: last ? shortDay(last.date) : 'no service yet',
-      tone: 'max-md:hidden',
-      to: '/attendance',
-    },
   ]
+  const daysToService = data.upcoming
+    ? daysBetween(manilaDay(), data.upcoming.date)
+    : null
+  const when =
+    daysToService === null
+      ? ''
+      : daysToService <= 0
+        ? 'today'
+        : daysToService === 1
+          ? 'tomorrow'
+          : `in ${daysToService} days`
 
   const attention = [
     ...(data.guestsToFollowUp > 0
@@ -132,88 +155,62 @@ function HomePage() {
           attendance), then what to do, while wide screens keep two
           columns. */}
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="order-1 grid grid-cols-3 overflow-hidden rounded-xl border bg-card md:grid-cols-4 lg:order-none lg:col-span-2 lg:row-start-1 [&>*+*]:border-l">
-          {stats.map((s) => (
-            <Link
-              key={s.label}
-              to={s.to}
-              className={cn(
-                'flex min-w-0 flex-col gap-1 px-3 py-3 transition-colors hover:bg-muted/50 md:px-4',
-                s.tone.includes('max-md:hidden') && 'max-md:hidden',
-              )}
-            >
-              <span className="truncate text-xs text-muted-foreground md:text-[13px]">
-                {s.label}
-              </span>
-              <span
-                className={cn(
-                  'numeric truncate text-xl font-semibold tracking-tight md:text-[28px]',
-                  s.tone.replace('max-md:hidden', ''),
-                )}
-              >
-                {s.value}
-              </span>
-              <span className="text-xs leading-tight text-muted-foreground">
-                {s.hint}
-              </span>
-            </Link>
-          ))}
-        </div>
+        <StatStrip
+          items={stats}
+          className="order-1 lg:order-none lg:col-span-2 lg:row-start-1"
+        />
 
-        <div className="order-3 flex min-w-0 flex-col gap-6 lg:order-none lg:col-start-2 lg:row-start-2">
-          <section
-            aria-label="Next service"
-            className="flex min-w-0 flex-col gap-3 rounded-xl border border-primary/40 bg-card p-4"
-          >
-            {data.upcoming ? (
-              <>
-                <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="grid h-12 w-11 shrink-0 place-items-center content-center rounded-lg bg-muted"
-                  >
-                    <span className="font-mono text-[10px] font-semibold tracking-widest text-primary uppercase">
-                      {shortDay(data.upcoming.date).split(' ')[0]}
-                    </span>
-                    <span className="text-lg leading-5 font-bold">
-                      {shortDay(data.upcoming.date).split(' ')[1]}
-                    </span>
-                  </span>
-                  <span className="flex min-w-0 flex-col">
-                    <span className="truncate text-[15px] font-semibold">
-                      {data.upcoming.title}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {longDay(data.upcoming.date)}
-                    </span>
-                  </span>
+        {/* The next service leads on phones (as Safe to spend does in
+            Osamu): Sunday's one job is a tap away. */}
+        <section
+          aria-label="Next service"
+          className="order-first flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 lg:order-none lg:col-start-2 lg:row-start-2"
+        >
+          {data.upcoming ? (
+            <>
+              <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                <CalendarDays
+                  aria-hidden="true"
+                  className="size-4 text-primary"
+                />
+                Next service · {when}
+              </span>
+              <div className="min-w-0">
+                <div className="numeric text-[28px] leading-8 font-semibold tracking-tight">
+                  {weekdayDay(data.upcoming.date)}
                 </div>
-                <Link
-                  to="/attendance/$attendanceId"
-                  params={{ attendanceId: data.upcoming.id }}
-                  className={buttonVariants({ size: 'lg' })}
-                >
-                  <CalendarCheck aria-hidden="true" /> Take attendance
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  No service set up for this Sunday yet.
-                </p>
-                <Link
-                  to="/attendance"
-                  className={buttonVariants({
-                    size: 'lg',
-                    variant: 'secondary',
-                  })}
-                >
-                  <CalendarCheck aria-hidden="true" /> Set up attendance
-                </Link>
-              </>
-            )}
-          </section>
+                <div className="mt-1 truncate text-sm text-muted-foreground">
+                  {data.upcoming.title}
+                  {last && ` · last Sunday ${last.total} present`}
+                </div>
+              </div>
+              <Link
+                to="/attendance/$attendanceId"
+                params={{ attendanceId: data.upcoming.id }}
+                className={buttonVariants({ size: 'lg' })}
+              >
+                <CalendarCheck aria-hidden="true" /> Take attendance
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                No service set up for this Sunday yet.
+              </p>
+              <Link
+                to="/attendance"
+                className={buttonVariants({
+                  size: 'lg',
+                  variant: 'secondary',
+                })}
+              >
+                <CalendarCheck aria-hidden="true" /> Set up attendance
+              </Link>
+            </>
+          )}
+        </section>
 
+        <div className="order-3 flex min-w-0 flex-col gap-6 lg:order-none lg:col-start-2 lg:row-start-3">
           {data.notReported.length > 0 && (
             <Section
               title={
@@ -288,27 +285,9 @@ function HomePage() {
               </Group>
             </Section>
           )}
-
-          <Link
-            to="/insights"
-            className="flex min-h-16 min-w-0 items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50 dark:border-transparent"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-primary">
-              <ChartColumn aria-hidden="true" className="size-[18px]" />
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-[15px] font-semibold">
-                Insights
-              </span>
-              <span className="truncate text-xs text-muted-foreground">
-                Cell groups, soul winning and members
-              </span>
-            </span>
-            <RowChevron />
-          </Link>
         </div>
 
-        <div className="contents lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
+        <div className="contents lg:col-start-1 lg:row-span-3 lg:row-start-2 lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
           {data.sundays.length > 0 && (
             <div className="order-2 min-w-0 lg:order-none">
               <Section
@@ -401,7 +380,7 @@ function HomePage() {
           </div>
         </div>
 
-        <div className="order-5 min-w-0 lg:order-none lg:col-start-2 lg:row-start-3">
+        <div className="order-5 min-w-0 lg:order-none lg:col-start-2 lg:row-start-4">
           <Section title={`Birthdays this week · ${data.birthdays.length}`}>
             <BirthdayList birthdays={data.birthdays} today={data.today} />
           </Section>

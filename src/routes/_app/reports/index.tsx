@@ -7,7 +7,6 @@ import { FilterBar } from '@/components/filter-bar'
 import { ReportFiltersDialog } from '@/components/cell-reports/filters-dialog'
 import { ReportsTable } from '@/components/cell-reports/reports-table'
 import { Pager } from '@/components/pager'
-import { UnderlineTabs } from '@/components/ui/underline-tabs'
 import { ReportRow as ReportItem } from '@/components/cell-reports/report-row'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Group } from '@/components/ui/list'
@@ -72,31 +71,30 @@ function ReportsPage() {
             <FileDown aria-hidden="true" />
             <span className="max-md:sr-only">View PDF</span>
           </Button>
-          <Link
-            to="/reports/new"
-            className={buttonVariants({
-              size: 'lg',
-              className: 'max-md:hidden',
-            })}
-          >
-            <Plus aria-hidden="true" /> New report
+          <Link to="/reports/new" className={buttonVariants({ size: 'lg' })}>
+            <Plus aria-hidden="true" /> New
+            <span className="max-md:hidden">report</span>
           </Link>
         </>
       }
     >
       <ReportsTabs on="cell" />
-      <UnderlineTabs
-        label="Type"
-        value={search.type ?? 'ALL'}
-        onChange={(v) => set({ type: v === 'ALL' ? undefined : v })}
-        options={[
-          { value: 'ALL', label: 'All' },
-          { value: 'OPEN', label: 'Open Cell' },
-          { value: 'DISCIPLESHIP', label: 'Discipleship' },
-        ]}
-      />
       <FilterBar
         active={[
+          ...(search.type
+            ? [
+                {
+                  key: 'type',
+                  label:
+                    search.type === 'OPEN'
+                      ? 'Open Cell'
+                      : search.type === 'DISCIPLESHIP'
+                        ? 'Discipleship'
+                        : 'Soul winning',
+                  clear: () => set({ type: undefined }),
+                },
+              ]
+            : []),
           ...(search.mine
             ? [
                 {
@@ -127,7 +125,12 @@ function ReportsPage() {
         ]}
         onOpen={() => setFiltering(true)}
         onClearAll={() =>
-          set({ mine: undefined, leader: undefined, assistant: undefined })
+          set({
+            mine: undefined,
+            leader: undefined,
+            assistant: undefined,
+            type: undefined,
+          })
         }
       >
         <NativeSelect
@@ -147,8 +150,12 @@ function ReportsPage() {
       <ReportFiltersDialog
         open={filtering}
         onOpenChange={setFiltering}
-        value={{ mine: search.mine, leader: search.leader }}
-        onApply={(f) => set({ mine: f.mine, leader: f.leader })}
+        value={{
+          mine: search.mine,
+          leader: search.leader,
+          type: search.type === 'SOULWINNING' ? undefined : search.type,
+        }}
+        onApply={(f) => set({ mine: f.mine, leader: f.leader, type: f.type })}
         canChooseWhose={!!data.myId}
         leaders={data.canFilterLeader ? data.leaders : []}
       />

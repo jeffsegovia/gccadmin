@@ -3,6 +3,7 @@ import { UsersRound } from 'lucide-react'
 import { z } from 'zod'
 import { Empty, Page } from '@/components/shell/page'
 import { ListSearch } from '@/components/list-search'
+import { AttendanceTabs } from '@/components/reports-tabs'
 import { Pill } from '@/components/status-pill'
 import { buttonVariants } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
@@ -28,8 +29,8 @@ function GuestsPage() {
     <Page
       title="Guests"
       description="Everyone who came to a service before becoming a disciple. Follow up, and make them disciples when they’re ready."
-      back={{ to: '/attendance', label: 'Attendance' }}
     >
+      <AttendanceTabs on="guests" />
       <ListSearch
         value={q}
         placeholder="Search guests"

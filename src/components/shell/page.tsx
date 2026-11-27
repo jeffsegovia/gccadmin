@@ -41,8 +41,10 @@ export function Page({
             <span className="truncate">{back.label}</span>
           </Link>
         )}
-        <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
-          <div className="min-w-0 flex-1 basis-60">
+        {/* The page's action sits beside its title, phones too (as in
+            Osamu): one main action, the rest in a ⋯ menu. */}
+        <div className="flex min-w-0 items-end justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <h1 className="text-[22px] leading-7 font-semibold tracking-tight md:text-2xl">
               {title}
             </h1>
@@ -53,7 +55,7 @@ export function Page({
             )}
           </div>
           {action && (
-            <div className="flex flex-wrap items-center gap-2">{action}</div>
+            <div className="flex shrink-0 items-center gap-2">{action}</div>
           )}
         </div>
       </div>
@@ -98,7 +100,7 @@ export function Empty({
   children?: ReactNode
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 border border-dashed px-6 py-14 text-center rounded-xl">
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-14 text-center">
       <Icon aria-hidden className="size-6 text-muted-foreground" />
       <p className="text-sm text-muted-foreground">{title}</p>
       {children}

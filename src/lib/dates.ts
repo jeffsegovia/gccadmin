@@ -74,6 +74,23 @@ export function longDay(date: Date | string): string {
   ).format(new Date(date))
 }
 
+/** "Sun, Nov 30" (a calendar day), for a headline where the year is
+ * plain. */
+export function weekdayDay(date: Date | string): string {
+  return fmt({ weekday: 'short', month: 'short', day: 'numeric' }, true).format(
+    new Date(date),
+  )
+}
+
+/** Whole days from `from` to `to` (calendar days, so no time-zone drift):
+ * 0 is the same day, 1 is the next. */
+export function daysBetween(from: string, to: Date | string): number {
+  return Math.round(
+    (dayToDate(dateToDay(to)).getTime() - dayToDate(from).getTime()) /
+      86_400_000,
+  )
+}
+
 /** "Nov 26" in Manila (an instant). */
 export function shortDate(date: Date | string): string {
   return fmt({ month: 'short', day: 'numeric' }, false).format(new Date(date))

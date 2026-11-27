@@ -1,33 +1,30 @@
-import { Link } from '@tanstack/react-router'
-import { cn } from 'cn'
+import { SegmentLinks } from '@/components/ui/segment-links'
 
-/** Phones: Reports holds cell groups and soul winning, one tab each. On
- * wide screens each has its own place in the menu. */
+/** Phones: Reports holds cell groups and soul winning, as two segments.
+ * On wide screens each has its own place in the menu. */
 export function ReportsTabs({ on }: { on: 'cell' | 'soul' }) {
-  // Underline tabs, as everywhere else: no box.
-  const tab = (active: boolean) =>
-    cn(
-      '-mb-px flex h-10 items-center border-b-2 text-sm font-medium whitespace-nowrap',
-      active
-        ? 'border-primary text-foreground'
-        : 'border-transparent text-muted-foreground',
-    )
   return (
-    <nav aria-label="Reports" className="flex gap-5 border-b md:hidden">
-      <Link
-        to="/reports"
-        className={tab(on === 'cell')}
-        aria-current={on === 'cell' ? 'page' : undefined}
-      >
-        Cell groups
-      </Link>
-      <Link
-        to="/soul-winning"
-        className={tab(on === 'soul')}
-        aria-current={on === 'soul' ? 'page' : undefined}
-      >
-        Soul winning
-      </Link>
-    </nav>
+    <SegmentLinks
+      label="Reports"
+      className="md:hidden"
+      items={[
+        { to: '/reports', label: 'Cell groups', on: on === 'cell' },
+        { to: '/soul-winning', label: 'Soul winning', on: on === 'soul' },
+      ]}
+    />
+  )
+}
+
+/** Attendance's two pages: the services, and the guests who came. */
+export function AttendanceTabs({ on }: { on: 'services' | 'guests' }) {
+  return (
+    <SegmentLinks
+      label="Attendance"
+      className="md:max-w-sm"
+      items={[
+        { to: '/attendance', label: 'Services', on: on === 'services' },
+        { to: '/attendance/guests', label: 'Guests', on: on === 'guests' },
+      ]}
+    />
   )
 }

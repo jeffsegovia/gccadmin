@@ -2,7 +2,6 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useClerkSafe } from '@/lib/auth/clerk-safe'
 import {
   ChartColumn,
-  ChevronRight,
   ExternalLink,
   LogOut,
   Smartphone,
@@ -13,13 +12,14 @@ import { Page, Section } from '@/components/shell/page'
 import { UserAvatar } from '@/components/shell/user-menu'
 import { ThemeSegmented } from '@/components/shell/theme-segmented'
 import { Button } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
 import { SiteIcon } from '@/components/site-icon'
 import { GCC_LINKS } from '@/config/links'
 import { ADMIN_NAV, RESOURCE_NAV } from '@/components/shell/nav-items'
 import type { NavItem } from '@/components/shell/nav-items'
 
-/** Phones: everything that isn't in the bottom bar. */
+/** Phones: everything that isn't in the bottom bar, opened from the
+ * avatar. */
 export const Route = createFileRoute('/_app/more')({
   head: () => ({ meta: [{ title: 'More · GCC Admin' }] }),
   component: MorePage,
@@ -40,10 +40,7 @@ function Rows({ items }: { items: ReadonlyArray<NavItem> }) {
           <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
             {item.label}
           </span>
-          <ChevronRight
-            aria-hidden="true"
-            className="size-4 shrink-0 text-muted-foreground"
-          />
+          <RowChevron />
         </Link>
       ))}
     </Group>
@@ -57,7 +54,8 @@ function MorePage() {
     <Page title="More">
       <Link
         to="/profile"
-        className="flex min-w-0 items-center gap-3 border bg-card p-3.5 dark:border-transparent rounded-xl"
+        aria-label={`Your profile, ${viewer.name}`}
+        className="flex min-w-0 items-center gap-3 rounded-xl border bg-card p-3.5 dark:border-transparent"
       >
         <UserAvatar user={viewer} className="size-11" />
         <span className="flex min-w-0 flex-1 flex-col">
@@ -69,7 +67,7 @@ function MorePage() {
             {viewer.disciple?.isPrimary ? ' · Primary leader' : ''}
           </span>
         </span>
-        <span className="text-[13px] font-medium text-primary">Profile</span>
+        <RowChevron />
       </Link>
       <Section title="Ministry">
         <Rows
@@ -120,7 +118,7 @@ function MorePage() {
         <ThemeSegmented />
       </Section>
       <Section title="App">
-        <p className="flex items-start gap-2 border bg-card p-3.5 text-sm text-muted-foreground dark:border-transparent rounded-xl">
+        <p className="flex items-start gap-2 rounded-xl border bg-card p-3.5 text-sm text-muted-foreground dark:border-transparent">
           <Smartphone
             aria-hidden="true"
             className="mt-0.5 size-4 shrink-0 text-primary"
@@ -129,7 +127,8 @@ function MorePage() {
           tap ⋮ › Install app. Installed, attendance works offline.
         </p>
       </Section>
-      <Button variant="destructive" size="xl" onClick={signOut}>
+      {/* Signing out is plain, not a warning (as in Osamu). */}
+      <Button variant="secondary" size="xl" onClick={signOut}>
         <LogOut aria-hidden="true" /> Sign out
       </Button>
     </Page>

@@ -1,3 +1,4 @@
+import { ChipChoice } from '@/components/form-field'
 import { useEffect, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Download, Mail, Share2 } from 'lucide-react'
@@ -12,7 +13,6 @@ import {
 } from '@/components/responsive-dialog'
 import { SubmitButton } from '@/components/submit-button'
 import { Button } from '@/components/ui/button'
-import { Segmented } from '@/components/ui/segmented'
 import { Spinner } from '@/components/ui/spinner'
 import { digestFileName, renderDigestImage } from '@/lib/digest/image'
 import { DIGEST_WORDS } from '@/lib/digest/types'
@@ -132,7 +132,7 @@ function ReportDialog({
             }
           }}
         >
-          <Segmented<DigestKind>
+          <ChipChoice<DigestKind>
             label="Report"
             value={kind}
             onChange={setKind}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FormField } from '@/components/form-field'
+import { ChipChoice, FormField } from '@/components/form-field'
 import { PersonCombobox } from '@/components/person-combobox'
 import {
   DialogActions,
@@ -9,11 +9,15 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/responsive-dialog'
 import { Button } from '@/components/ui/button'
-import { Segmented } from '@/components/ui/segmented'
 
-export type ReportFilters = { mine?: boolean; leader?: string }
+export type ReportFilters = {
+  mine?: boolean
+  leader?: string
+  type?: 'OPEN' | 'DISCIPLESHIP'
+}
 
-/** Cell reports' filters in one sheet: whose, and which leader. */
+/** Cell reports' filters in one sheet: whose, which kind of cell group
+ * and which leader. */
 export function ReportFiltersDialog({
   open,
   onOpenChange,
@@ -45,7 +49,7 @@ export function ReportFiltersDialog({
         <div className="flex min-w-0 flex-col gap-5">
           {canChooseWhose && (
             <FormField label="Whose">
-              <Segmented
+              <ChipChoice
                 label="Whose"
                 value={draft.mine ? 'mine' : 'all'}
                 onChange={(v) =>
@@ -58,6 +62,20 @@ export function ReportFiltersDialog({
               />
             </FormField>
           )}
+          <FormField label="Cell type">
+            <ChipChoice
+              label="Cell type"
+              value={draft.type ?? 'ALL'}
+              onChange={(v) =>
+                setDraft({ ...draft, type: v === 'ALL' ? undefined : v })
+              }
+              options={[
+                { value: 'ALL', label: 'All' },
+                { value: 'OPEN', label: 'Open Cell' },
+                { value: 'DISCIPLESHIP', label: 'Discipleship' },
+              ]}
+            />
+          </FormField>
           {leaders.length > 0 && (
             <FormField label="Leader">
               <PersonCombobox

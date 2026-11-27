@@ -1,25 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-  CalendarCheck,
-  ChevronRight,
-  CloudOff,
-  Lock,
-  Plus,
-  UsersRound,
-} from 'lucide-react'
+import { CalendarCheck, CloudOff, Lock, Plus } from 'lucide-react'
 import { z } from 'zod'
 import { Empty, Page, Section } from '@/components/shell/page'
 import { ListSearch } from '@/components/list-search'
 import { ServiceDialog } from '@/components/attendance/service-dialog'
 import { Pill } from '@/components/status-pill'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, RowChevron } from '@/components/ui/list'
+import { DateTile } from '@/components/date-tile'
+import { AttendanceTabs } from '@/components/reports-tabs'
 import { getServices } from '@/server/attendance/attendance.functions'
 import type { ServiceRow } from '@/server/attendance/attendance.queries'
 import { servicesWithPending } from '@/lib/attendance/outbox'
 import { ATTENDANCE_TYPE, plural } from '@/lib/labels'
-import { dateToDay, manilaDay, monthLabel, shortDay } from '@/lib/dates'
+import { dateToDay, longDay, manilaDay, monthLabel } from '@/lib/dates'
 
 export const Route = createFileRoute('/_app/attendance/')({
   validateSearch: z.object({
@@ -38,21 +33,49 @@ function summary(s: ServiceRow) {
   return parts.join(' · ')
 }
 
-function DateTile({ date, accent }: { date: Date; accent?: boolean }) {
-  const label = shortDay(date)
-  const [month, day] = label.split(' ')
+/** An open service as a card (Home's next-service card): its day, how
+ * many are in, and Take attendance, one tap from the list. */
+function OpenServiceCard({ s, waiting }: { s: ServiceRow; waiting: boolean }) {
   return (
-    <span
-      aria-hidden="true"
-      className="grid h-12 w-11 shrink-0 place-items-center content-center rounded-lg bg-muted"
+    <section
+      aria-label={`${s.title}, open`}
+      className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4"
     >
-      <span
-        className={`font-mono text-[10px] font-semibold tracking-widest uppercase ${accent ? 'text-primary' : 'text-muted-foreground'}`}
+      <div className="flex items-center justify-between gap-3 text-[13px]">
+        {waiting ? (
+          <Pill tone="caution">
+            <CloudOff className="size-3" aria-hidden="true" /> Not synced
+          </Pill>
+        ) : (
+          <span className="flex items-center gap-1.5 font-medium text-covered">
+            <span
+              aria-hidden="true"
+              className="size-2 rounded-full bg-covered"
+            />
+            Open now
+          </span>
+        )}
+        <span className="text-muted-foreground">{longDay(s.date)}</span>
+      </div>
+      <div className="flex min-w-0 items-baseline justify-between gap-3">
+        <span className="truncate text-xl font-semibold tracking-tight">
+          {s.title}
+        </span>
+        <span className="shrink-0 text-[13px] text-muted-foreground">
+          <span className="numeric text-xl font-semibold text-foreground">
+            {s.members + s.guests}
+          </span>{' '}
+          present
+        </span>
+      </div>
+      <Link
+        to="/attendance/$attendanceId"
+        params={{ attendanceId: s.id }}
+        className={buttonVariants({ size: 'lg' })}
       >
-        {month}
-      </span>
-      <span className="text-lg leading-5 font-bold">{day}</span>
-    </span>
+        <CalendarCheck aria-hidden="true" /> Take attendance
+      </Link>
+    </section>
   )
 }
 
@@ -91,10 +114,7 @@ function ServiceLink({
       ) : (
         <Pill tone="covered">Open</Pill>
       )}
-      <ChevronRight
-        aria-hidden="true"
-        className="size-4 shrink-0 text-muted-foreground"
-      />
+      <RowChevron />
     </Link>
   )
 }
@@ -132,21 +152,15 @@ function AttendancePage() {
   return (
     <Page
       title="Attendance"
-      description="Sunday services and events. Works offline."
+      description="Services and events. Works offline."
       action={
-        <>
-          <Link
-            to="/attendance/guests"
-            className={buttonVariants({ variant: 'secondary', size: 'lg' })}
-          >
-            <UsersRound aria-hidden="true" /> Guests
-          </Link>
-          <Button size="lg" onClick={() => setCreating(true)}>
-            <Plus aria-hidden="true" /> New service
-          </Button>
-        </>
+        <Button size="lg" onClick={() => setCreating(true)}>
+          <Plus aria-hidden="true" /> <span className="md:hidden">Service</span>
+          <span className="max-md:hidden">New service</span>
+        </Button>
       }
     >
+      <AttendanceTabs on="services" />
       <ListSearch
         value={q}
         placeholder="Search services"
@@ -165,20 +179,9 @@ function AttendancePage() {
         </Empty>
       ) : (
         <>
-          {openNow.length > 0 && (
-            <Section title="Open now">
-              <Group className="border-primary/40 dark:border-primary/40">
-                {openNow.map((s) => (
-                  <ServiceLink
-                    key={s.id}
-                    s={s}
-                    waiting={waiting.has(s.id)}
-                    open
-                  />
-                ))}
-              </Group>
-            </Section>
-          )}
+          {openNow.map((s) => (
+            <OpenServiceCard key={s.id} s={s} waiting={waiting.has(s.id)} />
+          ))}
           {[...byMonth.entries()].map(([month, rows]) => (
             <Section key={month} title={monthLabel(`${month}-01`)}>
               <Group>

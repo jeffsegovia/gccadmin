@@ -20,7 +20,7 @@ function Landing() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-6 text-center">
       <Logo className="size-20" />
       <div className="flex flex-col gap-2">
-        <p className="font-mono text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+        <p className="text-sm font-medium text-muted-foreground">
           {appConfig.church}
         </p>
         <h1 className="text-3xl font-semibold tracking-tight">

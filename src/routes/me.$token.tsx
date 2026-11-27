@@ -17,9 +17,10 @@ import { GrowthBar, Weeks } from '@/components/disciples/progress'
 import { FormField } from '@/components/form-field'
 import { SubmitButton } from '@/components/submit-button'
 import { Input } from '@/components/ui/input'
-import { UnderlineTabs } from '@/components/ui/underline-tabs'
+import { Segmented } from '@/components/ui/segmented'
+import { DateTile } from '@/components/date-tile'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, rowClass } from '@/components/ui/list'
 import { RadioCards } from '@/components/radio-cards'
 import {
   CellStatusPill,
@@ -28,7 +29,7 @@ import {
 } from '@/components/status-pill'
 import { PortalDiscipleForm } from '@/components/portal/disciple-form'
 import { PortalSessionForm } from '@/components/portal/session-form'
-import { MEMBER_TYPE } from '@/lib/labels'
+import { MEMBER_TYPE, initials } from '@/lib/labels'
 import { appConfig } from '@/config/site'
 import { dateTime, longDay, shortDate } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
@@ -115,7 +116,7 @@ function PortalPage() {
       <header className="dark border-b border-white/12 bg-background text-foreground">
         <div className="mx-auto flex max-w-xl items-center gap-2 px-4 py-3">
           <Logo className="size-6" />
-          <span className="truncate font-mono text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+          <span className="truncate text-[15px] font-semibold tracking-tight">
             {appConfig.church}
           </span>
         </div>
@@ -140,7 +141,7 @@ function PortalPage() {
           </Button>
         </div>
 
-        <UnderlineTabs
+        <Segmented
           label="Sections"
           value={tab}
           onChange={setTab}
@@ -159,21 +160,29 @@ function PortalPage() {
           ) : (
             <Group>
               {p.handled.map((d) => (
-                <div
-                  key={d.id}
-                  className="flex min-h-15 min-w-0 flex-col gap-1 px-3.5 py-2.5"
-                >
-                  <span className="flex min-w-0 items-baseline justify-between gap-3">
-                    <span className="truncate text-[15px] font-medium">
-                      {d.name}
+                // Two lines, badges only for what isn't Regular.
+                <div key={d.id} className={rowClass}>
+                  <span
+                    aria-hidden="true"
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-foreground/80"
+                  >
+                    {initials(d.name)}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate text-[15px] font-medium">
+                        {d.name}
+                      </span>
+                      {d.churchStatus !== 'REGULAR' && (
+                        <ChurchStatusPill status={d.churchStatus} />
+                      )}
+                      {d.cellStatus !== 'REGULAR' && (
+                        <CellStatusPill status={d.cellStatus} />
+                      )}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <span className="truncate text-xs text-muted-foreground">
                       {MEMBER_TYPE[d.memberType]}
                     </span>
-                  </span>
-                  <span className="flex flex-wrap gap-1">
-                    <ChurchStatusPill status={d.churchStatus} named />
-                    <CellStatusPill status={d.cellStatus} named />
                   </span>
                 </div>
               ))}
@@ -189,28 +198,23 @@ function PortalPage() {
           ) : (
             <Group>
               {p.reports.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex min-h-15 min-w-0 flex-col gap-1 px-3.5 py-2.5"
-                >
-                  <span className="flex min-w-0 items-center justify-between gap-3">
-                    <KindPill kind={r.type} />
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {dateTime(r.date)}
+                <div key={r.id} className={rowClass} title={dateTime(r.date)}>
+                  <DateTile date={r.date} instant />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[15px] font-medium">
+                      {r.topic ?? 'No lesson'}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {r.type === 'SOUL_WINNING'
+                        ? `${r.attendees} won`
+                        : r.type === 'CONSOLIDATION'
+                          ? `${r.attendees} consolidated`
+                          : `${r.attendees} ${r.attendees === 1 ? 'attendee' : 'attendees'}`}
+                      {' · '}
+                      {r.venue}
                     </span>
                   </span>
-                  <span className="truncate text-[15px] font-medium">
-                    {r.topic ?? 'No lesson'}
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {r.type === 'SOUL_WINNING'
-                      ? `${r.attendees} won`
-                      : r.type === 'CONSOLIDATION'
-                        ? `${r.attendees} consolidated`
-                        : `${r.attendees} ${r.attendees === 1 ? 'attendee' : 'attendees'}`}
-                    {' · '}
-                    {r.venue}
-                  </span>
+                  <KindPill kind={r.type} />
                 </div>
               ))}
             </Group>

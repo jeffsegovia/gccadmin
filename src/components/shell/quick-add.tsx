@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { Link, useLocation } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import {
   CalendarCheck,
   ClipboardList,
@@ -9,7 +8,6 @@ import {
   UserPlus,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { cn } from 'cn'
 import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,11 +15,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/responsive-dialog'
+import { Group, RowChevron, Tile, rowClass } from '@/components/ui/list'
 
 type Action = {
-  /** The page this add belongs to, so that page's + goes straight to it. */
-  module?: string
   label: string
+  hint: string
   icon: LucideIcon
   to: string
   search?: Record<string, string>
@@ -30,134 +34,84 @@ type Action = {
 /** Everything a leader adds from anywhere, most used first. */
 export const QUICK_ADD: ReadonlyArray<Action> = [
   {
-    module: '/reports',
     label: 'Cell report',
+    hint: 'Who came, and the lesson',
     icon: ClipboardList,
     to: '/reports/new',
   },
   {
-    module: '/disciples',
     label: 'Disciple',
+    hint: 'Someone new in your network',
     icon: UserPlus,
     to: '/disciples/new',
   },
   {
-    module: '/soul-winning',
     label: 'Soul winning',
+    hint: 'A session and who believed',
     icon: Sprout,
     to: '/soul-winning/new',
   },
   {
-    module: '/soul-winning',
     label: 'Consolidation',
+    hint: 'A follow-up with a new believer',
     icon: HeartHandshake,
     to: '/soul-winning/new',
     search: { type: 'CONSOLIDATION' },
   },
   {
-    module: '/attendance',
     label: 'Service or event',
+    hint: 'A sheet to take attendance on',
     icon: CalendarCheck,
     to: '/attendance',
     search: { new: '1' },
   },
 ]
 
-/** Phones: one + over the bottom bar, as in Worsheep. A tap opens the
- * choices above it over a see-through veil and the + turns into an ×. */
-export function QuickAddFab() {
-  const [open, setOpen] = useState(false)
-  const { pathname } = useLocation()
-  useEffect(() => setOpen(false), [pathname])
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open])
-  // Forms are where you add; the + would only cover their buttons.
-  if (/\/new$/.test(pathname)) return null
-  // On a module's own pages its one add is one tap; the menu is for the
-  // rest (and for Soul winning, which has two).
-  const here = QUICK_ADD.filter(
-    (a) =>
-      a.module &&
-      (pathname === a.module || pathname.startsWith(`${a.module}/`)),
-  )
-  if (here.length === 1) {
-    const a = here[0]
-    return (
-      <Link
-        to={a.to}
-        search={a.search}
-        aria-label={`New ${a.label.toLowerCase()}`}
-        title={`New ${a.label.toLowerCase()}`}
-        className="fixed right-4 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom)+1rem)] z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/0.35)] transition-transform active:scale-95 md:hidden"
-      >
-        <Plus aria-hidden="true" strokeWidth={2.25} className="size-6" />
-      </Link>
-    )
-  }
+/** Phones: the bottom bar's + opens this sheet (as Osamu's + Add does),
+ * so nothing floats over the rows of a list. */
+export function QuickAddSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
   return (
-    <div className="md:hidden">
-      <div
-        aria-hidden="true"
-        onClick={() => setOpen(false)}
-        className={cn(
-          'fixed inset-0 z-30 bg-background/60 backdrop-blur-[2px] transition-opacity duration-200',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
-      />
-      <nav
-        id="quick-add"
-        aria-label="Add"
-        inert={!open}
-        className={cn(
-          'fixed right-4 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom)+1rem+3.5rem+0.75rem)] z-40 flex flex-col items-end gap-2 transition-[opacity,translate] duration-200 ease-out',
-          open
-            ? 'translate-y-0 opacity-100'
-            : 'pointer-events-none translate-y-3 opacity-0',
-        )}
-      >
-        {QUICK_ADD.map((a) => (
-          <Link
-            key={a.label}
-            to={a.to}
-            search={a.search}
-            onClick={() => setOpen(false)}
-            className={buttonVariants({
-              variant: 'secondary',
-              size: 'xl',
-              className:
-                'gap-2.5 px-4 shadow-[0_8px_24px_oklch(0_0_0/0.35)] [&_svg]:size-5',
-            })}
-          >
-            <a.icon aria-hidden="true" className="text-primary" /> {a.label}
-          </Link>
-        ))}
-      </nav>
-      <button
-        type="button"
-        aria-label={open ? 'Close' : 'Add something'}
-        aria-expanded={open}
-        aria-controls="quick-add"
-        onClick={() => setOpen(!open)}
-        className="fixed right-4 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom)+1rem)] z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/0.35)] transition-transform active:scale-95"
-      >
-        <Plus
-          aria-hidden="true"
-          strokeWidth={2.25}
-          className={cn(
-            'size-6 transition-transform duration-200',
-            open && 'rotate-45',
-          )}
-        />
-      </button>
-    </div>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Add</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
+        <Group>
+          {QUICK_ADD.map((a) => (
+            <Link
+              key={a.label}
+              to={a.to}
+              search={a.search}
+              onClick={() => onOpenChange(false)}
+              className={rowClass}
+            >
+              <Tile className="text-primary">
+                <a.icon />
+              </Tile>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">
+                  {a.label}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {a.hint}
+                </span>
+              </span>
+              <RowChevron />
+            </Link>
+          ))}
+        </Group>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }
 
-/** Wide screens: the sidebar's New button opens the same choices. */
+/** Wide screens: the sidebar's Add button opens the same choices. */
 export function QuickAddMenu() {
   return (
     <DropdownMenu>
@@ -167,10 +121,10 @@ export function QuickAddMenu() {
             type="button"
             className={buttonVariants({
               size: 'lg',
-              className: 'mb-3 w-full justify-start',
+              className: 'mb-3 w-full',
             })}
           >
-            <Plus aria-hidden="true" /> New
+            <Plus aria-hidden="true" /> Add
           </button>
         }
       />

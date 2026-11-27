@@ -193,8 +193,13 @@ function Tab({ item, pathname }: { item: NavItem; pathname: string }) {
   )
 }
 
+/** Form pages fill the screen on phones (as Osamu's focus mode): no
+ * bottom bar, their Back and Next pinned to the foot instead. */
+export const isFormPage = (pathname: string) => /\/new$/.test(pathname)
+
 function PhoneTabs({ onAdd }: { onAdd: () => void }) {
   const { pathname } = useLocation()
+  if (isFormPage(pathname)) return null
   const [first, second, ...rest] = PHONE_TABS
   return (
     <nav
@@ -230,13 +235,20 @@ export function AppShell({
   children: ReactNode
 }) {
   const [adding, setAdding] = useState(false)
+  const { pathname } = useLocation()
+  const form = isFormPage(pathname)
   return (
     <div data-app-shell className="min-h-dvh">
       <TopBar user={user} />
       <PhoneHeader user={user} />
       <div className="md:flex">
         <Sidebar isAdmin={isAdmin} />
-        <div className="min-w-0 flex-1 pb-[calc(3.5rem+1px+env(safe-area-inset-bottom))] md:pb-0">
+        <div
+          className={cn(
+            'min-w-0 flex-1 md:pb-0',
+            !form && 'pb-[calc(3.5rem+1px+env(safe-area-inset-bottom))]',
+          )}
+        >
           {children}
         </div>
       </div>

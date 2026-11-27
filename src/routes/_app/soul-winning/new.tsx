@@ -74,11 +74,11 @@ function NewSessionPage() {
           : 'New consolidation'
       }
       back={{ to: '/soul-winning', label: 'Soul winning' }}
-      className="max-w-3xl"
+      className="max-w-3xl pb-0 md:pb-12"
     >
       <form
         noValidate
-        className="flex flex-col gap-5 border bg-card p-4 md:p-6 dark:border-transparent rounded-xl"
+        className="flex flex-col gap-5 md:rounded-xl md:border md:bg-card md:p-6 md:dark:border-transparent"
         onSubmit={async (e) => {
           e.preventDefault()
           const base = {

@@ -17,7 +17,7 @@ import {
   Unlink,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Page } from '@/components/shell/page'
+import { Page, Section } from '@/components/shell/page'
 import { ChurchStatusPill, KindPill, Pill } from '@/components/status-pill'
 import { PortalSheet } from '@/components/disciples/portal-sheet'
 import { GrowthBar, Weeks } from '@/components/disciples/progress'
@@ -34,9 +34,9 @@ import { PersonCombobox } from '@/components/person-combobox'
 import { PendingButton } from '@/components/pending-button'
 import { FormField } from '@/components/form-field'
 import { LinkAccountDialog } from '@/components/leaders/link-account-dialog'
-import { UnderlineTabs } from '@/components/ui/underline-tabs'
+import { DateTile } from '@/components/date-tile'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Group, RowChevron } from '@/components/ui/list'
+import { Group, Row, RowChevron } from '@/components/ui/list'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +60,7 @@ import {
   MEMBER_TYPE,
   PROCESS_LEVEL,
   PROCESS_STATUS,
+  initials,
 } from '@/lib/labels'
 import { ageOn, dateToDay, longDay, shortDate } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
@@ -83,15 +84,12 @@ export const Route = createFileRoute('/_app/disciples/$discipleId')({
   component: DisciplePage,
 })
 
-type Tab = 'cell' | 'details' | 'lessons' | 'disciples'
-
 function DisciplePage() {
   const data = Route.useLoaderData()
   const d = data.disciple
   const router = useRouter()
   const navigate = useNavigate()
   // v2 opened a disciple on Details.
-  const [tab, setTab] = useState<Tab>('details')
   const [sharing, setSharing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -109,262 +107,258 @@ function DisciplePage() {
     }
   }
 
-  // v2's tabs, in its order.
-  const tabs: Array<{ value: Tab; label: string }> = [
-    { value: 'details', label: 'Details' },
-    { value: 'lessons', label: 'Lessons Taken' },
-    { value: 'cell', label: 'Cell Groups' },
-    { value: 'disciples', label: 'Handled Disciples' },
+  const leaderOf = d.handledByName ?? d.leaderName
+  const details: Array<[string, string]> = [
+    ['Gender', GENDER[d.gender]],
+    ['Birthday', `${longDay(d.birthdate)} · ${ageOn(d.birthdate)}`],
+    ['Phone', d.contactNo || '—'],
+    ['Address', d.address || '—'],
+    ['Network', d.leaderName ?? '—'],
+    ['Handled by', leaderOf ?? '—'],
+    ['Cell status', CELL_STATUS[d.cellStatus]],
+    [
+      'Process level',
+      `${PROCESS_LEVEL[d.processLevel]} · ${PROCESS_STATUS[d.processLevelStatus]}`,
+    ],
   ]
+  const hasActions =
+    data.canEdit && (!!d.contactNo || (!d.isPrimary && d.isActive))
 
   return (
     <Page
       back={{ to: '/disciples', label: 'Disciples' }}
       title={
-        <span className="flex min-w-0 items-center gap-3">
-          <span className="min-w-0 break-words">{d.name}</span>
+        <span className="flex min-w-0 items-center gap-3.5">
+          <span
+            aria-hidden="true"
+            className="grid size-14 shrink-0 place-items-center rounded-full bg-muted text-lg font-semibold text-foreground/80"
+          >
+            {initials(d.name.replace(/^(ptr|ptra|pastor|bro|sis)\.?\s+/i, ''))}
+          </span>
+          <span className="flex min-w-0 flex-col gap-1.5">
+            <span className="min-w-0 break-words">{d.name}</span>
+            <span className="flex flex-wrap gap-1.5">
+              {d.isPrimary && <Pill tone="primary">Primary leader</Pill>}
+              {d.isMyPrimary && !d.isPrimary && (
+                <Pill tone="primary">Assistant leader</Pill>
+              )}
+              <Pill>{MEMBER_TYPE[d.memberType]}</Pill>
+              {d.churchStatus !== 'REGULAR' && (
+                <ChurchStatusPill status={d.churchStatus} />
+              )}
+              {!d.isActive && <Pill tone="short">Inactive</Pill>}
+              {data.portal?.isEnabled && <Pill tone="covered">Portal on</Pill>}
+            </span>
+          </span>
         </span>
       }
       action={
         data.canEdit && (
-          <>
-            {!d.isPrimary && d.isActive && (
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() => setSharing(true)}
-              >
-                <Link2 aria-hidden="true" /> Portal link
-              </Button>
-            )}
-            {d.contactNo && (
-              <a
-                href={`tel:${d.contactNo}`}
-                className={buttonVariants({ variant: 'secondary', size: 'lg' })}
-              >
-                <Phone aria-hidden="true" /> Call
-              </a>
-            )}
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => setEditing(true)}
-            >
-              <Pencil aria-hidden="true" /> Edit
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="secondary"
-                    size="icon-lg"
-                    aria-label="More actions"
-                  >
-                    <Ellipsis aria-hidden="true" />
-                  </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="secondary"
+                  size="icon-lg"
+                  aria-label="Edit and more"
+                >
+                  <Ellipsis aria-hidden="true" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setEditing(true)}>
+                <Pencil /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  void run(
+                    () =>
+                      setDiscipleActive({
+                        data: { id: d.id, isActive: !d.isActive },
+                      }),
+                    d.isActive ? 'Marked inactive' : 'Marked active',
+                  )
                 }
-              />
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  onClick={() =>
-                    void run(
-                      () =>
-                        setDiscipleActive({
-                          data: { id: d.id, isActive: !d.isActive },
-                        }),
-                      d.isActive ? 'Marked inactive' : 'Marked active',
-                    )
-                  }
-                >
-                  <Power /> {d.isActive ? 'Mark inactive' : 'Mark active'}
-                </DropdownMenuItem>
-                {data.canPromote &&
-                  (d.isPrimary ? (
-                    <DropdownMenuItem onClick={() => setDemoting(true)}>
-                      <ArrowDownToLine /> Remove as primary leader
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem
-                      onClick={() =>
-                        void run(
-                          () => promoteToPrimary({ data: { id: d.id } }),
-                          `${d.name} is now a primary leader`,
-                        )
-                      }
-                    >
-                      <ArrowUpToLine /> Make primary leader
-                    </DropdownMenuItem>
-                  ))}
-                {/* A primary leader's sign-in, kept off the Leaders list. */}
-                {data.canPromote &&
-                  d.isPrimary &&
-                  (d.userAccountId ? (
-                    <DropdownMenuItem onClick={() => setUnlinking(true)}>
-                      <Unlink /> Unlink account
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => setLinking(true)}>
-                      <Link2 /> Link account
-                    </DropdownMenuItem>
-                  ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => setDeleting(true)}
-                >
-                  <Trash2 /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
+              >
+                <Power /> {d.isActive ? 'Mark inactive' : 'Mark active'}
+              </DropdownMenuItem>
+              {data.canPromote &&
+                (d.isPrimary ? (
+                  <DropdownMenuItem onClick={() => setDemoting(true)}>
+                    <ArrowDownToLine /> Remove as primary leader
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      void run(
+                        () => promoteToPrimary({ data: { id: d.id } }),
+                        `${d.name} is now a primary leader`,
+                      )
+                    }
+                  >
+                    <ArrowUpToLine /> Make primary leader
+                  </DropdownMenuItem>
+                ))}
+              {/* A primary leader's sign-in, kept off the Leaders list. */}
+              {data.canPromote &&
+                d.isPrimary &&
+                (d.userAccountId ? (
+                  <DropdownMenuItem onClick={() => setUnlinking(true)}>
+                    <Unlink /> Unlink account
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => setLinking(true)}>
+                    <Link2 /> Link account
+                  </DropdownMenuItem>
+                ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setDeleting(true)}
+              >
+                <Trash2 /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )
       }
     >
-      <div className="-mt-2 flex flex-wrap gap-1.5">
-        <ChurchStatusPill status={d.churchStatus} />
-        <Pill>{MEMBER_TYPE[d.memberType]}</Pill>
-        {d.isPrimary && <Pill tone="primary">Primary leader</Pill>}
-        {d.isMyPrimary && !d.isPrimary && (
-          <Pill tone="primary">Assistant leader</Pill>
-        )}
-        {!d.isActive && <Pill tone="short">Inactive</Pill>}
-        {data.portal?.isEnabled && <Pill tone="covered">Portal on</Pill>}
-      </div>
+      {hasActions && (
+        <div className="-mt-1 flex gap-2 md:max-w-md">
+          {d.contactNo && (
+            <a
+              href={`tel:${d.contactNo}`}
+              className={buttonVariants({ size: 'lg', className: 'flex-1' })}
+            >
+              <Phone aria-hidden="true" /> Call
+            </a>
+          )}
+          {!d.isPrimary && d.isActive && (
+            <Button
+              variant="secondary"
+              size="lg"
+              className="flex-1"
+              onClick={() => setSharing(true)}
+            >
+              <Link2 aria-hidden="true" /> Portal link
+            </Button>
+          )}
+        </div>
+      )}
 
+      {/* v2's four tabs, as sections you scroll (one cut off as tabs on a
+          phone): growth, attendance, details, lessons, cell groups and
+          the disciples they handle. */}
       <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
         <div className="flex min-w-0 flex-col gap-5">
           <GrowthBar level={d.processLevel} status={d.processLevelStatus} />
-          <UnderlineTabs
-            label="Sections"
-            value={tab}
-            onChange={setTab}
-            options={tabs}
-          />
 
-          {tab === 'cell' && (
-            <div className="flex min-w-0 flex-col gap-4">
-              <div className="flex flex-col gap-3 border bg-card p-4 dark:border-transparent rounded-xl">
-                <h2 className="text-[13px] font-medium text-muted-foreground">
-                  Last 12 weeks
-                </h2>
-                <Weeks label="Cell group" weeks={data.history.cellWeeks} />
-                <Weeks label="Sundays" weeks={data.history.sundays} />
-              </div>
-              <section className="flex min-w-0 flex-col gap-2">
-                <h2 className="px-0.5 text-[13px] font-medium text-muted-foreground">
-                  Cell groups · {data.cellGroupTotal}
-                </h2>
-                {data.recent.length === 0 ? (
-                  <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
-                    No cell groups yet.
-                  </p>
-                ) : (
-                  <Group>
-                    {data.recent.map((r) => (
-                      <Link
-                        key={r.id}
-                        to="/reports/$reportId"
-                        params={{ reportId: r.id }}
-                        className="flex min-h-14 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
-                      >
-                        <span className="w-14 shrink-0 font-mono text-xs text-muted-foreground uppercase">
-                          {shortDate(r.date)}
-                        </span>
-                        <span className="flex min-w-0 flex-1 flex-col">
-                          <span className="truncate text-[15px] font-medium">
-                            {r.lessonTitle ?? r.customTitle ?? 'Cell group'}
-                          </span>
-                          <span className="flex min-w-0 items-center gap-1.5">
-                            <KindPill kind={r.type} />
-                            <span className="truncate text-xs text-muted-foreground">
-                              {r.leaderName ? `led by ${r.leaderName}` : ''}
-                            </span>
-                          </span>
-                        </span>
-                        <RowChevron />
-                      </Link>
-                    ))}
-                  </Group>
-                )}
-              </section>
+          <Section title="Last 12 weeks">
+            <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 dark:border-transparent">
+              <Weeks label="Cell group" weeks={data.history.cellWeeks} />
+              <Weeks label="Sundays" weeks={data.history.sundays} />
             </div>
-          )}
+          </Section>
 
-          {tab === 'details' && (
-            <dl className="grid min-w-0 grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-4 gap-y-3 border bg-card p-4 text-sm dark:border-transparent rounded-xl">
-              {[
-                ['Gender', GENDER[d.gender]],
-                [
-                  'Birthdate',
-                  `${longDay(d.birthdate)} (${ageOn(d.birthdate)})`,
-                ],
-                ['Phone', d.contactNo || '—'],
-                ['Address', d.address || '—'],
-                ['Network', d.leaderName ?? '—'],
-                ['Handled By', d.handledByName ?? d.leaderName ?? '—'],
-                ['Cell Status', CELL_STATUS[d.cellStatus]],
-                [
-                  'Process Level',
-                  `${PROCESS_LEVEL[d.processLevel]} · ${PROCESS_STATUS[d.processLevelStatus]}`,
-                ],
-              ].map(([k, v]) => (
-                <div key={k} className="contents">
-                  <dt className="text-muted-foreground">{k}</dt>
-                  <dd className="min-w-0 break-words">{v}</dd>
-                </div>
+          <Section title="Details">
+            <Group>
+              {details.map(([k, v]) => (
+                <Row key={k} className="min-h-11 items-start">
+                  <span className="w-28 shrink-0 text-muted-foreground">
+                    {k}
+                  </span>
+                  <span className="min-w-0 flex-1 text-right break-words">
+                    {v}
+                  </span>
+                </Row>
               ))}
-            </dl>
-          )}
+            </Group>
+          </Section>
 
-          {tab === 'lessons' &&
-            (data.lessonsTaken.length === 0 ? (
-              <p className="border border-dashed px-4 py-6 text-center text-sm text-muted-foreground rounded-xl">
+          <Section title={`Lessons taken · ${data.lessonsTaken.length}`}>
+            {data.lessonsTaken.length === 0 ? (
+              <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
                 No lessons yet.
               </p>
             ) : (
               <Group>
                 {data.lessonsTaken.map((l) => (
-                  <div
-                    key={l.title}
-                    className="flex min-h-12 min-w-0 items-center gap-3 px-3.5 py-2"
-                  >
+                  <Row key={l.title} className="min-h-12">
                     <span className="min-w-0 flex-1 truncate font-medium">
                       {l.title}
                     </span>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {shortDate(l.date)}
                     </span>
-                  </div>
+                  </Row>
                 ))}
               </Group>
-            ))}
+            )}
+          </Section>
 
-          {tab === 'disciples' && data.handled.length === 0 && (
-            <p className="border border-dashed px-4 py-8 text-center text-sm text-muted-foreground rounded-xl">
-              No disciples being handled yet.
-            </p>
-          )}
-          {tab === 'disciples' && data.handled.length > 0 && (
-            <Group>
-              {data.handled.map((h) => (
-                <Link
-                  key={h.id}
-                  to="/disciples/$discipleId"
-                  params={{ discipleId: h.id }}
-                  className="flex min-h-14 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
-                >
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate font-medium">{h.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {MEMBER_TYPE[h.memberType]} ·{' '}
-                      {PROCESS_LEVEL[h.processLevel]}
+          <Section title={`Cell groups · ${data.cellGroupTotal}`}>
+            {data.recent.length === 0 ? (
+              <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                No cell groups yet.
+              </p>
+            ) : (
+              <Group>
+                {data.recent.map((r) => (
+                  <Link
+                    key={r.id}
+                    to="/reports/$reportId"
+                    params={{ reportId: r.id }}
+                    className="flex min-h-14 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
+                  >
+                    <DateTile date={r.date} instant />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate font-medium">
+                        {r.lessonTitle ?? r.customTitle ?? 'Cell group'}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {r.leaderName ? `Led by ${r.leaderName}` : ''}
+                      </span>
                     </span>
-                  </span>
-                  <ChurchStatusPill status={h.churchStatus} />
-                  <RowChevron />
-                </Link>
-              ))}
-            </Group>
+                    <KindPill kind={r.type} />
+                    <RowChevron />
+                  </Link>
+                ))}
+              </Group>
+            )}
+          </Section>
+
+          {(data.handled.length > 0 || d.isPrimary || d.isMyPrimary) && (
+            <Section title={`Handled disciples · ${data.handled.length}`}>
+              {data.handled.length === 0 ? (
+                <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                  No disciples being handled yet.
+                </p>
+              ) : (
+                <Group>
+                  {data.handled.map((h) => (
+                    <Link
+                      key={h.id}
+                      to="/disciples/$discipleId"
+                      params={{ discipleId: h.id }}
+                      className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2 hover:bg-muted/50"
+                    >
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate font-medium">{h.name}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {MEMBER_TYPE[h.memberType]} ·{' '}
+                          {PROCESS_LEVEL[h.processLevel]}
+                        </span>
+                      </span>
+                      {h.churchStatus !== 'REGULAR' && (
+                        <ChurchStatusPill status={h.churchStatus} />
+                      )}
+                      <RowChevron />
+                    </Link>
+                  ))}
+                </Group>
+              )}
+            </Section>
           )}
         </div>
 

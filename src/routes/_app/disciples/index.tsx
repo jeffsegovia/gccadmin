@@ -41,7 +41,7 @@ import {
   CHURCH_STATUS,
   MEMBER_TYPE,
   PROCESS_LEVEL,
-  initials,
+  plural,
 } from '@/lib/labels'
 import { FilterBar } from '@/components/filter-bar'
 import type { ActiveFilter } from '@/components/filter-bar'
@@ -318,6 +318,11 @@ function DisciplesPage() {
           {/* Phones: two-line rows (as in Osamu). Badges only for what
               isn't the norm: Regular says nothing; the table on wide
               screens shows every status. */}
+          {/* The list says what its last column is, as in the redesign. */}
+          <div className="-mb-3 flex items-baseline justify-between px-0.5 text-[13px] font-medium text-muted-foreground md:hidden">
+            <span>{plural(data.total, 'disciple')}</span>
+            <span>Last Sunday</span>
+          </div>
           <Group className="md:hidden">
             {data.rows.map((d) => (
               <Link
@@ -326,14 +331,6 @@ function DisciplesPage() {
                 params={{ discipleId: d.id }}
                 className={rowClass}
               >
-                <span
-                  aria-hidden="true"
-                  className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-foreground/80"
-                >
-                  {initials(
-                    d.name.replace(/^(ptr|ptra|pastor|bro|sis)\.?\s+/i, ''),
-                  )}
-                </span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className="truncate text-[15px] font-medium">

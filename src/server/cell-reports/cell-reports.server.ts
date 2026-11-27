@@ -7,6 +7,7 @@ import {
   gte,
   inArray,
   lt,
+  max,
   or,
   sql,
 } from 'drizzle-orm'
@@ -406,4 +407,39 @@ export async function replaceReport(
     }
     await addAttendees(tx, id, added)
   })
+}
+
+/** Primary leaders with no cell report this week (Manila), longest
+ * without one first, with their last report. `only` narrows it to one
+ * leader (a leader sees only themselves, as on Home). */
+export async function notReportedThisWeek(only?: string) {
+  const [from] = rangeBounds('this_week')!
+  const rows = await db
+    .select({
+      id: leader.id,
+      name: leader.name,
+      last: max(cellReports.date),
+    })
+    .from(leader)
+    .leftJoin(cellReports, eq(cellReports.leaderId, leader.id))
+    .where(
+      and(
+        eq(leader.isPrimary, true),
+        eq(leader.isActive, true),
+        eq(leader.isDeleted, false),
+        only ? eq(leader.id, only) : undefined,
+      ),
+    )
+    .groupBy(leader.id, leader.name)
+  return rows
+    .filter((l) => !l.last || new Date(l.last) < from)
+    .map((l) => ({
+      id: l.id,
+      name: l.name,
+      last: l.last ? new Date(l.last).toISOString() : null,
+      days: l.last
+        ? Math.floor((Date.now() - new Date(l.last).getTime()) / 86_400_000)
+        : null,
+    }))
+    .sort((a, b) => (b.days ?? 9999) - (a.days ?? 9999))
 }

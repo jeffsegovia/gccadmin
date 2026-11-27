@@ -161,6 +161,11 @@ function AttendancePage() {
       }
     >
       <AttendanceTabs on="services" />
+      {/* The service open now leads; search is for the past ones below
+          (as in the redesign). */}
+      {openNow.map((s) => (
+        <OpenServiceCard key={s.id} s={s} waiting={waiting.has(s.id)} />
+      ))}
       <ListSearch
         value={q}
         placeholder="Search services"
@@ -178,20 +183,15 @@ function AttendancePage() {
           </Button>
         </Empty>
       ) : (
-        <>
-          {openNow.map((s) => (
-            <OpenServiceCard key={s.id} s={s} waiting={waiting.has(s.id)} />
-          ))}
-          {[...byMonth.entries()].map(([month, rows]) => (
-            <Section key={month} title={monthLabel(`${month}-01`)}>
-              <Group>
-                {rows.map((s) => (
-                  <ServiceLink key={s.id} s={s} waiting={waiting.has(s.id)} />
-                ))}
-              </Group>
-            </Section>
-          ))}
-        </>
+        [...byMonth.entries()].map(([month, rows]) => (
+          <Section key={month} title={monthLabel(`${month}-01`)}>
+            <Group>
+              {rows.map((s) => (
+                <ServiceLink key={s.id} s={s} waiting={waiting.has(s.id)} />
+              ))}
+            </Group>
+          </Section>
+        ))
       )}
       <ServiceDialog open={creating} onOpenChange={setCreating} />
     </Page>

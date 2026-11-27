@@ -147,7 +147,7 @@ function DisciplePage() {
                 <ChurchStatusPill status={d.churchStatus} />
               )}
               {!d.isActive && <Pill tone="short">Inactive</Pill>}
-              {data.portal?.isEnabled && <Pill tone="covered">Portal on</Pill>}
+              {data.portal?.isEnabled && <Pill>Portal on</Pill>}
             </span>
           </span>
         </span>

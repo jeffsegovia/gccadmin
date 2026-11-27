@@ -29,7 +29,7 @@ import {
 } from '@/components/status-pill'
 import { PortalDiscipleForm } from '@/components/portal/disciple-form'
 import { PortalSessionForm } from '@/components/portal/session-form'
-import { MEMBER_TYPE, initials } from '@/lib/labels'
+import { MEMBER_TYPE } from '@/lib/labels'
 import { appConfig } from '@/config/site'
 import { dateTime, longDay, shortDate } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
@@ -162,12 +162,6 @@ function PortalPage() {
               {p.handled.map((d) => (
                 // Two lines, badges only for what isn't Regular.
                 <div key={d.id} className={rowClass}>
-                  <span
-                    aria-hidden="true"
-                    className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-foreground/80"
-                  >
-                    {initials(d.name)}
-                  </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="flex min-w-0 items-center gap-1.5">
                       <span className="truncate text-[15px] font-medium">

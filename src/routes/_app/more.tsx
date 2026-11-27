@@ -11,24 +11,32 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { Page, Section } from '@/components/shell/page'
-import { UserAvatar } from '@/components/shell/user-menu'
 import { ThemeSegmented } from '@/components/shell/theme-segmented'
 import { Button } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
 import { SiteIcon } from '@/components/site-icon'
 import { GCC_LINKS } from '@/config/links'
 import { GUIDES } from '@/config/guides'
+import { getMoreCounts } from '@/server/home/home.functions'
 import { ADMIN_NAV, RESOURCE_NAV } from '@/components/shell/nav-items'
 import type { NavItem } from '@/components/shell/nav-items'
 
 /** Phones: everything that isn't in the bottom bar, opened from the
  * avatar. */
 export const Route = createFileRoute('/_app/more')({
+  loader: () => getMoreCounts(),
   head: () => ({ meta: [{ title: 'More · GCC Admin' }] }),
   component: MorePage,
 })
 
-function Rows({ items }: { items: ReadonlyArray<NavItem> }) {
+/** A count at a row's end says what waits there, as in the redesign. */
+function Rows({
+  items,
+  counts = {},
+}: {
+  items: ReadonlyArray<NavItem>
+  counts?: Partial<Record<string, string | null>>
+}) {
   return (
     <Group>
       {items.map((item) => (
@@ -43,6 +51,11 @@ function Rows({ items }: { items: ReadonlyArray<NavItem> }) {
           <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
             {item.label}
           </span>
+          {counts[item.to] && (
+            <span className="shrink-0 text-[13px] text-muted-foreground numeric">
+              {counts[item.to]}
+            </span>
+          )}
           <RowChevron />
         </Link>
       ))}
@@ -53,6 +66,7 @@ function Rows({ items }: { items: ReadonlyArray<NavItem> }) {
 function MorePage() {
   const { viewer } = Route.useRouteContext()
   const signOut = useClerkSafe()
+  const n = Route.useLoaderData()
   return (
     <Page title="More">
       <Link
@@ -60,7 +74,6 @@ function MorePage() {
         aria-label={`Your profile, ${viewer.name}`}
         className="flex min-w-0 items-center gap-3 rounded-xl border bg-card p-3.5 dark:border-transparent"
       >
-        <UserAvatar user={viewer} className="size-11" />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-base font-semibold">
             {viewer.name}
@@ -83,6 +96,14 @@ function MorePage() {
               icon: UsersRound,
             },
           ]}
+          counts={{
+            '/soul-winning': n.soulWinningThisMonth
+              ? `${n.soulWinningThisMonth} this month`
+              : null,
+            '/attendance/guests': n.guestsToFollowUp
+              ? String(n.guestsToFollowUp)
+              : null,
+          }}
         />
       </Section>
       <Section title="Resources">
@@ -90,7 +111,10 @@ function MorePage() {
       </Section>
       {viewer.isAdmin && (
         <Section title="Admin">
-          <Rows items={ADMIN_NAV} />
+          <Rows
+            items={ADMIN_NAV}
+            counts={{ '/leaders': n.leaders ? String(n.leaders) : null }}
+          />
         </Section>
       )}
       <Section title="Grace City Church">

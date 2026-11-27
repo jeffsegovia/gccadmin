@@ -5,7 +5,6 @@ import type {
   CellType,
   SoulWinningReportType,
   ChurchStatus,
-  Gender,
   MemberType,
   ProcessLevel,
 } from '@/db/schema'
@@ -25,11 +24,12 @@ const TONES: Record<Tone, string> = {
   short: 'bg-short/15 text-short',
   primary: 'bg-primary/15 text-primary',
   men: 'bg-men/15 text-men',
-  neutral: 'bg-muted text-muted-foreground',
+  neutral: 'bg-muted text-foreground/80',
 }
 
-/** A small word in a tint: Regular, 1st visit, Closed. Always a word,
- * never color alone. */
+/** A small word: gray by default, as in the redesign (27 November 2026).
+ * A tint only says something needs a look (No Sunday yet, Not yet) or is
+ * done (Reported). Always a word, never color alone. */
 export function Pill({
   tone = 'neutral',
   children,
@@ -43,7 +43,7 @@ export function Pill({
     <span
       className={cn(
         // Tiny, as in Osamu: a word, not a button.
-        'inline-flex h-5 max-w-full shrink-0 items-center gap-1 rounded-md px-1.5 text-xs leading-none font-medium whitespace-nowrap',
+        'inline-flex h-5 w-fit max-w-full shrink-0 items-center gap-1 rounded-md px-1.5 text-xs leading-none font-medium whitespace-nowrap',
         TONES[tone],
         className,
       )}
@@ -62,19 +62,13 @@ export function CellStatusPill({
   named?: boolean
 }) {
   return (
-    <Pill tone={status === 'REGULAR' ? 'covered' : 'caution'}>
-      {named ? `Cell · ${CELL_STATUS[status]}` : CELL_STATUS[status]}
-    </Pill>
+    <Pill>{named ? `Cell · ${CELL_STATUS[status]}` : CELL_STATUS[status]}</Pill>
   )
 }
 
 /** Process Level as a badge (the Growth Process step). */
 export function ProcessLevelPill({ level }: { level: ProcessLevel }) {
-  return (
-    <Pill tone={level === 'NONE' ? 'neutral' : 'primary'}>
-      {PROCESS_LEVEL[level]}
-    </Pill>
-  )
+  return <Pill>{PROCESS_LEVEL[level]}</Pill>
 }
 
 /** Member Type as a badge, the word only. */
@@ -91,67 +85,17 @@ export function ChurchStatusPill({
   status: ChurchStatus
   named?: boolean
 }) {
-  const tone: Tone =
-    status === 'REGULAR' ? 'covered' : status === 'ACS' ? 'primary' : 'neutral'
   return (
-    <Pill tone={tone}>
+    <Pill>
       {named ? `Church · ${CHURCH_STATUS[status]}` : CHURCH_STATUS[status]}
     </Pill>
   )
 }
 
-/** A thin colored bar beside a name: men blue, women pink (with the word
- * in the row's second line or the screen reader text). */
-export function GenderBar({ gender }: { gender: Gender }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'h-7 w-1 shrink-0',
-        gender === 'MALE' ? 'bg-men' : 'bg-women',
-      )}
-    />
-  )
-}
-
-export function PersonAvatar({
-  name,
-  gender,
-  className,
-}: {
-  name: string
-  gender: Gender
-  className?: string
-}) {
-  const letters = name
-    .replace(/^(ptr|ptra|pastor|bro|sis)\.?\s+/i, '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('')
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-semibold',
-        gender === 'MALE' ? 'bg-men/15 text-men' : 'bg-women/15 text-women',
-        className,
-      )}
-    >
-      {letters}
-    </span>
-  )
-}
-
-/** A lesson's source, as v2 tagged it: GCC Lesson or Custom. Small muted
- * text under the lesson's name, not a badge. */
+/** A lesson's source, as v2 tagged it: GCC Lesson or Custom, as a gray
+ * badge beside the lesson's name. */
 export function LessonTag({ custom }: { custom: boolean }) {
-  return (
-    <span className="text-xs text-muted-foreground">
-      {custom ? 'Custom' : 'GCC Lesson'}
-    </span>
-  )
+  return <Pill>{custom ? 'Custom' : 'GCC Lesson'}</Pill>
 }
 
 /* One color per report kind, everywhere (badges, charts, PDF): the
@@ -173,19 +117,18 @@ const KIND_LABEL = {
   CONSOLIDATION: 'Consolidation',
 } as const
 
-/** A report's kind as a badge in its color: Open Cell, Discipleship, Soul
- * Winning, Consolidation. */
+/** A report's kind as a gray badge with a dot in its color (the color it
+ * has in the charts and PDF): Open Cell, Discipleship, Soul Winning,
+ * Consolidation. */
 export function KindPill({ kind }: { kind: CellType | SoulWinningReportType }) {
-  const color = KIND_COLOR[kind]
   return (
-    <span
-      className="inline-flex h-5 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs leading-none font-medium whitespace-nowrap"
-      style={{
-        color,
-        background: `color-mix(in oklab, ${color} 16%, transparent)`,
-      }}
-    >
+    <Pill>
+      <span
+        aria-hidden="true"
+        className="mr-1 inline-block size-1.5 rounded-full align-middle"
+        style={{ background: KIND_COLOR[kind] }}
+      />
       {KIND_LABEL[kind]}
-    </span>
+    </Pill>
   )
 }

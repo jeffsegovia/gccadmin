@@ -18,11 +18,11 @@ import { ChipChoice, FormField } from '@/components/form-field'
 import { PendingButton } from '@/components/pending-button'
 import { PersonCombobox } from '@/components/person-combobox'
 import { SubmitButton } from '@/components/submit-button'
-import { Pill } from '@/components/status-pill'
+import { KindPill } from '@/components/status-pill'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { GENDER, MEMBER_TYPE, SOUL_WINNING_TYPE, options } from '@/lib/labels'
+import { GENDER, MEMBER_TYPE, options } from '@/lib/labels'
 import { shortDate } from '@/lib/dates'
 import { messageOf } from '@/lib/errors'
 import { newBelieverSchema } from '@/lib/soul-winning/schema'
@@ -209,11 +209,7 @@ export function BelieverSheet({
                           </span>
                         )}
                       </span>
-                      <Pill
-                        tone={s.type === 'SOUL_WINNING' ? 'covered' : 'men'}
-                      >
-                        {SOUL_WINNING_TYPE[s.type]}
-                      </Pill>
+                      <KindPill kind={s.type} />
                     </li>
                   ))}
                 </ul>

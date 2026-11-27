@@ -2,7 +2,8 @@ import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useClerkSafe } from '@/lib/auth/clerk-safe'
-import { LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react'
+import { BookOpen, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react'
+import { GUIDES } from '@/config/guides'
 import { cn } from 'cn'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -104,6 +105,14 @@ export function UserMenu({
           <DropdownMenuItem render={<Link to="/profile" />}>
             <UserRound /> My profile
           </DropdownMenuItem>
+          {GUIDES.map((g) => (
+            <DropdownMenuItem
+              key={g.href}
+              render={<a href={g.href} download />}
+            >
+              <BookOpen /> {g.label}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

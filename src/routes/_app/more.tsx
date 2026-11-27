@@ -1,7 +1,9 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useClerkSafe } from '@/lib/auth/clerk-safe'
 import {
+  BookOpen,
   ChartColumn,
+  Download,
   ExternalLink,
   LogOut,
   Smartphone,
@@ -15,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Group, RowChevron } from '@/components/ui/list'
 import { SiteIcon } from '@/components/site-icon'
 import { GCC_LINKS } from '@/config/links'
+import { GUIDES } from '@/config/guides'
 import { ADMIN_NAV, RESOURCE_NAV } from '@/components/shell/nav-items'
 import type { NavItem } from '@/components/shell/nav-items'
 
@@ -107,6 +110,34 @@ function MorePage() {
                 {l.label}
               </span>
               <ExternalLink
+                aria-hidden="true"
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+            </a>
+          ))}
+        </Group>
+      </Section>
+      <Section title="Help">
+        <Group>
+          {GUIDES.map((g) => (
+            <a
+              key={g.href}
+              href={g.href}
+              download
+              className="flex min-h-13 min-w-0 items-center gap-3 px-3.5 py-2"
+            >
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-primary">
+                <BookOpen aria-hidden="true" className="size-4" />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[15px] font-medium">
+                  {g.label}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {g.note}
+                </span>
+              </span>
+              <Download
                 aria-hidden="true"
                 className="size-4 shrink-0 text-muted-foreground"
               />

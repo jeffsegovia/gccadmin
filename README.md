@@ -134,3 +134,12 @@ email never fails the action that sent it.
 Chromium. The shortcuts (long-press the app icon) are in
 `public/manifest.webmanifest`: New cell report, Take attendance, Add a
 disciple and New soul-winning session.
+
+## User guides
+
+More › Help (and the account menu on wide screens) downloads two PDFs in
+`public/guides/`: the GCC Admin user guide and the Disciple portal guide,
+for leaders to send their disciples. They're written in HTML in
+`scripts/guides/` with phone screenshots of the seeded church in
+`scripts/guides/img/`, and rendered by `pnpm guides`. When a screen they
+show changes, update the page and its screenshot, then run it again.

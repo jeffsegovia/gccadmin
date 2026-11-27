@@ -47,4 +47,5 @@ pnpm db:migrate && pnpm seed
 pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 pnpm email:preview  # every email, with sample data
 pnpm images         # share image and shortcut icons
+pnpm guides         # the user guides (public/guides/*.pdf)
 ```

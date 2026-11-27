@@ -15,7 +15,8 @@
     "seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio",
     "email:preview": "tsx scripts/email-preview.ts",
-    "images": "tsx scripts/render-images.tsx"
+    "images": "tsx scripts/render-images.tsx",
+    "guides": "tsx scripts/guides/render.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",

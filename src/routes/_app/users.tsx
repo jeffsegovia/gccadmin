@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { Empty, Page } from '@/components/shell/page'
 import { ListSearch } from '@/components/list-search'
 import { Pill } from '@/components/status-pill'
-import { UserAvatar } from '@/components/shell/user-menu'
 import { ChipChoice } from '@/components/form-field'
 import { PendingButton } from '@/components/pending-button'
 import {
@@ -64,7 +63,6 @@ function UsersPage() {
               onClick={() => setEditing(a)}
               className="flex min-h-15 w-full min-w-0 items-center gap-3 px-3.5 py-2 text-left hover:bg-muted/50"
             >
-              <UserAvatar user={a} className="size-9" />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-[15px] font-medium">
                   {a.name}
@@ -91,13 +89,13 @@ function UsersPage() {
                   </span>
                 </span>
               </span>
-              {a.pastor && <Pill tone="men">Pastor</Pill>}
+              {a.pastor && <Pill>Pastor</Pill>}
               <Pill
                 tone={
                   a.role === 'admin'
                     ? 'primary'
                     : a.role === 'leader'
-                      ? 'covered'
+                      ? 'neutral'
                       : 'caution'
                 }
               >

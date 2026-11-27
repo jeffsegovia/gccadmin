@@ -5,7 +5,7 @@ import {
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
-import { FileDown, Pencil, Trash2 } from 'lucide-react'
+import { Ellipsis, FileDown, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Page } from '@/components/shell/page'
 import { ReportForm } from '@/components/cell-reports/report-form'
@@ -19,6 +19,14 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/responsive-dialog'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { RowChevron } from '@/components/ui/list'
 import { Spinner } from '@/components/ui/spinner'
 import {
   AlertDialog,
@@ -65,16 +73,23 @@ function ReportPage() {
       title={lesson}
       description={`${dateTime(r.date)}${data.seriesTitle ? ` · ${data.seriesTitle}` : ''}`}
       action={
-        <>
-          {/* v2's Generate PDF: this report's page, previewed first. */}
-          <Button variant="secondary" size="lg" onClick={() => setPdf(true)}>
-            <FileDown aria-hidden="true" /> PDF
-          </Button>
-          {data.canEdit && (
-            <>
+        // One ⋯ beside the title, as on a disciple's page, so a long lesson
+        // name keeps the width on a phone.
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
               <Button
                 variant="secondary"
-                size="lg"
+                size="icon-lg"
+                aria-label="Edit and more"
+              >
+                <Ellipsis aria-hidden="true" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="w-52">
+            {data.canEdit && (
+              <DropdownMenuItem
                 onClick={async () => {
                   setEditing(true)
                   setOpts(
@@ -84,19 +99,26 @@ function ReportPage() {
                   )
                 }}
               >
-                <Pencil aria-hidden="true" /> Edit
-              </Button>
-              <Button
-                variant="destructive"
-                size="icon-lg"
-                aria-label="Delete report"
-                onClick={() => setDeleting(true)}
-              >
-                <Trash2 aria-hidden="true" />
-              </Button>
-            </>
-          )}
-        </>
+                <Pencil /> Edit
+              </DropdownMenuItem>
+            )}
+            {/* v2's Generate PDF: this report's page, previewed first. */}
+            <DropdownMenuItem onClick={() => setPdf(true)}>
+              <FileDown /> PDF
+            </DropdownMenuItem>
+            {data.canEdit && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setDeleting(true)}
+                >
+                  <Trash2 /> Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       }
     >
       <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
@@ -116,8 +138,9 @@ function ReportPage() {
                   {a.name}
                 </span>
                 {a.statusThen && a.statusThen !== 'REGULAR' && (
-                  <Pill tone="caution">{CELL_STATUS[a.statusThen]}</Pill>
+                  <Pill>{CELL_STATUS[a.statusThen]}</Pill>
                 )}
+                <RowChevron />
               </Link>
             ))}
           </div>
@@ -127,7 +150,20 @@ function ReportPage() {
             ['Leader', data.leaderName ?? '—'],
             ['Assistant', data.assistantName ?? '—'],
             ['Type', <KindPill key="type" kind={r.type} />],
-            ['Lesson', <LessonTag key="lesson" custom={!r.lessonId} />],
+            [
+              'Lesson',
+              // The lesson's name, and whether it's a GCC lesson or the
+              // leader's own.
+              <span
+                key="lesson"
+                className="flex flex-wrap items-center gap-1.5"
+              >
+                {lesson}
+                {(data.lessonName ?? r.lessonTitle) && (
+                  <LessonTag custom={!r.lessonId} />
+                )}
+              </span>,
+            ],
             ['Venue', r.venue],
             ['Scripture', (r.scriptureReferences ?? []).join(', ') || '—'],
             ['Worship', (r.worship ?? []).join(', ') || '—'],

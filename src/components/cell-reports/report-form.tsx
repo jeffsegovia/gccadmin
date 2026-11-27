@@ -19,6 +19,7 @@ import { DialogActions } from '@/components/responsive-dialog'
 import { RadioCards } from '@/components/radio-cards'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import { TagsInput } from '@/components/tags-input'
 import { cellReportSchema } from '@/lib/cell-reports/schema'
 import type { CellReportInput } from '@/lib/cell-reports/schema'
@@ -435,14 +436,37 @@ export function ReportForm({
           )}
 
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-            <FormField label="Date & time" htmlFor="r-date" error={errors.date}>
-              <Input
-                id="r-date"
-                type="datetime-local"
-                value={v.date}
-                onChange={(e) => setV({ ...v, date: e.target.value })}
-              />
-            </FormField>
+            {/* Date and time side by side, as in the redesign: the
+                phone's own pickers are easier one at a time. Both write
+                the one local date-time the form keeps. */}
+            <div className="grid min-w-0 grid-cols-2 gap-3">
+              <FormField label="Date" htmlFor="r-date" error={errors.date}>
+                <Input
+                  id="r-date"
+                  type="date"
+                  value={v.date.slice(0, 10)}
+                  onChange={(e) =>
+                    setV({
+                      ...v,
+                      date: `${e.target.value}T${v.date.slice(11, 16) || '19:00'}`,
+                    })
+                  }
+                />
+              </FormField>
+              <FormField label="Time" htmlFor="r-time">
+                <Input
+                  id="r-time"
+                  type="time"
+                  value={v.date.slice(11, 16)}
+                  onChange={(e) =>
+                    setV({
+                      ...v,
+                      date: `${v.date.slice(0, 10)}T${e.target.value}`,
+                    })
+                  }
+                />
+              </FormField>
+            </div>
             <FormField label="Venue" htmlFor="r-venue" error={errors.venue}>
               <Input
                 id="r-venue"
@@ -456,20 +480,24 @@ export function ReportForm({
 
           {!fixedLeader && (
             <div className="flex min-w-0 flex-col gap-2">
-              <CheckRow
-                checked={withAssistant}
-                onChange={(on) => {
-                  setWithAssistant(on)
-                  if (!on)
-                    setV({
-                      ...v,
-                      assistantId: undefined,
-                      attendees: v.attendees.filter((a) => a !== v.assistantId),
-                    })
-                }}
-              >
+              {/* An on/off setting, so a switch (as in the redesign). */}
+              <label className="flex min-h-11 min-w-0 items-center justify-between gap-3 text-sm">
                 I have an assistant leader
-              </CheckRow>
+                <Switch
+                  checked={withAssistant}
+                  onCheckedChange={(on) => {
+                    setWithAssistant(on)
+                    if (!on)
+                      setV({
+                        ...v,
+                        assistantId: undefined,
+                        attendees: v.attendees.filter(
+                          (a) => a !== v.assistantId,
+                        ),
+                      })
+                  }}
+                />
+              </label>
               {withAssistant && (
                 <FormField
                   label="Assistant leader"

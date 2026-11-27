@@ -217,3 +217,50 @@ export const getHome = createServerFn({ method: 'GET' }).handler(async () => {
     today,
   }
 })
+
+/** The small counts at the end of More's rows, as in the redesign:
+ * soul-winning sessions this month (the leader's own network unless they
+ * see everyone), guests to follow up, and primary leaders. */
+export const getMoreCounts = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const access = await requireAccess()
+    const everyone = seesEveryone(access)
+    const me = access.disciple?.id ?? null
+    const month = rangeBounds('this_month')!
+    const [[sessions], [guests], [leaders]] = await Promise.all([
+      db
+        .select({ n: count() })
+        .from(soulWinningReports)
+        .where(
+          and(
+            gte(soulWinningReports.date, month[0]),
+            lt(soulWinningReports.date, month[1]),
+            everyone
+              ? undefined
+              : me
+                ? eq(soulWinningReports.networkLeaderId, me)
+                : sql`false`,
+          ),
+        ),
+      db
+        .select({ n: count() })
+        .from(newComers)
+        .where(sql`${newComers.discipleProfileId} is null`),
+      db
+        .select({ n: count() })
+        .from(disciples)
+        .where(
+          and(
+            eq(disciples.isPrimary, true),
+            eq(disciples.isActive, true),
+            eq(disciples.isDeleted, false),
+          ),
+        ),
+    ])
+    return {
+      soulWinningThisMonth: sessions.n,
+      guestsToFollowUp: guests.n,
+      leaders: access.isAdmin ? leaders.n : null,
+    }
+  },
+)

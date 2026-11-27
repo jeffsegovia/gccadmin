@@ -22,6 +22,7 @@ import {
   insertReport,
   lessonChoices,
   listReports,
+  notReportedThisWeek,
   replaceReport,
   suggestedLesson,
 } from './cell-reports.server'
@@ -33,13 +34,33 @@ export const getReportsPage = createServerFn({ method: 'GET' })
   .validator(listReportsSchema)
   .handler(async ({ data }) => {
     const access = await requireAccess()
-    const [list, leaders] = await Promise.all([
-      listReports(data, access.disciple?.id ?? null),
+    const me = access.disciple?.id ?? null
+    // Who hasn't reported makes sense only for this week, across both
+    // kinds of cell group; a leader sees only themselves (as on Home).
+    const askNotReported =
+      (data.range ?? 'this_week') === 'this_week' &&
+      !data.type &&
+      !data.assistant
+    const only = seesEveryone(access)
+      ? data.mine
+        ? me
+        : (data.leader ?? null)
+      : !me || (data.leader && data.leader !== me)
+        ? ''
+        : me
+    const [list, leaders, notReported] = await Promise.all([
+      listReports(data, me),
       seesEveryone(access) ? listLeaders() : Promise.resolve([]),
+      askNotReported && only !== ''
+        ? notReportedThisWeek(only ?? undefined)
+        : Promise.resolve(null),
     ])
     return {
       ...list,
       leaders,
+      notReported,
+      // Reminders are an admin's, as on Home.
+      canRemind: access.isAdmin,
       canFilterLeader: seesEveryone(access),
       myId: access.disciple?.id ?? null,
     }

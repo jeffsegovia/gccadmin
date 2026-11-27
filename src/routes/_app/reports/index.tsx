@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ClipboardList, FileDown, Plus } from 'lucide-react'
-import { Empty, Page } from '@/components/shell/page'
+import {
+  CircleAlert,
+  ClipboardList,
+  FileDown,
+  Plus,
+  UsersRound,
+} from 'lucide-react'
+import { Empty, Page, Section } from '@/components/shell/page'
+import { RemindButton } from '@/components/remind-button'
+import { Pill } from '@/components/status-pill'
 import { ReportsTabs } from '@/components/reports-tabs'
 import { FilterBar } from '@/components/filter-bar'
 import { ReportFiltersDialog } from '@/components/cell-reports/filters-dialog'
@@ -9,7 +17,7 @@ import { ReportsTable } from '@/components/cell-reports/reports-table'
 import { Pager } from '@/components/pager'
 import { ReportRow as ReportItem } from '@/components/cell-reports/report-row'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Group } from '@/components/ui/list'
+import { Group, StatStrip } from '@/components/ui/list'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
   RANGE_LABEL,
@@ -17,8 +25,7 @@ import {
   listReportsSchema,
 } from '@/lib/cell-reports/schema'
 import type { ReportRange } from '@/lib/cell-reports/schema'
-import { plural } from '@/lib/labels'
-import { manilaDay, shortDay, weekStart } from '@/lib/dates'
+import { manilaDay, shortDate, shortDay, weekStart } from '@/lib/dates'
 import {
   exportReports,
   getReportsForPdf,
@@ -59,7 +66,7 @@ function ReportsPage() {
     <Page
       wide
       title="Cell reports"
-      description={`${RANGE_LABEL[range]} · ${plural(data.total, 'report')} · ${plural(data.attendances, 'attendance')}`}
+      description={RANGE_LABEL[range]}
       action={
         <>
           <Button
@@ -160,6 +167,26 @@ function ReportsPage() {
         leaders={data.canFilterLeader ? data.leaders : []}
       />
 
+      {/* The period at a glance, as in the redesign. */}
+      <StatStrip
+        items={[
+          { label: 'Reports', value: data.total, icon: ClipboardList },
+          { label: 'Attended', value: data.attendances, icon: UsersRound },
+          ...(data.notReported
+            ? [
+                {
+                  label: 'Not reported',
+                  value: data.notReported.length,
+                  icon: CircleAlert,
+                  tone: data.notReported.length
+                    ? ('caution' as const)
+                    : undefined,
+                },
+              ]
+            : []),
+        ]}
+      />
+
       {data.rows.length === 0 ? (
         <Empty icon={ClipboardList} title="No reports in this range.">
           {range !== 'all' || search.mine || search.leader || search.type ? (
@@ -206,6 +233,39 @@ function ReportsPage() {
         </>
       )}
       <Pager page={data.page} total={data.total} pageSize={data.pageSize} />
+      {data.notReported && data.notReported.length > 0 && (
+        <Section
+          title={`Not reported yet · ${data.notReported.length}`}
+          action={
+            data.canRemind ? (
+              <RemindButton leaderIds={data.notReported.map((l) => l.id)} />
+            ) : undefined
+          }
+        >
+          <Group>
+            {data.notReported.map((l) => (
+              <div
+                key={l.id}
+                className="flex min-h-12 min-w-0 items-center gap-3 px-3.5 py-2"
+              >
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate font-medium">{l.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {l.last
+                      ? `Last report ${shortDate(l.last)}`
+                      : 'No reports yet'}
+                  </span>
+                </span>
+                {l.days !== null && (
+                  <Pill tone={l.days > 14 ? 'short' : 'caution'}>
+                    {l.days} days
+                  </Pill>
+                )}
+              </div>
+            ))}
+          </Group>
+        </Section>
+      )}
       <PdfPreview
         open={pdf}
         onOpenChange={setPdf}

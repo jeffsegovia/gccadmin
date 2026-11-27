@@ -395,7 +395,7 @@ function SoulWinningPage() {
                         </span>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        <Pill tone="covered">
+                        <Pill>
                           {s.believers} {conso ? 'consolidated' : 'won'}
                         </Pill>
                       </td>
